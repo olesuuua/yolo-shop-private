@@ -1,0 +1,18 @@
+# Allowlist: never send local models, datasets, camera captures or environments.
+**
+!Dockerfile
+!requirements.txt
+!requirements-paddle.txt
+!*.py
+!bytetrack-*.yaml
+!objects365_classes.json
+!rpc_classes.json
+!models/
+!models/grocery6-overhead/
+!models/grocery6-overhead/best.json
+!static/
+!static/**
+!docker/
+!docker/*.py
+!tests/
+!tests/*.py

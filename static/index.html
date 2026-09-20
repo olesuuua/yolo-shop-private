@@ -1,0 +1,281 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LightStore — Packing monitor</title>
+
+  <style>
+    :root {
+      color-scheme: dark;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: #0b0d12;
+      color: #f8fafc;
+      font-family: Arial, sans-serif;
+    }
+
+    main {
+      width: min(1280px, 96vw);
+      margin: 0 auto;
+      padding: 20px 0;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(1.2rem, 2vw, 1.8rem);
+    }
+
+    #status {
+      margin: 6px 0 0;
+      color: #aeb6c7;
+      font-size: 0.95rem;
+    }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    button {
+      padding: 10px 15px;
+      border: 0;
+      border-radius: 9px;
+      background: #4f46e5;
+      color: #fff;
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    button:hover:not(:disabled) {
+      background: #6366f1;
+    }
+
+    button:disabled {
+      cursor: not-allowed;
+      opacity: 0.5;
+    }
+
+    #stopButton {
+      background: #b91c1c;
+    }
+
+    #stopButton:hover:not(:disabled) {
+      background: #dc2626;
+    }
+
+    .viewer {
+      position: relative;
+      width: 100%;
+      overflow: hidden;
+      aspect-ratio: 4 / 3;
+      background: #000;
+      border: 1px solid #262b36;
+      border-radius: 14px;
+    }
+
+    #result {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      background: #000;
+    }
+
+    .placeholder {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      color: #8b95a7;
+      pointer-events: none;
+    }
+
+    .viewer.has-image .placeholder {
+      display: none;
+    }
+
+    .viewer:not(.has-image) #result {
+      visibility: hidden;
+    }
+
+    #counter {
+      width: 100%;
+      padding: 13px 15px;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      border-radius: 11px;
+      background: rgba(8, 11, 18, 0.84);
+      backdrop-filter: blur(10px);
+      box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
+    }
+
+    .counter-title {
+      margin-bottom: 8px;
+      color: #dbeafe;
+      font-size: 0.78rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .counter-total {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+
+    .counter-total span {
+      color: #cbd5e1;
+      font-size: 0.85rem;
+    }
+
+    .counter-total strong {
+      color: #fff;
+      font-size: 1.7rem;
+      line-height: 1;
+    }
+
+    #classCounts, #packedCounts {
+      display: grid;
+      gap: 4px;
+      max-height: 160px;
+      overflow-y: auto;
+    }
+
+    .class-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      color: #d9e2f0;
+      font-size: 0.86rem;
+    }
+
+    .class-row .count {
+      color: #93c5fd;
+      font-weight: 800;
+    }
+
+    .empty-count {
+      color: #aab3c2;
+      font-size: 0.82rem;
+    }
+
+    .workspace {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 280px;
+      gap: 18px;
+      align-items: start;
+    }
+
+    .stats-section + .stats-section {
+      border-top: 1px solid #303745;
+      margin-top: 20px;
+      padding-top: 20px;
+    }
+
+    .hint { color: #aeb6c7; line-height: 1.5; font-size: 0.9rem; }
+    #lastEvent { color: #86efac; line-height: 1.5; }
+    #resetButton { background: #334155; }
+
+    @media (max-width: 850px) {
+      .workspace { grid-template-columns: 1fr; }
+    }
+
+    /* Camera is needed for capture but is intentionally not shown. */
+    #camera,
+    #canvas {
+      display: none;
+    }
+
+    @media (max-width: 560px) {
+      main {
+        width: 100%;
+        padding: 14px;
+      }
+
+    }
+  </style>
+</head>
+
+<body>
+  <main>
+    <header>
+      <div>
+        <h1>LightStore · Packing monitor</h1>
+        <p class="hint" id="modelInfo" aria-live="polite"></p>
+        <p id="status">Click “Start camera” to begin.</p>
+      </div>
+
+      <div class="controls">
+        <button id="startButton">Start camera</button>
+        <button id="stopButton" disabled>Stop</button>
+        <button id="resetButton">Reset session</button>
+      </div>
+    </header>
+
+    <p class="hint">Place products outside the yellow bag zone, then move them inside.
+      Hold each product in the zone until the green PACKED label appears.</p>
+
+    <div class="workspace">
+    <section id="viewer" class="viewer" aria-label="Camera stream">
+      <img id="result" alt="Annotated packing camera stream">
+
+      <div class="placeholder">
+        Processed camera stream will appear here
+      </div>
+    </section>
+
+      <aside id="counter" aria-live="polite">
+        <div class="stats-section">
+          <div class="counter-title">Packed this session</div>
+          <div class="counter-total">
+            <span>Total items</span>
+            <strong id="packedTotal">0</strong>
+          </div>
+          <div id="packedCounts"><div class="empty-count">Nothing packed yet</div></div>
+          <p id="lastEvent">Waiting for a transfer</p>
+        </div>
+        <div class="stats-section">
+        <div class="counter-title">Detected now</div>
+
+        <div class="counter-total">
+          <span>Total items</span>
+          <strong id="totalCount">0</strong>
+        </div>
+
+        <div id="classCounts">
+          <div class="empty-count">No detections yet</div>
+        </div>
+        </div>
+      </aside>
+    </div>
+    <p class="hint">Stop pauses capture and preserves the session. Reset clears the packed list.
+      One camera can be connected at a time.</p>
+
+    <video id="camera" autoplay playsinline muted></video>
+    <canvas id="canvas"></canvas>
+  </main>
+
+  <script src="/static/app.js?v=sku110k" defer></script>
+</body>
+</html>

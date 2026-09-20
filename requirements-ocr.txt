@@ -1,0 +1,4 @@
+# Install with Paddle's CUDA 12.9 wheel index; keep separate from detection.
+paddlepaddle-gpu==3.3.1
+paddleocr==3.7.0
+paddlex==3.7.2

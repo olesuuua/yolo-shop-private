@@ -1,0 +1,53 @@
+name: Docker build and inference
+
+on:
+  push:
+    branches: [main, codex/lightstore-packing-mvp]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: docker-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: CPU inference (${{ matrix.arch }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-24.04
+            arch: amd64
+          - runner: ubuntu-24.04-arm
+            arch: arm64
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Build native CPU image
+        run: docker compose build
+      - name: Unit tests
+        run: >-
+          docker run --rm --network none
+          -e LIGHTSTORE_MODEL=ppyoloe_objects365
+          --entrypoint /app/.venv/bin/python lightstore:grocery6
+          -m unittest discover -s tests -q
+      - name: Real inference without network access
+        run: >-
+          docker run --rm --network none
+          --entrypoint /app/.venv/bin/python lightstore:grocery6
+          run_lightstore.py --check
+      - name: Compose startup and health check
+        run: |
+          docker compose up -d --wait --wait-timeout 240
+          curl --fail --retry 3 http://127.0.0.1:8001/api/session
+      - name: Container logs
+        if: always()
+        run: docker compose logs --no-color
+      - name: Stop test containers
+        if: always()
+        run: docker compose down

@@ -1,0 +1,10 @@
+services:
+  lightstore:
+    build:
+      context: .
+    image: lightstore:grocery6
+    init: true
+    ports:
+      - "127.0.0.1:${LIGHTSTORE_PORT:-8001}:8001"
+    restart: unless-stopped
+    stop_grace_period: 20s

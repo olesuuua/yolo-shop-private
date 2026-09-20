@@ -1,0 +1,90 @@
+{
+  "schema_version": 1,
+  "architecture": "ppyoloe_plus_crn_s",
+  "labels": [
+    "apple",
+    "bottle",
+    "can",
+    "chocolate bar",
+    "pack of crisps",
+    "pack of muffins"
+  ],
+  "source_checkpoint_sha256": "a0b3edcf31d2c641c20ae4e137666662d498b48f43d09debeaea2dfb0c570ff7",
+  "paddledetection_commit": "b25522a0f4bde8c80603f3ba5e3472059972e3b5",
+  "paddle_version": "3.3.1",
+  "input_size": 416,
+  "dataset_sha256": "e07fba3df590bd707f2039bc86c8971ada6e491f78c30a5fa5cb96b0ed24e59e",
+  "dataset_warnings": [
+    "Frames from the same source videos occur in multiple splits; validation/test are not independent camera sessions.",
+    "Video groups are inferred from filenames; verify split independence manually for other naming conventions."
+  ],
+  "source_class_ids": [
+    82,
+    8,
+    64,
+    null,
+    303,
+    null
+  ],
+  "source_classes": [
+    "Apple",
+    "Bottle",
+    "Canned",
+    null,
+    "Chips",
+    null
+  ],
+  "parent_checkpoint_sha256": "336e172dc3a985e1539b91b43dd4fbe43d950d59929745642571596b90e59886",
+  "parent_labels": [
+    "apple",
+    "bottle",
+    "can",
+    "pack of crisps"
+  ],
+  "class_initialization": {
+    "apple": {
+      "method": "parent",
+      "parent_class_id": 0
+    },
+    "bottle": {
+      "method": "parent",
+      "parent_class_id": 1
+    },
+    "can": {
+      "method": "parent",
+      "parent_class_id": 2
+    },
+    "chocolate bar": {
+      "method": "new",
+      "parent_class_id": null
+    },
+    "pack of crisps": {
+      "method": "parent",
+      "parent_class_id": 3
+    },
+    "pack of muffins": {
+      "method": "new",
+      "parent_class_id": null
+    }
+  },
+  "evaluation_prefix": "more_cls_horiz",
+  "purpose": "finetune",
+  "weights": "best.pdparams",
+  "checkpoint_sha256": "a7d4f66ac449016bcc006d3ff46e64f46d6d05d3f8ad5364245e395eac666f83",
+  "epoch": 17,
+  "optimizer_steps": 1700,
+  "validation": {
+    "map50_95": 0.7959077651587487,
+    "map50": 0.9212139346088659,
+    "per_class_map50_95": {
+      "apple": 0.7404388387499318,
+      "bottle": 0.8793431328368712,
+      "can": 0.6692156323787382,
+      "chocolate bar": 0.919009439405479,
+      "pack of crisps": 0.8665374573724511,
+      "pack of muffins": 0.700902090209021
+    },
+    "images": 58,
+    "prediction_boxes": 6446
+  }
+}

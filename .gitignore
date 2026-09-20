@@ -1,0 +1,23 @@
+# Игнорировать все папки, начинающиеся с точки (например, .venv, .idea, .vscode)
+.*/
+# Docker CI is source code, not a local hidden cache.
+!.github/
+!.github/workflows/
+# Игнорировать все файлы с расширением .pt (модели PyTorch)
+*.pt
+*.pt.tmp
+weights/
+runs/
+*.pdparams
+*.pdopt
+__pycache__/
+*.py[cod]
+.DS_Store
+
+# Local experiment and credentials
+.env
+.env.*
+!.env.example
+work/
+.runtime/
+data/local/
