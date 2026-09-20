@@ -76,6 +76,7 @@ function renderIdentification(identification) {
     value.className = "count";
     if (info.status === "candidate" && info.choice) {
       value.textContent = info.confidence == null ? `${info.choice}?` : `${info.choice}? ${info.confidence.toFixed(2)}`;
+      if (info.complete) value.textContent = `${info.choice} ${info.confidence.toFixed(2)} · OCR paused`;
     } else if (info.status === "unknown") {
       value.textContent = "unknown";
     } else if (info.lines) {

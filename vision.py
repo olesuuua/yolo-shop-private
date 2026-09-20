@@ -238,6 +238,8 @@ class FrameProcessor:
             active_ids = set()
             for detection in detections:
                 active_ids.add(detection.track_id)
+                if identifier.is_complete(detection.track_id):
+                    continue
                 crop = hires_crop(full_frame, detection.bbox)
                 if crop is None:
                     continue

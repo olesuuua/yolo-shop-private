@@ -11,6 +11,7 @@ or missing, never exposed to the browser.
 
 import json
 import logging
+import math
 import os
 import re
 import socket
@@ -52,6 +53,11 @@ class IdentConfig:
     jev_debounce_s: float = JEV_DEBOUNCE_S
     dedup: bool = True
     jev_inline: bool = False
+    stop_confidence: float = 0.7
+
+    def __post_init__(self):
+        if not math.isfinite(self.stop_confidence) or not 0 <= self.stop_confidence <= 1:
+            raise ValueError("stop_confidence must be between 0 and 1")
 
 
 def dhash(jpeg_bytes):
@@ -87,6 +93,7 @@ def useful_evidence(norms):
 
 @dataclass
 class TrackEvidence:
+    complete: bool = False
     hint: str = ""
     lines: dict = field(default_factory=dict)  # norm -> {text, score, hits}
     fingerprint: tuple = ()
@@ -309,6 +316,8 @@ class IdentificationService:
             evidence.last_seen_time = now
             if evidence.first_seen_at is None:
                 evidence.first_seen_at = now
+            if evidence.complete:
+                return False
             # Empty tracks retry faster so a brief label view is still caught.
             interval = (self.config.submit_interval_s if evidence.ocr_runs
                         else self.config.submit_interval_empty_s)
@@ -322,16 +331,19 @@ class IdentificationService:
                 evidence.last_crop_wh = tuple(crop_wh)
             if len(jpeg_bytes) <= MAX_CROP_BYTES:
                 evidence.last_crop_jpeg = bytes(jpeg_bytes)
-        with self.slot_lock:
-            if track_id in self.slots:
-                with self.lock:
-                    if track_id in self.tracks:
-                        self.tracks[track_id].stale_replaced += 1
-            else:
-                self.slot_order.append(track_id)
-            self.slots[track_id] = bytes(jpeg_bytes)
+            with self.slot_lock:
+                if track_id in self.slots:
+                    evidence.stale_replaced += 1
+                else:
+                    self.slot_order.append(track_id)
+                self.slots[track_id] = bytes(jpeg_bytes)
         self.wake.set()
         return True
+
+    def is_complete(self, track_id):
+        with self.lock:
+            evidence = self.tracks.get(track_id)
+            return evidence is not None and evidence.complete
 
     def note(self, track_id, hint, sharpness, crop_wh=None):
         """Record a seen crop (even a rejected one) so the overlay can show
@@ -346,6 +358,8 @@ class IdentificationService:
             if evidence.first_seen_at is None:
                 evidence.first_seen_at = now
             evidence.absent_frames = 0
+            if evidence.complete:
+                return
             evidence.last_sharpness = sharpness
             if crop_wh:
                 evidence.last_crop_wh = tuple(crop_wh)
@@ -360,6 +374,7 @@ class IdentificationService:
             return {
                 track_id: {
                     "status": evidence.result.get("status", "needs_more_evidence"),
+                    "complete": evidence.complete,
                     "choice": evidence.result.get("choice"),
                     "confidence": evidence.result.get("confidence"),
                     "hint": evidence.hint,
@@ -393,6 +408,7 @@ class IdentificationService:
                     str(track_id): {
                         "hint": evidence.hint,
                         "status": evidence.result.get("status"),
+                        "complete": evidence.complete,
                         "choice": evidence.result.get("choice"),
                         "confidence": evidence.result.get("confidence"),
                         "submitted": evidence.submitted,
@@ -435,9 +451,13 @@ class IdentificationService:
             "jev_calls": self.jev_calls,
         }
 
-    def _merge(self, track_id, hint, lines):
+    def _merge(self, track_id, hint, lines, expected=None):
         with self.lock:
             evidence = self.tracks.get(track_id)
+            if expected is not None and evidence is not expected:
+                return None
+            if evidence is not None and evidence.complete:
+                return None
             if evidence is None:
                 # submit() normally creates the entry first; tolerate direct merges.
                 evidence = self.tracks[track_id] = TrackEvidence(hint=hint or "")
@@ -465,6 +485,8 @@ class IdentificationService:
             return evidence
 
     def _jev_due(self, evidence):
+        if evidence.complete:
+            return False
         if self.jev_fn is None or not self.products:
             return False
         if not useful_evidence(evidence.fingerprint):
@@ -475,6 +497,9 @@ class IdentificationService:
         return now - evidence.last_jev_time >= self.config.jev_debounce_s
 
     def _identify(self, track_id, evidence):
+        with self.lock:
+            if self.tracks.get(track_id) is not evidence or evidence.complete:
+                return
         lines = [
             {"text": evidence.lines[n]["text"], "score": evidence.lines[n]["score"]}
             for n in evidence.fingerprint[:MAX_JEV_LINES]
@@ -507,6 +532,17 @@ class IdentificationService:
             current = self.tracks.get(track_id)
             if current is evidence:
                 evidence.result = result
+                confidence = result.get("confidence")
+                evidence.complete = (
+                    result.get("status") == "candidate" and bool(result.get("choice"))
+                    and isinstance(confidence, (int, float))
+                    and math.isfinite(confidence)
+                    and self.config.stop_confidence <= confidence <= 1
+                )
+                if evidence.complete:
+                    with self.slot_lock:
+                        self.slots.pop(track_id, None)
+                        self.slot_order = deque(t for t in self.slot_order if t != track_id)
                 evidence.jev_error = error_text
                 evidence.last_jev_fingerprint = evidence.fingerprint
                 evidence.last_jev_time = time.monotonic()
@@ -553,7 +589,7 @@ class IdentificationService:
                 with self.lock:
                     evidence = self.tracks.get(track_id)
                     hint = evidence.hint if evidence is not None else ""
-                if evidence is None or self.ocr is None:
+                if evidence is None or evidence.complete or self.ocr is None:
                     continue
                 if self.config.dedup:
                     # A held-still bottle yields effectively identical crops;
@@ -576,7 +612,7 @@ class IdentificationService:
                     continue
                 ocr_ms = (time.monotonic() - started) * 1000
                 with self.lock:
-                    if self.tracks.get(track_id) is not evidence:
+                    if self.tracks.get(track_id) is not evidence or evidence.complete:
                         # Expired while OCR ran: stale results must not
                         # attach to a reused ID.
                         continue
@@ -586,7 +622,7 @@ class IdentificationService:
                         evidence.last_ocr_hash = digest
                     if evidence.first_ocr_done_at is None:
                         evidence.first_ocr_done_at = time.monotonic()
-                merged = self._merge(track_id, hint, lines or [])
+                merged = self._merge(track_id, hint, lines or [], expected=evidence)
                 if merged is not None and self._jev_due(merged):
                     if self.config.jev_inline:
                         self._identify(track_id, merged)

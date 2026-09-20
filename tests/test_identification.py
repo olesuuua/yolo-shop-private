@@ -1,6 +1,7 @@
 """Per-track OCR accumulation and Jev identification without weights or network."""
 
 import time
+import threading
 import unittest
 
 from identification import (IdentConfig, IdentificationService, hamming,
@@ -33,6 +34,69 @@ def candidate(choice, confidence=0.8):
 
 
 class IdentificationTests(unittest.TestCase):
+    def test_confident_result_freezes_crop_and_clears_pending_work(self):
+        service = IdentificationService(jev_fn=lambda *a: candidate("senezhskaya-0-5l", 0.7))
+        self.assertTrue(service.submit(1, "Bottle", b"first", (100, 200)))
+        evidence = service._merge(1, "Bottle", [{"text": "СЕНЕЖСКАЯ", "score": 0.9}])
+        service._identify(1, evidence)
+        self.assertTrue(service.is_complete(1))
+        self.assertIsNone(service._take_slot())
+        self.assertFalse(service.submit(1, "Bottle", b"second", (200, 300)))
+        service.note(1, "Bottle", 99, (200, 300))
+        self.assertEqual(evidence.last_crop_jpeg, b"first")
+        self.assertEqual(evidence.last_crop_wh, (100, 200))
+        self.assertIsNone(service._merge(1, "Bottle", [{"text": "NEW", "score": 1}]))
+        service._identify(1, evidence)
+        self.assertEqual(service.jev_calls, 1)
+        self.assertFalse(service._jev_due(evidence))
+        self.assertTrue(service.snapshot()[1]["complete"])
+        service.prune({1})
+        self.assertTrue(service.is_complete(1))
+        from config import IDENT_ABSENT_FRAMES
+        for _ in range(IDENT_ABSENT_FRAMES + 1):
+            service.prune(set())
+        self.assertFalse(service.is_complete(1))
+        self.assertTrue(service.submit(1, "Bottle", b"new item"))
+        service.reset()
+        self.assertTrue(service.submit(1, "Bottle", b"reset item"))
+
+    def test_low_confidence_and_unknown_keep_collecting(self):
+        outcomes = [candidate("senezhskaya-0-5l", 0.699),
+                    candidate("other_product", 1),
+                    candidate("insufficient_evidence", 1)]
+        for outcome in outcomes:
+            with self.subTest(outcome=outcome):
+                service = IdentificationService(jev_fn=lambda *a: outcome)
+                evidence = service._merge(1, "Bottle", [{"text": "WATER", "score": 1}])
+                service._identify(1, evidence)
+                self.assertFalse(service.is_complete(1))
+                self.assertTrue(service.submit(1, "Bottle", b"next"))
+
+    def test_ocr_in_flight_cannot_change_completed_identity(self):
+        started, release = threading.Event(), threading.Event()
+        class BlockingOcr(FakeOcr):
+            def predict(self, jpeg):
+                started.set()
+                release.wait(3)
+                return [{"text": "LATE TEXT", "score": 1}]
+        service = IdentificationService(ocr_factory=BlockingOcr,
+            jev_fn=lambda *a: candidate("senezhskaya-0-5l", 0.95),
+            config=IdentConfig(jev_inline=True, dedup=False))
+        service.start()
+        try:
+            service.submit(1, "Bottle", b"crop")
+            self.assertTrue(started.wait(2))
+            evidence = service._merge(1, "Bottle", [{"text": "СЕНЕЖСКАЯ", "score": 1}])
+            service._identify(1, evidence)
+            release.set()
+            service.close()
+            self.assertEqual(evidence.ocr_runs, 0)
+            self.assertNotIn("LATETEXT", evidence.lines)
+            self.assertTrue(service.is_complete(1))
+        finally:
+            release.set()
+            service.close()
+
     def make_service(self, ocr=None, jev=None, config=None):
         service = IdentificationService(
             ocr_factory=lambda: ocr or FakeOcr(),
@@ -122,7 +186,7 @@ class IdentificationTests(unittest.TestCase):
 
         def jev(lines, products, hint):
             calls.append(True)
-            return candidate("senezhskaya-0-5l")
+            return candidate("senezhskaya-0-5l", 0.6)
 
         service = self.make_service(jev=jev)
         evidence = service._merge(1, "Bottle", [{"text": "СЕНЕЖСКАЯ", "score": 0.9}])
@@ -245,7 +309,8 @@ class IdentificationTests(unittest.TestCase):
         payload = jpeg.tobytes()
         ocr = FakeOcr()
         service = self.make_service(
-            ocr=ocr, config=IdentConfig(submit_interval_s=0, submit_interval_empty_s=0))
+            ocr=ocr, jev=lambda *a: candidate("senezhskaya-0-5l", 0.6),
+            config=IdentConfig(submit_interval_s=0, submit_interval_empty_s=0))
         service.submit(1, "Bottle", payload)
         deadline = time.monotonic() + 5
         while time.monotonic() < deadline and ocr.calls < 1:

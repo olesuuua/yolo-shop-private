@@ -92,6 +92,22 @@ all four SKUs loaded, and API key present. OCR initializes on first demand.
 The catalog and supplied product references are included in this commit
 explicitly despite the `data/local/` ignore rule. Credentials remain excluded.
 
+## 8. Stop identification after a confident match
+
+Per-track OCR/Jev collection now stops when a catalog candidate reaches
+confidence >= 0.70 (`IdentConfig.stop_confidence`, lowered from 0.90 at the
+user's request). Pending crops are cleared,
+new crop preparation is skipped, and the last crop and identity remain visible
+with an "OCR paused" label. Results from OCR already in flight are discarded.
+Unknown and insufficient-evidence outcomes do not stop collection. Detection
+and tracking continue; existing absence expiry and Reset clear the completion
+state so a new item starts collecting again. This is a scheduling threshold,
+not a claim of verified SKU accuracy.
+
+Regression checks: 92 Python tests ran successfully, with 2 optional skips,
+including queue cancellation, frozen crops, low-confidence/unknown outcomes,
+track expiry/reset, and OCR completing after identification.
+
 ## Validation and state
 
 - 89 unit tests pass (`discover -s tests`, 2 pre-existing optional skips),
