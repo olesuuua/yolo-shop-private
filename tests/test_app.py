@@ -197,6 +197,17 @@ class ApiTests(unittest.TestCase):
         self.assertEqual(set(session["enabled_classes"]), FOOD_CLASSES)
         self.assertEqual(self.client.get("/static/app.js").status_code, 200)
 
+    def test_ident_diagnostics_endpoints(self):
+        readiness = self.client.get("/api/ident-readiness").json()
+        self.assertTrue(readiness["catalog_ok"])
+        self.assertIn("jev_key_present", readiness)
+        self.assertNotIn("TYPESAFE_API_KEY", str(readiness))
+        debug = self.client.get("/api/ident-debug").json()
+        self.assertIn("capture", debug)
+        self.assertIn("queue_depth", debug)
+        self.assertIn("tracks", debug)
+        self.assertEqual(self.client.get("/api/ident-crop/999").status_code, 404)
+
     def test_websocket_filtering_tracking_packing_and_reset(self):
         self.model.frames = [
             [(bbox, CLASS_IDS[PRIMARY_CLASS], 7), (bbox, CLASS_IDS["Person"], 1), (bbox, CLASS_IDS["Laptop"], 2)]

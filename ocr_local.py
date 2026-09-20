@@ -1,4 +1,4 @@
-"""Read Russian/English packaging text locally on GPU; save reviewable JSON."""
+"""Read Russian/English packaging text locally on CPU or GPU; save reviewable JSON."""
 import argparse
 import json
 import os
@@ -6,6 +6,8 @@ from pathlib import Path
 import sys
 
 ROOT = Path(__file__).resolve().parent
+
+CPU_NO_MKLDNN = "PADDLE_PDX_ENABLE_MKLDNN_BYDEFAULT"
 
 def main():
     python = ROOT / ".venv-ocr/bin/python"
@@ -23,6 +25,10 @@ def main():
     os.environ.setdefault("PADDLE_PDX_CACHE_HOME", str(ROOT / ".cache/paddlex"))
     os.environ.setdefault("HF_HOME", str(ROOT / ".cache/huggingface"))
     os.environ.setdefault("PADDLE_PDX_DISABLE_MODEL_SOURCE_CHECK", "True")
+    if args.device == "cpu":
+        # PP-OCRv5 detection uses a oneDNN op missing from this Paddle build;
+        # PaddleX documents this flag to select plain CPU inference instead.
+        os.environ.setdefault(CPU_NO_MKLDNN, "False")
     from paddleocr import PaddleOCR
     ocr = PaddleOCR(
         device=args.device,

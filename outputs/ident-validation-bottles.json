@@ -1,0 +1,192 @@
+{
+  "device": "cpu",
+  "catalog": [
+    {
+      "sku": "aqua-minerale-0-5l",
+      "name": "Aqua Minerale вода питьевая негазированная 0,5 л"
+    },
+    {
+      "sku": "senezhskaya-0-5l",
+      "name": "Сенежская вода питьевая негазированная 0,5 л"
+    }
+  ],
+  "reference_ocr": {
+    "data_local_products_bottle-1_water_aq1.jpg": {
+      "image": "/home/olesya/Projects/yolo-shop/data/local/products/bottle-1/water_aq1.jpg",
+      "device": "cpu",
+      "lines": [
+        {
+          "text": "AKBA",
+          "score": 0.967
+        },
+        {
+          "text": "МИНЕРАЛЕ",
+          "score": 0.958
+        }
+      ]
+    },
+    "data_local_products_bottle-1_water_aq2.jpg": {
+      "image": "/home/olesya/Projects/yolo-shop/data/local/products/bottle-1/water_aq2.jpg",
+      "device": "cpu",
+      "lines": [
+        {
+          "text": "AQUA",
+          "score": 0.906
+        }
+      ]
+    },
+    "data_local_products_bottle-1_water_aq3.jpg": {
+      "image": "/home/olesya/Projects/yolo-shop/data/local/products/bottle-1/water_aq3.jpg",
+      "device": "cpu",
+      "lines": [
+        {
+          "text": "30КА9060",
+          "score": 0.339
+        },
+        {
+          "text": "XR",
+          "score": 0.327
+        },
+        {
+          "text": "DENS",
+          "score": 0.452
+        },
+        {
+          "text": "0",
+          "score": 0.214
+        },
+        {
+          "text": "CO.COM*-67ЫЛKA (70",
+          "score": 0.458
+        },
+        {
+          "text": "EAC",
+          "score": 0.8
+        },
+        {
+          "text": "ОБЪЁМ",
+          "score": 0.946
+        },
+        {
+          "text": "О,5Л",
+          "score": 0.722
+        }
+      ]
+    },
+    "data_local_products_bottle-2_water_sn1.jpg": {
+      "image": "/home/olesya/Projects/yolo-shop/data/local/products/bottle-2/water_sn1.jpg",
+      "device": "cpu",
+      "lines": [
+        {
+          "text": "ВОДАПИТЬЕВАЯ",
+          "score": 0.992
+        },
+        {
+          "text": "«СЕНЕЖСКАЯ» НЕГАЗИРОВАННАЯ.",
+          "score": 0.937
+        },
+        {
+          "text": "У-обучееПрдуаав защитойатосре",
+          "score": 0.543
+        },
+        {
+          "text": "Падумок",
+          "score": 0.525
+        },
+        {
+          "text": "'1",
+          "score": 0.683
+        },
+        {
+          "text": "ад2н 1, кyc 2.",
+          "score": 0.52
+        }
+      ]
+    },
+    "data_local_products_bottle-2_water_sn2.jpg": {
+      "image": "/home/olesya/Projects/yolo-shop/data/local/products/bottle-2/water_sn2.jpg",
+      "device": "cpu",
+      "lines": [
+        {
+          "text": "e",
+          "score": 0.255
+        },
+        {
+          "text": "CBD",
+          "score": 0.586
+        },
+        {
+          "text": "fabrikaitsenegskaya.nu.",
+          "score": 0.853
+        },
+        {
+          "text": "Дарамес",
+          "score": 0.573
+        },
+        {
+          "text": "протннойлиинапееут",
+          "score": 0.461
+        },
+        {
+          "text": "982009",
+          "score": 0.639
+        },
+        {
+          "text": "Срок годности: 18 месяцев.",
+          "score": 0.975
+        },
+        {
+          "text": "EAL",
+          "score": 0.567
+        },
+        {
+          "text": "TY11.07.11-011-17491195-2020",
+          "score": 0.994
+        },
+        {
+          "text": "ОБЪЁМ:0,5Л",
+          "score": 0.882
+        },
+        {
+          "text": "PET",
+          "score": 0.989
+        }
+      ]
+    },
+    "data_local_products_bottle-2_water_sn3.jpg": {
+      "image": "/home/olesya/Projects/yolo-shop/data/local/products/bottle-2/water_sn3.jpg",
+      "device": "cpu",
+      "lines": [
+        {
+          "text": "СЕНЕЖСКАЯ",
+          "score": 0.665
+        },
+        {
+          "text": "2",
+          "score": 0.432
+        },
+        {
+          "text": "ПИТЬЕВАЯ",
+          "score": 0.909
+        },
+        {
+          "text": "",
+          "score": 0.0
+        },
+        {
+          "text": "НЕГАЗИРОВАННАЯ",
+          "score": 0.736
+        }
+      ]
+    }
+  },
+  "notes": [
+    "bottle-1 front: OCR reads Cyrillic АКВА as Latin AKBA; catalog identity_clues record this.",
+    "bottle-1 rear small print is mostly noise; ОБЪЁМ/0,5Л/EAC tokens survive.",
+    "bottle-2 front reads СЕНЕЖСКАЯ/ПИТЬЕВАЯ/НЕГАЗИРОВАННАЯ cleanly.",
+    "bottle-2 rear gives Срок годности: 18 месяцев (0.98) vs store 12 мес — flagged in catalog cautions.",
+    "CPU detector (PP-YOLOE Objects365, conf 0.10) finds both bottles in outputs/test-bottles1.jpg (0.84/0.63) and test-bottles2.jpg (0.81/0.71).",
+    "CPU OCR worker on test-bottles1.jpg full frame reads СЕНЕЖСК (truncated, edge) + AKBA in 0.5s.",
+    "Jev payloads build for all 6 reference photos; no API call made (no key in .env)."
+  ]
+}

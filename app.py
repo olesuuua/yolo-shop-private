@@ -97,11 +97,17 @@ def load_model():
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Loading at startup keeps imports and API tests independent of model files.
-    app.state.processor = await asyncio.to_thread(lambda: FrameProcessor(load_model()))
+    from identification import IdentificationService
+    identifier = IdentificationService()
+    identifier.start()
+    app.state.identifier = identifier
+    app.state.processor = await asyncio.to_thread(
+        lambda: FrameProcessor(load_model(), identifier=identifier))
     app.state.active_camera = None
     try:
         yield
     finally:
+        await asyncio.to_thread(identifier.close)
         close = getattr(app.state.processor.model, "close", None)
         if callable(close):
             await asyncio.to_thread(close)
@@ -119,6 +125,42 @@ async def home():
 @app.get("/api/session")
 def get_session():
     return app.state.processor.snapshot()
+
+
+@app.get("/api/ident-readiness")
+def get_ident_readiness():
+    """Prerequisites and key availability; never exposes the key itself."""
+    identifier = getattr(app.state, "identifier", None)
+    if identifier is None:
+        return {"catalog_ok": False, "catalog_error": "Identification service is not running.",
+                "products": [], "ocr_available": False, "ocr_error": "",
+                "ocr_device": "cpu", "jev_key_present": False,
+                "jev_model": "", "jev_calls": 0}
+    return identifier.readiness()
+
+
+@app.get("/api/ident-debug")
+def get_ident_debug():
+    """Per-track OCR evidence and pipeline timings; text only, no key."""
+    identifier = getattr(app.state, "identifier", None)
+    if identifier is None:
+        return {"capture": {}, "queue_depth": 0, "tracks": {}}
+    return identifier.debug()
+
+
+@app.get("/api/ident-crop/{track_id}")
+def get_ident_crop(track_id: int):
+    """Latest submitted OCR crop for a track (diagnostic preview)."""
+    from fastapi.responses import Response
+    identifier = getattr(app.state, "identifier", None)
+    if identifier is None:
+        return Response(status_code=503)
+    with identifier.lock:
+        evidence = identifier.tracks.get(track_id)
+        jpeg = evidence.last_crop_jpeg if evidence is not None else b""
+    if not jpeg:
+        return Response(status_code=404)
+    return Response(content=jpeg, media_type="image/jpeg")
 
 
 @app.post("/api/reset")

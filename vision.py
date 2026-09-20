@@ -1,7 +1,9 @@
 """YOLO adapter, drawing and serialized access to one packing session."""
 
 import base64
-from collections import Counter
+import logging
+import time
+from collections import Counter, deque
 from threading import Lock
 
 import cv2
@@ -11,9 +13,14 @@ from config import (
     AGNOSTIC_NMS, CONF_THRESHOLD, FOOD_CLASSES, FRAME_HEIGHT, FRAME_WIDTH,
     MAX_FRAME_BYTES, MAX_PACKED_OVERLAY_ROWS, NMS_IOU_THRESHOLD,
     MODEL_LABEL, MODEL_PROFILE, PACKED_BANNER_FRAMES, TRACKER_CONFIG,
-    INFERENCE_DEVICE, INFERENCE_SIZE,
+    INFERENCE_DEVICE, INFERENCE_SIZE, OCR_CROP_JPEG_QUALITY,
+    OCR_CROP_MARGIN, OCR_MIN_CROP_HEIGHT, OCR_MIN_CROP_WIDTH,
+    OCR_SHARPNESS_MIN,
 )
 from tracking import Detection, PackingTracker
+
+
+logger = logging.getLogger(__name__)
 
 
 def extract_food_detections(result) -> list[Detection]:
@@ -31,15 +38,53 @@ def extract_food_detections(result) -> list[Detection]:
     return detections
 
 
-def draw_label(frame, text, origin, color=(255, 255, 255), scale=0.5):
-    # A dark outline keeps small labels legible on light and dark products.
-    cv2.putText(frame, text, origin, cv2.FONT_HERSHEY_SIMPLEX, scale,
-                (15, 20, 25), 4, cv2.LINE_AA)
-    cv2.putText(frame, text, origin, cv2.FONT_HERSHEY_SIMPLEX, scale,
-                color, 1, cv2.LINE_AA)
+def draw_label(frame, text, origin, color=(255, 255, 255), scale=0.6):
+    # Solid pill background: legible on light bottles and dark scenes alike.
+    (width, height), baseline = cv2.getTextSize(
+        text, cv2.FONT_HERSHEY_SIMPLEX, scale, 2)
+    x, y = origin
+    pad = 5
+    top = max(0, y - height - pad * 2)
+    cv2.rectangle(frame, (max(0, x - pad), top),
+                  (x + width + pad, y + baseline // 2), (15, 20, 25), -1)
+    cv2.putText(frame, text, (max(0, x), top + height + pad - 2),
+                cv2.FONT_HERSHEY_SIMPLEX, scale, color, 2, cv2.LINE_AA)
 
 
-def annotate_frame(frame, detections, tracker):
+def crop_sharpness(crop) -> float:
+    """Laplacian variance; blurry or flat crops score low and are skipped."""
+    gray = cv2.cvtColor(crop, cv2.COLOR_BGR2GRAY)
+    return float(cv2.Laplacian(gray, cv2.CV_64F).var())
+
+
+def hires_crop(full_frame, bbox_640x480):
+    """Map a detection box to the high-resolution frame with a small margin."""
+    full_height, full_width = full_frame.shape[:2]
+    scale_x, scale_y = full_width / FRAME_WIDTH, full_height / FRAME_HEIGHT
+    x1, y1, x2, y2 = bbox_640x480
+    width, height = x2 - x1, y2 - y1
+    margin_x, margin_y = width * OCR_CROP_MARGIN, height * OCR_CROP_MARGIN
+    x1 = max(0, int((x1 - margin_x) * scale_x))
+    y1 = max(0, int((y1 - margin_y) * scale_y))
+    x2 = min(full_width, int((x2 + margin_x) * scale_x))
+    y2 = min(full_height, int((y2 + margin_y) * scale_y))
+    if x2 - x1 < OCR_MIN_CROP_WIDTH or y2 - y1 < OCR_MIN_CROP_HEIGHT:
+        return None
+    return full_frame[y1:y2, x1:x2]
+
+
+def ident_label(status, choice, confidence) -> str:
+    if status == "candidate" and choice:
+        if confidence is None:
+            return f"ID: {choice}?"
+        return f"ID: {choice}? {confidence:.2f}"
+    if status == "unknown":
+        return "ID: unknown"
+    return "ID: need evidence"
+
+
+def annotate_frame(frame, detections, tracker, identification=None):
+    identification = identification or {}
     for detection in detections:
         state = tracker.tracks.get(detection.track_id)
         if state is None:
@@ -52,7 +97,14 @@ def annotate_frame(frame, detections, tracker):
             label += " PACKED"
         elif state.inside_frames:
             label += f" entering {state.inside_frames}/{tracker.min_inside_frames}"
-        draw_label(frame, label, (max(2, x1), max(18, y1 - 8)), color)
+        draw_label(frame, label, (max(2, x1), max(44, y1 - 34)), color)
+        info = identification.get(detection.track_id)
+        if info is not None:
+            # Identification sits directly above the box, under the class
+            # label, so it is never hidden behind the bottle or the frame edge.
+            draw_label(frame, ident_label(info.get("status"), info.get("choice"),
+                                          info.get("confidence")),
+                       (max(2, x1), max(18, y1 - 8)), (140, 220, 255), scale=0.55)
 
     x1, y1, x2, y2 = map(int, tracker.roi)
     cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 220, 255), 3)
@@ -81,11 +133,14 @@ def annotate_frame(frame, detections, tracker):
 class FrameProcessor:
     """One camera/table per server process. The lock also serializes reset."""
 
-    def __init__(self, model):
+    def __init__(self, model, identifier=None):
         self.model = model
+        self.identifier = identifier
         self.tracker = PackingTracker()
         self.lock = Lock()
         self.session_version = 0
+        self.frame_times = deque(maxlen=30)
+        self.detect_ms_ema = 0.0
         missing_classes = FOOD_CLASSES - set(model.names.values())
         if missing_classes:
             raise ValueError(
@@ -103,6 +158,8 @@ class FrameProcessor:
         with self.lock:
             self.tracker.reset()
             self.session_version += 1
+            if self.identifier is not None:
+                self.identifier.reset()
             # Keep ByteTrack IDs continuous; the packing state starts fresh.
             return self._snapshot()
 
@@ -122,12 +179,14 @@ class FrameProcessor:
         if not image_bytes or len(image_bytes) > MAX_FRAME_BYTES:
             raise ValueError("Camera frame is empty or too large.")
         image_array = np.frombuffer(image_bytes, dtype=np.uint8)
-        frame = cv2.imdecode(image_array, cv2.IMREAD_COLOR)
-        if frame is None:
+        full_frame = cv2.imdecode(image_array, cv2.IMREAD_COLOR)
+        if full_frame is None:
             raise ValueError("Could not decode camera frame.")
-        frame = cv2.resize(frame, (FRAME_WIDTH, FRAME_HEIGHT))
+        # Detection keeps the small fixed input; OCR crops use the upload.
+        frame = cv2.resize(full_frame, (FRAME_WIDTH, FRAME_HEIGHT))
 
         with self.lock:
+            detect_start = time.monotonic()
             result = self.model.track(
                 frame, persist=True, tracker=TRACKER_CONFIG,
                 classes=self.food_class_ids, conf=CONF_THRESHOLD,
@@ -137,13 +196,25 @@ class FrameProcessor:
                 # used by the YOLO11 profiles remains active before ByteTrack.
                 nms=True,
             )[0]
+            detect_ms = (time.monotonic() - detect_start) * 1000
+            self.detect_ms_ema = (detect_ms if not self.detect_ms_ema
+                                  else 0.2 * detect_ms + 0.8 * self.detect_ms_ema)
+            now = time.monotonic()
+            self.frame_times.append(now)
+            fps = (len(self.frame_times) / (self.frame_times[-1] - self.frame_times[0])
+                   if len(self.frame_times) >= 2 and self.frame_times[-1] > self.frame_times[0] else 0.0)
             detections = extract_food_detections(result)
             events = self.tracker.update(detections)
+            full_height, full_width = full_frame.shape[:2]
+            identification = self._identify(detections, full_frame)
+            if self.identifier is not None:
+                self.identifier.note_capture((full_width, full_height), fps,
+                                             self.detect_ms_ema)
             visible_counts = Counter(
                 self.tracker.tracks[d.track_id].class_name for d in detections
                 if d.track_id in self.tracker.tracks
             )
-            frame = annotate_frame(frame, detections, self.tracker)
+            frame = annotate_frame(frame, detections, self.tracker, identification)
             success, image = cv2.imencode(
                 ".jpg", frame, [int(cv2.IMWRITE_JPEG_QUALITY), 80],
             )
@@ -154,5 +225,40 @@ class FrameProcessor:
                 "counts": dict(visible_counts),  # Original frontend compatibility.
                 "visible_counts": dict(visible_counts),
                 **self._snapshot(),
+                "identification": identification,
                 "events": events,  # Only newly registered events, in frame order.
             }
+
+    def _identify(self, detections, full_frame) -> dict:
+        """Queue sharp hires crops per track; never block detection."""
+        identifier = self.identifier
+        if identifier is None:
+            return {}
+        try:
+            active_ids = set()
+            for detection in detections:
+                active_ids.add(detection.track_id)
+                crop = hires_crop(full_frame, detection.bbox)
+                if crop is None:
+                    continue
+                crop_height, crop_width = crop.shape[:2]
+                sharpness = crop_sharpness(crop)
+                # Record every seen crop so the overlay/sidebar can show
+                # collection state; only sharp crops are queued for OCR.
+                identifier.note(detection.track_id, detection.class_name, sharpness,
+                                (crop_width, crop_height))
+                if sharpness < OCR_SHARPNESS_MIN:
+                    continue
+                success, encoded = cv2.imencode(
+                    ".jpg", crop, [int(cv2.IMWRITE_JPEG_QUALITY), OCR_CROP_JPEG_QUALITY],
+                )
+                if success:
+                    # The detector label is an unreliable hint, not a filter:
+                    # every tracked product crop may carry label evidence.
+                    identifier.submit(detection.track_id, detection.class_name,
+                                      encoded.tobytes(), (crop_width, crop_height))
+            identifier.prune(active_ids)
+            return identifier.snapshot()
+        except Exception:
+            logger.exception("Identification update failed; detection continues.")
+            return identifier.snapshot() if identifier is not None else {}

@@ -175,6 +175,19 @@
       font-weight: 800;
     }
 
+    .crop-thumb {
+      width: 44px;
+      height: 60px;
+      object-fit: cover;
+      border-radius: 4px;
+      border: 1px solid #303745;
+      background: #000;
+    }
+
+    .crop-thumb:not([src]) {
+      display: none;
+    }
+
     .empty-count {
       color: #aab3c2;
       font-size: 0.82rem;
@@ -201,10 +214,16 @@
       .workspace { grid-template-columns: 1fr; }
     }
 
-    /* Camera is needed for capture but is intentionally not shown. */
+    /* Camera is needed for capture but is intentionally not shown.
+       Kept rendered (not display:none): some browsers never start
+       playback for display:none video, stalling await camera.play(). */
     #camera,
     #canvas {
-      display: none;
+      position: fixed;
+      width: 2px;
+      height: 2px;
+      opacity: 0;
+      pointer-events: none;
     }
 
     @media (max-width: 560px) {
@@ -267,6 +286,11 @@
           <div class="empty-count">No detections yet</div>
         </div>
         </div>
+        <div class="stats-section">
+          <div class="counter-title">Bottle identification</div>
+          <div id="identList"><div class="empty-count">No tracked bottles yet</div></div>
+          <p class="hint" id="identReadiness">Checking identification prerequisites…</p>
+        </div>
       </aside>
     </div>
     <p class="hint">Stop pauses capture and preserves the session. Reset clears the packed list.
@@ -276,6 +300,6 @@
     <canvas id="canvas"></canvas>
   </main>
 
-  <script src="/static/app.js?v=sku110k" defer></script>
+  <script src="/static/app.js?v=camfix2" defer></script>
 </body>
 </html>

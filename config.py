@@ -53,7 +53,7 @@ if MODEL_PROFILE == "ppyoloe_objects365":
     TRACKER_CONFIG = str(Path(__file__).resolve().with_name("bytetrack-ppyoloe.yaml"))
     MODEL_PATH = "weights/ppyoloe-objects365/ppyoloe_crn_s_obj365_pretrained.pdparams"
     MODEL_SHA256 = None  # The Paddle worker checks the pinned checkpoint digest.
-    MODEL_LABEL = "PP-YOLOE+ Small · Objects365 · CPU · 78 grocery classes"
+    MODEL_LABEL = f"PP-YOLOE+ Small · Objects365 · {INFERENCE_DEVICE.upper()} · 78 grocery classes"
     catalog = json.loads(Path(__file__).with_name("objects365_classes.json").read_text())
     FOOD_CLASS_GROUPS = {name: set(labels) for name, labels in catalog["grocery_groups"].items()}
 elif MODEL_PROFILE == "ppyoloe_custom":
@@ -148,3 +148,17 @@ TRACK_TTL_FRAMES = 60
 PACKED_BANNER_FRAMES = 30
 MAX_PACKED_OVERLAY_ROWS = 8
 MAX_FRAME_BYTES = 2_000_000
+# Identification stage: detection still runs on FRAME_WIDTH x FRAME_HEIGHT
+# while OCR crops come from the higher-resolution uploaded frame.
+OCR_MIN_CROP_WIDTH = 60
+OCR_MIN_CROP_HEIGHT = 80
+OCR_CROP_MARGIN = 0.08
+# Calibrated on CPU OCR (Sep 2026): brand text still reads at sharpness ~15
+# with minor noise and survives down to ~7; 60 rejected perfectly good crops.
+OCR_SHARPNESS_MIN = 15.0
+OCR_CROP_JPEG_QUALITY = 85
+# A track absent this many consecutive processed frames loses its OCR
+# evidence and identity: at ~1 fps on CPU this clears a removed bottle
+# while tolerating brief detection flicker. ByteTrack may reuse an ID for
+# a newly placed bottle, so evidence must not outlive a visible gap.
+IDENT_ABSENT_FRAMES = 3

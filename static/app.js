@@ -12,6 +12,8 @@ const packedTotal = document.getElementById("packedTotal");
 const packedCounts = document.getElementById("packedCounts");
 const lastEvent = document.getElementById("lastEvent");
 const modelInfo = document.getElementById("modelInfo");
+const identList = document.getElementById("identList");
+const identReadiness = document.getElementById("identReadiness");
 
 let socket = null;
 let stream = null;
@@ -46,6 +48,57 @@ function renderCounts(counts, totalElement, listElement, emptyText) {
     value.textContent = count;
     row.append(name, value);
     listElement.appendChild(row);
+  }
+}
+
+function renderIdentification(identification) {
+  const entries = Object.entries(identification || {}).sort(([a], [b]) => Number(a) - Number(b));
+  identList.replaceChildren();
+  if (!entries.length) {
+    const empty = document.createElement("div");
+    empty.className = "empty-count";
+    empty.textContent = "No tracked bottles yet";
+    identList.appendChild(empty);
+    return;
+  }
+  for (const [trackId, info] of entries) {
+    const row = document.createElement("div");
+    row.className = "class-row";
+    const thumb = document.createElement("img");
+    thumb.className = "crop-thumb";
+    thumb.alt = "";
+    if (info.submitted) {
+      thumb.src = `/api/ident-crop/${trackId}?s=${info.submitted}`;
+    }
+    const name = document.createElement("span");
+    name.textContent = `#${trackId} ${info.hint || ""}`.trim();
+    const value = document.createElement("span");
+    value.className = "count";
+    if (info.status === "candidate" && info.choice) {
+      value.textContent = info.confidence == null ? `${info.choice}?` : `${info.choice}? ${info.confidence.toFixed(2)}`;
+    } else if (info.status === "unknown") {
+      value.textContent = "unknown";
+    } else if (info.lines) {
+      value.textContent = `need evidence (${info.lines} lines)`;
+    } else {
+      value.textContent = `collecting… (sharp ${info.sharpness ?? "?"})`;
+    }
+    row.append(thumb, name, value);
+    identList.appendChild(row);
+  }
+}
+
+async function loadReadiness() {
+  try {
+    const response = await fetch("/api/ident-readiness");
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const state = await response.json();
+    const catalog = state.catalog_ok ? `catalog: ${state.products.length} products` : "catalog: MISSING";
+    const ocr = state.ocr_available ? "OCR CPU: ready" : (state.ocr_error ? "OCR CPU: unavailable" : "OCR CPU: starting…");
+    const jev = state.jev_key_present ? "Jev key: set" : "Jev key: MISSING (add TYPESAFE_API_KEY to .env)";
+    identReadiness.textContent = `${catalog} · ${ocr} · ${jev}`;
+  } catch (error) {
+    identReadiness.textContent = `Cannot load identification status: ${error.message}`;
   }
 }
 
@@ -88,17 +141,34 @@ async function start() {
       throw new Error("Camera access requires localhost or HTTPS.");
     }
     setStatus("Requesting camera permission...");
-    const acquiredStream = await navigator.mediaDevices.getUserMedia({
-      video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: "environment" },
-      audio: false
-    });
+    let acquiredStream = null;
+    try {
+      acquiredStream = await navigator.mediaDevices.getUserMedia({
+        video: { width: { ideal: 1280 }, height: { ideal: 960 }, facingMode: { ideal: "environment" } },
+        audio: false
+      });
+    } catch (error) {
+      // Single-camera laptops often reject the facing-mode constraint; retry plainly.
+      if (error && (error.name === "OverconstrainedError" || error.name === "NotFoundError")) {
+        acquiredStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+      } else {
+        throw error;
+      }
+    }
     if (generation !== connectionGeneration) {
       acquiredStream.getTracks().forEach((track) => track.stop());
       return;
     }
     stream = acquiredStream;
     camera.srcObject = stream;
-    await camera.play();
+    camera.muted = true;
+    // play() can hang forever on a camera that yields no frames; fail loudly instead.
+    await Promise.race([
+      camera.play(),
+      new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("Camera did not start producing frames.")), 10000)
+      ),
+    ]);
     if (generation !== connectionGeneration) return;
     setStatus("Connecting to packing server...");
     const protocol = location.protocol === "https:" ? "wss" : "ws";
@@ -123,6 +193,7 @@ async function start() {
         if (renderSession(response)) {
           showImage(response.image);
           renderCounts(response.visible_counts || {}, totalCount, classCounts, "No tracked products visible");
+          renderIdentification(response.identification);
         }
         sendNextFrame();
       } catch (error) {
@@ -136,7 +207,8 @@ async function start() {
       if (socket === connection) stop("Server connection closed.");
     };
   } catch (error) {
-    if (generation === connectionGeneration) stop(`Cannot start camera: ${error.message}`);
+    const reason = error && error.name ? `${error.name}: ${error.message}` : error.message;
+    if (generation === connectionGeneration) stop(`Cannot start camera: ${reason}`);
   }
 }
 
@@ -149,9 +221,14 @@ function sendNextFrame() {
     });
     return;
   }
-  canvas.width = 640;
-  canvas.height = 480;
-  canvas.getContext("2d", { alpha: false, desynchronized: true }).drawImage(camera, 0, 0, 640, 480);
+  // Detection runs on 640x480 server-side; uploads keep the higher camera
+  // resolution so OCR crops stay legible. One frame in flight at a time.
+  const sourceWidth = camera.videoWidth || 640;
+  const sourceHeight = camera.videoHeight || 480;
+  const scale = Math.min(1, 1280 / sourceWidth);
+  canvas.width = Math.round(sourceWidth * scale);
+  canvas.height = Math.round(sourceHeight * scale);
+  canvas.getContext("2d", { alpha: false, desynchronized: true }).drawImage(camera, 0, 0, canvas.width, canvas.height);
   frameInFlight = true;
   const connection = socket;
   canvas.toBlob((blob) => {
@@ -165,7 +242,7 @@ function sendNextFrame() {
       return;
     }
     connection.send(blob);
-  }, "image/jpeg", 0.78);
+  }, "image/jpeg", 0.85);
 }
 
 function stop(message = "Stopped. Packed items are preserved.") {
@@ -185,6 +262,7 @@ function stop(message = "Stopped. Packed items are preserved.") {
   startButton.disabled = false;
   stopButton.disabled = true;
   renderCounts({}, totalCount, classCounts, "Camera stopped");
+  renderIdentification({});
   setStatus(message);
 }
 
@@ -196,6 +274,8 @@ async function resetSession() {
     const response = await fetch("/api/reset", { method: "POST" });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     renderSession(await response.json());
+    renderIdentification({});
+    loadReadiness();
     // Remove the old annotated frame, which still contains the previous counts.
     if (resultUrl) URL.revokeObjectURL(resultUrl);
     resultUrl = null;
@@ -228,3 +308,5 @@ stopButton.addEventListener("click", () => stop());
 resetButton.addEventListener("click", resetSession);
 window.addEventListener("beforeunload", () => stop());
 loadSession();
+loadReadiness();
+setInterval(loadReadiness, 5000);

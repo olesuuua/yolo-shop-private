@@ -1,0 +1,60 @@
+{
+  "gate_calibration_cpu": [
+    {
+      "blur": 0,
+      "sharpness": 627.9,
+      "ocr_s": 0.9,
+      "brand_read": true
+    },
+    {
+      "blur": 3,
+      "sharpness": 113.1,
+      "ocr_s": 0.59,
+      "brand_read": true
+    },
+    {
+      "blur": 5,
+      "sharpness": 54.8,
+      "ocr_s": 0.29,
+      "brand_read": true,
+      "note": "rejected by old gate 60"
+    },
+    {
+      "blur": 9,
+      "sharpness": 15.3,
+      "ocr_s": 0.28,
+      "brand_read": true,
+      "note": "minor noise"
+    },
+    {
+      "blur": 13,
+      "sharpness": 6.9,
+      "ocr_s": 0.22,
+      "brand_read": true
+    },
+    {
+      "blur": 21,
+      "sharpness": 2.8,
+      "ocr_s": 0.15,
+      "brand_read": true,
+      "note": "brand only"
+    }
+  ],
+  "detection_cpu_s": 0.16,
+  "harness_worst_case": {
+    "ocr_latency": 0.9,
+    "jev_latency": 0.8,
+    "both_tracks_from_t0": true,
+    "legacy": {
+      "track2_first_ocr": 2.6,
+      "track2_ident": 3.4,
+      "ocr_calls": 19
+    },
+    "new": {
+      "track2_first_ocr": 1.8,
+      "track2_ident": 2.6,
+      "ocr_calls": 17
+    }
+  },
+  "conclusion": "Gate 60->15 (readable crops no longer rejected); second bottle ~0.8s earlier under load; slots+dedup bound redundant CPU work."
+}

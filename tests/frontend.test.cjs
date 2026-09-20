@@ -60,11 +60,14 @@ async function controller() {
     WebSocket: Socket, HTMLMediaElement: { HAVE_CURRENT_DATA: 2 },
     fetch(url) {
       if (url === "/api/session") return Promise.resolve({ ok: true, json: async () => session() });
+      if (url === "/api/ident-readiness") return Promise.resolve({ ok: true, json: async () => ({ products: [], catalog_ok: true }) });
       const request = deferred();
       requests.push(request);
       return request.promise;
     },
     Blob, Uint8Array, atob,
+    setInterval() { return 1; },
+    setTimeout() { return 1; },
     URL: { createObjectURL: () => "blob:test", revokeObjectURL: (url) => revoked.push(url) },
     requestAnimationFrame() { throw new Error("Unexpected frame retry"); }
   });
