@@ -106,13 +106,14 @@ class IdentificationTests(unittest.TestCase):
         self.addCleanup(service.close)
         return service
 
-    def test_catalog_has_two_unique_bottle_products(self):
+    def test_catalog_has_five_unique_bottle_products(self):
         service = self.make_service()
         skus = [p["sku"] for p in service.products]
-        self.assertEqual(len(skus), 4)
-        self.assertEqual(len(set(skus)), 4)
+        self.assertEqual(len(skus), 5)
+        self.assertEqual(len(set(skus)), 5)
         self.assertIn("aqua-minerale-0-5l", skus)
         self.assertIn("senezhskaya-0-5l", skus)
+        self.assertIn("saint-spring-0-75l", skus)
         required = {"sku", "name", "object_classes", "brand", "category",
                     "variant", "size", "aliases", "verified_label_text"}
         for product in service.products:
@@ -165,7 +166,8 @@ class IdentificationTests(unittest.TestCase):
         lines, skus, hint = calls[0]
         self.assertEqual(hint, "Bottle")  # Hint travels, never filters.
         self.assertEqual(set(skus), {"aqua-minerale-0-5l", "senezhskaya-0-5l",
-                                       "prostokvashino-2-5-930ml", "domik-v-derevne-2-5-930ml"})
+                                       "saint-spring-0-75l", "prostokvashino-2-5-930ml",
+                                       "domik-v-derevne-2-5-930ml"})
         self.assertTrue(all(line["text"] for line in lines))
 
     def test_uncertain_and_unknown_stay_unresolved(self):
@@ -258,7 +260,7 @@ class IdentificationTests(unittest.TestCase):
         service = self.make_service()
         readiness = service.readiness()
         self.assertTrue(readiness["catalog_ok"])
-        self.assertEqual(len(readiness["products"]), 4)
+        self.assertEqual(len(readiness["products"]), 5)
         self.assertEqual(readiness["ocr_device"], "cpu")
         self.assertNotIn("TYPESAFE_API_KEY", str(readiness).upper().replace("JEV_KEY_PRESENT", ""))
         self.assertIsInstance(readiness["jev_key_present"], bool)
