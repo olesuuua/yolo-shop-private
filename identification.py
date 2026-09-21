@@ -42,6 +42,10 @@ DUPLICATE_HAMMING_MAX = 5
 TRACK_TTL_S = 30.0
 MAX_JEV_LINES = 40
 MAX_CROP_BYTES = 300_000
+try:
+    JEV_WORKERS = int(os.environ.get("LIGHTSTORE_JEV_WORKERS", "4"))
+except ValueError:
+    raise ValueError("LIGHTSTORE_JEV_WORKERS must be an integer between 1 and 8.") from None
 
 
 @dataclass
@@ -54,10 +58,14 @@ class IdentConfig:
     dedup: bool = True
     jev_inline: bool = False
     stop_confidence: float = 0.7
+    jev_workers: int = JEV_WORKERS
 
     def __post_init__(self):
         if not math.isfinite(self.stop_confidence) or not 0 <= self.stop_confidence <= 1:
             raise ValueError("stop_confidence must be between 0 and 1")
+        if (not isinstance(self.jev_workers, int) or isinstance(self.jev_workers, bool)
+                or not 1 <= self.jev_workers <= 8):
+            raise ValueError("jev_workers must be an integer between 1 and 8")
 
 
 def dhash(jpeg_bytes):
@@ -219,9 +227,10 @@ class IdentificationService:
         self.slot_lock = threading.Lock()
         self.wake = threading.Event()
         self.jev_wake = threading.Event()
+        self.jev_inflight = set()
         self.stop_event = threading.Event()
         self.thread = None
-        self.jev_thread = None
+        self.jev_threads = []
         self.products = []
         self.catalog_error = ""
         self.ocr = None
@@ -253,10 +262,15 @@ class IdentificationService:
         self.thread = threading.Thread(target=self._loop, name="identification", daemon=True)
         self.thread.start()
         if not self.config.jev_inline:
-            # Jev HTTP runs on its own thread so OCR throughput never stalls
-            # behind API latency; evidence keeps accumulating meanwhile.
-            self.jev_thread = threading.Thread(target=self._jev_loop, name="ident-jev", daemon=True)
-            self.jev_thread.start()
+            # A bounded pool identifies separate tracks concurrently. A track
+            # is reserved by only one worker, so it never issues overlapping
+            # requests for successive OCR updates.
+            self.jev_threads = [
+                threading.Thread(target=self._jev_loop, name=f"ident-jev-{index + 1}", daemon=True)
+                for index in range(self.config.jev_workers)
+            ]
+            for thread in self.jev_threads:
+                thread.start()
 
     def close(self):
         self.stop_event.set()
@@ -265,9 +279,9 @@ class IdentificationService:
         if self.thread is not None:
             self.thread.join(timeout=10)
             self.thread = None
-        if self.jev_thread is not None:
-            self.jev_thread.join(timeout=10)
-            self.jev_thread = None
+        for thread in self.jev_threads:
+            thread.join(timeout=10)
+        self.jev_threads = []
         if self.ocr is not None:
             self.ocr.close()
             self.ocr = None
@@ -275,6 +289,7 @@ class IdentificationService:
     def reset(self):
         with self.lock:
             self.tracks = {}
+            self.jev_inflight.clear()
         with self.slot_lock:
             self.slots = {}
             self.slot_order.clear()
@@ -449,6 +464,7 @@ class IdentificationService:
             "jev_key_present": key_present,
             "jev_model": os.environ.get("TYPESAFE_MODEL", "jev-latest"),
             "jev_calls": self.jev_calls,
+            "jev_workers": self.config.jev_workers,
         }
 
     def _merge(self, track_id, hint, lines, expected=None):
@@ -499,15 +515,18 @@ class IdentificationService:
     def _identify(self, track_id, evidence):
         with self.lock:
             if self.tracks.get(track_id) is not evidence or evidence.complete:
+                self.jev_inflight.discard(track_id)
                 return
+            request_fingerprint = evidence.fingerprint
         lines = [
             {"text": evidence.lines[n]["text"], "score": evidence.lines[n]["score"]}
-            for n in evidence.fingerprint[:MAX_JEV_LINES]
+            for n in request_fingerprint[:MAX_JEV_LINES]
         ]
         started = time.monotonic()
+        call_completed = False
         try:
             outcome = self.jev_fn(lines, self.products, evidence.hint or None)
-            self.jev_calls += 1
+            call_completed = True
             answer = outcome.get("answer", {})
             choice = answer.get("choice")
             status = outcome.get("status", "needs_more_evidence")
@@ -529,6 +548,9 @@ class IdentificationService:
             logger.warning("Jev request failed for track %s: %s", track_id, error_text)
         elapsed_ms = (time.monotonic() - started) * 1000
         with self.lock:
+            if call_completed:
+                self.jev_calls += 1
+            self.jev_inflight.discard(track_id)
             current = self.tracks.get(track_id)
             if current is evidence:
                 evidence.result = result
@@ -544,11 +566,15 @@ class IdentificationService:
                         self.slots.pop(track_id, None)
                         self.slot_order = deque(t for t in self.slot_order if t != track_id)
                 evidence.jev_error = error_text
-                evidence.last_jev_fingerprint = evidence.fingerprint
+                # OCR may have added evidence while this HTTP request was in
+                # flight. Record only what the request actually contained so
+                # the newer evidence can trigger a subsequent call.
+                evidence.last_jev_fingerprint = request_fingerprint
                 evidence.last_jev_time = time.monotonic()
                 evidence.last_jev_ms = elapsed_ms
                 if evidence.first_ident_at is None and result.get("choice"):
                     evidence.first_ident_at = evidence.last_jev_time
+        self.jev_wake.set()
 
     def _ensure_ocr(self):
         if self.ocr is not None or self.ocr_gave_up:
@@ -630,8 +656,7 @@ class IdentificationService:
                         self.jev_wake.set()
 
     def _jev_loop(self):
-        """Dedicated Jev thread: API latency never stalls OCR, and evidence
-        keeps accumulating while a request is in flight."""
+        """Pool worker: reserve one due track, then call Jev outside locks."""
         while not self.stop_event.is_set():
             self.jev_wake.wait(timeout=1.0)
             self.jev_wake.clear()
@@ -640,10 +665,12 @@ class IdentificationService:
             while not self.stop_event.is_set():
                 with self.lock:
                     due = [(track_id, evidence) for track_id, evidence in self.tracks.items()
-                           if self._jev_due(evidence)]
+                           if track_id not in self.jev_inflight and self._jev_due(evidence)]
+                    if due:
+                        # Oldest first: the longest-waiting bottle is identified first.
+                        due.sort(key=lambda item: item[1].last_jev_time)
+                        track_id, evidence = due[0]
+                        self.jev_inflight.add(track_id)
                 if not due:
                     break
-                # Oldest first: the longest-waiting bottle is identified first.
-                due.sort(key=lambda item: item[1].last_jev_time)
-                track_id, evidence = due[0]
                 self._identify(track_id, evidence)

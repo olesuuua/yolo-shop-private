@@ -49,9 +49,10 @@ it. No API request is made by the current camera app.
 
 ## Product reference data
 
-`data/local/catalog.json` starts with an empty `products` list. For each actual
-product, record `sku`, `name`, `packaging`, `brand`, `variant`, `size`,
-`store_description`, and `verified_label_text`. Keep source URLs if available.
+`data/local/catalog.json` contains only identification data. For each actual
+product, record `sku`, `name`, `object_classes`, `brand`, `category`, `variant`,
+`size`, `aliases`, and `verified_label_text`. Use an empty string or list when
+text is unknown; do not add visual packaging descriptions or store copy.
 Store reference photos in `data/local/products/<sku>/`.
 
 Use store descriptions for structured identity and packaging photos for exact

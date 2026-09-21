@@ -252,6 +252,7 @@ All tuning lives in `config.py`:
 | `CONF_THRESHOLD` | `0.10` | Lowest detection confidence passed to ByteTrack; new tracks require `0.50` for PP-YOLOE, `0.60` for other profiles |
 | `AGNOSTIC_NMS` | `True` | Suppress overlapping detections across different classes |
 | `NMS_IOU_THRESHOLD` | `0.45` | Box IoU above which the lower-confidence detection is suppressed, across labels |
+| `JEV_WORKERS` | `4` | Concurrent Jev requests for different product tracks, selected by `LIGHTSTORE_JEV_WORKERS` (1–8) |
 | `PACKED_BANNER_FRAMES` | `30` | How long the latest event stays on the video |
 | `MAX_PACKED_OVERLAY_ROWS` | `8` | Maximum class rows on the video; the sidebar keeps all counts |
 | `MODEL_PROFILE` | `ppyoloe_objects365` | Selected by `LIGHTSTORE_MODEL`; also accepts `ppyoloe_custom`, `yoloe26n`, `yoloe26x`, `rpc_yolo26s`, `grocery_checkout`, `sku110k` and `openimages` |

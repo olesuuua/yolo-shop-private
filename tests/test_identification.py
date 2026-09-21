@@ -113,11 +113,16 @@ class IdentificationTests(unittest.TestCase):
         self.assertEqual(len(set(skus)), 4)
         self.assertIn("aqua-minerale-0-5l", skus)
         self.assertIn("senezhskaya-0-5l", skus)
-        required = {"name", "brand", "packaging", "category", "variant", "size",
-                    "aliases", "verified_label_text", "identity_clues", "cautions"}
+        required = {"sku", "name", "object_classes", "brand", "category",
+                    "variant", "size", "aliases", "verified_label_text"}
         for product in service.products:
-            self.assertTrue(required.issubset(product),
-                            f"{product.get('sku')} is missing Jev fields")
+            self.assertEqual(set(product), required,
+                             f"{product.get('sku')} has unexpected catalog fields")
+
+    def test_jev_config_rejects_invalid_worker_counts(self):
+        for value in (0, 9, 1.5, True):
+            with self.subTest(value=value), self.assertRaises(ValueError):
+                IdentConfig(jev_workers=value)
 
     def test_normalize_and_useful_evidence_gate(self):
         self.assertEqual(normalize("  Вода\tпитьевая "), "ВОДАПИТЬЕВАЯ")
@@ -347,6 +352,58 @@ class IdentificationTests(unittest.TestCase):
         release.set()
         self.assertEqual(ocr.calls, 2)
         self.assertGreaterEqual(service.snapshot()[1]["ocr_runs"], 2)
+
+    def test_different_tracks_are_identified_in_parallel(self):
+        both_entered = threading.Event()
+        release = threading.Event()
+        active = 0
+        active_lock = threading.Lock()
+
+        def blocking_jev(lines, products, hint):
+            nonlocal active
+            with active_lock:
+                active += 1
+                if active == 2:
+                    both_entered.set()
+            release.wait(timeout=5)
+            return candidate("senezhskaya-0-5l")
+
+        service = self.make_service(
+            jev=blocking_jev, config=IdentConfig(jev_workers=2))
+        service._merge(1, "Bottle", [{"text": "СЕНЕЖСКАЯ", "score": 0.9}])
+        service._merge(2, "Bottle", [{"text": "AQUА", "score": 0.9}])
+        service.jev_wake.set()
+        self.assertTrue(both_entered.wait(timeout=5))
+        with active_lock:
+            self.assertEqual(active, 2)
+        release.set()
+
+    def test_one_track_never_has_overlapping_jev_calls(self):
+        entered = threading.Event()
+        release = threading.Event()
+        calls = 0
+        calls_lock = threading.Lock()
+
+        def blocking_jev(lines, products, hint):
+            nonlocal calls
+            with calls_lock:
+                calls += 1
+            entered.set()
+            release.wait(timeout=5)
+            return candidate("senezhskaya-0-5l", 0.6)
+
+        service = self.make_service(
+            jev=blocking_jev, config=IdentConfig(jev_workers=4, jev_debounce_s=0))
+        evidence = service._merge(
+            1, "Bottle", [{"text": "СЕНЕЖСКАЯ", "score": 0.9}])
+        service.jev_wake.set()
+        self.assertTrue(entered.wait(timeout=5))
+        service._merge(1, "Bottle", [{"text": "ВОДА", "score": 0.8}])
+        service.jev_wake.set()
+        time.sleep(0.2)
+        with calls_lock:
+            self.assertEqual(calls, 1)
+        release.set()
 
     def test_first_submit_retry_is_faster(self):
         from identification import TrackEvidence

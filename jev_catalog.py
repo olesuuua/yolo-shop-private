@@ -1,20 +1,82 @@
 """Match packaging OCR to the local catalog. Calling classify sends text to TypeSafe."""
-import json, math, os
+import difflib, json, math, os, re
 from pathlib import Path
 import requests
 from dotenv import load_dotenv
 ROOT=Path(__file__).resolve().parent
+MAX_JEV_CANDIDATES=20
+PRODUCT_FIELDS={'sku','name','object_classes','brand','category','variant','size',
+                'aliases','verified_label_text'}
 
 def load_catalog():
     products=json.loads((ROOT/'data/local/catalog.json').read_text())['products']
     ids=[p['sku'] for p in products]
     if not 1<=len(products)<=253 or len(ids)!=len(set(ids)):
         raise ValueError('Expected 1–253 unique catalog products.')
+    for product in products:
+        if set(product)!=PRODUCT_FIELDS:
+            missing=sorted(PRODUCT_FIELDS-set(product))
+            extra=sorted(set(product)-PRODUCT_FIELDS)
+            raise ValueError(f"Catalog product {product.get('sku','?')} has missing fields {missing} and extra fields {extra}.")
     return products
 
+def _values(value):
+    if isinstance(value,list):
+        return [str(item) for item in value]
+    return [str(value)] if value else []
+
+def _norm(value):
+    return ''.join(re.findall(r'[^\W_]+',str(value).upper()))
+
+def _text_score(observed,product):
+    """Cheap, deliberately broad OCR similarity used only for ranking."""
+    weights={'brand':6,'aliases':5,'variant':4,'verified_label_text':4,
+             'name':3,'category':2,'size':2}
+    score=0.0
+    for field,weight in weights.items():
+        best=0.0
+        for raw in _values(product.get(field)):
+            term=_norm(raw)
+            if len(term)<2:
+                continue
+            for text in observed:
+                if term in text or text in term:
+                    similarity=min(len(term),len(text))/max(len(term),len(text))
+                    best=max(best,0.7+0.3*similarity)
+                elif min(len(term),len(text))>=4:
+                    best=max(best,difflib.SequenceMatcher(None,text,term).ratio())
+        score+=weight*best
+    return score
+
+def select_candidates(lines,products,object_class=None,limit=MAX_JEV_CANDIDATES):
+    """Rank within the whole detected packaging class; never infer a hard
+    water/milk/etc. subcategory before Jev. Entries without object_classes stay
+    eligible while a catalog is being completed."""
+    hint=str(object_class or '').casefold().strip()
+    if hint:
+        matching=[]; unclassified=[]
+        for product in products:
+            classes=product.get('object_classes') or []
+            if not classes:
+                unclassified.append(product)
+            elif any(str(value).casefold().strip()==hint for value in classes):
+                matching.append(product)
+        pool=matching+unclassified if matching else list(products)
+    else:
+        pool=list(products)
+    if len(pool)<=limit:
+        return pool
+    observed=[_norm(line.get('text','')) for line in lines]
+    observed=[value for value in observed if len(value)>=2]
+    ranked=sorted(enumerate(pool),key=lambda item:(-_text_score(observed,item[1]),item[0]))
+    return [product for _,product in ranked[:limit]]
+
 def build_request(lines, products, object_class=None):
-    fields=('name','brand','packaging','category','variant','size','aliases','verified_label_text','identity_clues','cautions')
-    criteria={p['sku']:{k:p[k] for k in fields} for p in products}
+    # Jev receives OCR, not an image. Keep only text that can be compared with
+    # an OCR result; object_classes is used locally to build the candidate pool.
+    fields=('name','brand','category','variant','size','aliases','verified_label_text')
+    candidates=select_candidates(lines,products,object_class)
+    criteria={p['sku']:{k:p[k] for k in fields} for p in candidates}
     criteria['other_product']='Readable evidence identifies a different product or contradicts the listed variants, flavors or sizes.'
     criteria['insufficient_evidence']='Unreadable, generic or ambiguous evidence; no product is clearly identified.'
     return {'model':os.environ.get('TYPESAFE_MODEL','jev-latest'),
