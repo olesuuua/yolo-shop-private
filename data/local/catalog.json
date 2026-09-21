@@ -103,12 +103,16 @@
     {
       "sku": "stantsiya-molochnaya-kefir-1-0-430g",
       "name": "Станция молочная кефир 1,0%",
-      "object_classes": [],
+      "object_classes": [
+        "Bottle"
+      ],
       "brand": "Станция молочная",
       "category": "Кефир",
       "variant": "1,0%",
       "size": "430г",
-      "aliases": [],
+      "aliases": [
+        "Станция молочная кефир 1,0%"
+      ],
       "verified_label_text": [
         "Кефир",
         "Массовая доля жира 1,0%",
