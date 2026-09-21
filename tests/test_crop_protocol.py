@@ -363,6 +363,35 @@ class CropResponseTests(unittest.TestCase):
         self.assertEqual(ack["reason"], "connection_mismatch")
 
 
+class Stage2Tests(unittest.TestCase):
+    """Small detection upload keeps diagnostics and OCR eligibility."""
+
+    def test_detection_response_carries_backend_timings(self):
+        proc, model, _ = processor_with([])
+        payload = jpeg_bytes()
+        model.frames.append([(BOX, CLASS_IDS[PRIMARY], 7)])
+        response = proc.process_detect(payload, connection_id="conn-1")
+        self.assertEqual(response["upload_bytes"], len(payload))
+        self.assertIsInstance(response["detect_ms"], float)
+        self.assertGreaterEqual(response["detect_ms"], 0.0)
+        # 640x480 uploads still yield requests tagged with upload dims.
+        self.assertEqual(len(response["crop_requests"]), 1)
+        request = response["crop_requests"][0]
+        self.assertEqual((request["upload_width"], request["upload_height"]), (640, 480))
+        self.assertEqual(request["coord_space"], CROP_COORD_SPACE)
+
+    def test_rect_scales_from_detect_space_to_full_resolution(self):
+        # Same 640x480 box maps larger (never smaller) on bigger originals.
+        base = upload_crop_rect(BOX, 640, 480)
+        full = upload_crop_rect(BOX, 1280, 960)
+        wide = upload_crop_rect(BOX, 1280, 720)
+        self.assertIsNotNone(base)
+        self.assertIsNotNone(full)
+        self.assertIsNotNone(wide)
+        self.assertGreater(full[2] - full[0], base[2] - base[0])
+        self.assertLessEqual(wide[3], 720)
+
+
 class WebSocketTests(unittest.TestCase):
     def test_crop_ack_flows_without_advancing_detection(self):
         import app as application

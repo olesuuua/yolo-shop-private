@@ -437,6 +437,11 @@ class FrameProcessor:
                 "identification": identification,
                 "crop_requests": crop_requests,
                 "events": events,  # Only newly registered events, in frame order.
+                # Diagnostics (stage 2): network-exclusive backend timings.
+                # detect_ms is pure server processing for this frame;
+                # upload_bytes is the received detection JPEG size.
+                "detect_ms": round(detect_ms, 1),
+                "upload_bytes": len(image_bytes),
             }
 
     def process_crop_response(self, header: dict, jpeg_bytes: bytes,

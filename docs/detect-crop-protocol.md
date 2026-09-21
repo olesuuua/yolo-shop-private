@@ -102,3 +102,27 @@ Text frames from the client are rejected with a fatal
   per-connection UUID, and sends `crop_ack` for crops vs full detection
   JSON for frames. Single-camera, shared session, CPU-only inference and
   the annotated display are preserved.
+
+## Stage 2: small detection upload, full-resolution retained original
+
+- **Detection upload**: exactly 640×480 (`DETECT_WIDTH`×`DETECT_HEIGHT`),
+  JPEG quality `0.75`, plain stretch with no letterbox or crop — the same
+  transform as the server's `cv2.resize(full_frame, (640, 480))`, so
+  detection boxes, `BAG_ROI` alignment and the `detect_640x480` coordinate
+  space are unchanged. `upload_width/height` in crop requests is therefore
+  always 640×480.
+- **Retained original**: one grab from the live video at capture
+  resolution (≤1280 px wide, JPEG source quality path unchanged); the
+  640×480 detection canvas is drawn from that same grab
+  (video → full canvas → detection canvas), never a second live draw.
+  OCR crops are cut from the retained full-resolution frame at crop JPEG
+  quality `0.85` with the unchanged 8 % margin and 60×80 px minimum.
+- **Validation change**: the browser checks `request.upload_width/height`
+  against the stored *detection* size (640×480) and maps the 640×480 box
+  to the *retained* size (`scale = retained / 640,480`). Session, frame,
+  clamping, TTL and memory bounds are unchanged.
+- **Diagnostics**: detection responses carry `detect_ms` (pure server
+  processing for that frame, network-exclusive) and `upload_bytes`
+  (received detection JPEG size). The browser adds opt-in (`?diag=1`)
+  overlay stats: detection bytes, send-to-response RTT (network-inclusive),
+  backend `detect_ms`, received results/s, crop count and bytes.

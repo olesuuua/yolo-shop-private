@@ -15,9 +15,10 @@ function session(version = 0, count = 0) {
   return { session_version: version, packed_counts: count ? { apple: count } : {}, last_event: null };
 }
 
-async function controller() {
+async function controller(url = "") {
   const elements = new Map();
   const captures = [];
+  const created = [];
   const sockets = [];
   const requests = [];
   const revoked = [];
@@ -25,8 +26,9 @@ async function controller() {
   const track = { stopped: false, stop() { this.stopped = true; } };
   const media = { getTracks: () => [track] };
   function element() {
-    return {
-      disabled: false, textContent: "", children: [], readyState: 2,
+    const ctx = { calls: [], drawImage(...args) { this.calls.push(args); } };
+    const el = {
+      disabled: false, textContent: "", children: [], readyState: 2, style: {},
       classList: { add() {}, remove() {} },
       addEventListener(name, handler) { this[name] = handler; },
       replaceChildren() { this.children = []; },
@@ -34,9 +36,15 @@ async function controller() {
       append(...children) { this.children.push(...children); },
       removeAttribute(name) { delete this[name]; },
       play: async () => {},
-      getContext: () => ({ drawImage() {} }),
-      toBlob(callback) { captures.push(callback); }
+      getContext: () => ctx,
+      toBlob(callback, type, quality) {
+        const fn = (blob) => callback(blob);
+        fn.quality = quality; fn.type = type; fn.canvas = el;
+        captures.push(fn);
+      },
+      __ctx: ctx,
     };
+    return el;
   }
   class Socket {
     static OPEN = 1;
@@ -52,11 +60,15 @@ async function controller() {
         if (!elements.has(id)) elements.set(id, element());
         return elements.get(id);
       },
-      createElement: element
+      createElement(...args) {
+        const el = element(...args);
+        created.push(el);
+        return el;
+      }
     },
     window: { addEventListener() {} },
     navigator: { mediaDevices: { getUserMedia: () => mediaRequest.promise } },
-    location: { protocol: "http:", host: "localhost:8000" },
+    location: { protocol: "http:", host: "localhost:8000", search: url },
     WebSocket: Socket, HTMLMediaElement: { HAVE_CURRENT_DATA: 2 },
     fetch(url) {
       if (url === "/api/session") return Promise.resolve({ ok: true, json: async () => session() });
@@ -65,7 +77,7 @@ async function controller() {
       requests.push(request);
       return request.promise;
     },
-    Blob, Uint8Array, atob, TextEncoder, TextDecoder, DataView, Date,
+    Blob, Uint8Array, atob, TextEncoder, TextDecoder, DataView, Date, URLSearchParams,
     setInterval() { return 1; },
     setTimeout() { return 1; },
     URL: { createObjectURL: () => "blob:test", revokeObjectURL: (url) => revoked.push(url) },
@@ -74,7 +86,7 @@ async function controller() {
   vm.runInContext(readFileSync(path.join(__dirname, "../static/app.js"), "utf8"), context);
   await context.loadSession();
   return {
-    context, elements, captures, sockets, requests, mediaRequest, media, track, revoked,
+    context, elements, captures, created, sockets, requests, mediaRequest, media, track, revoked,
     async connect() {
       const started = context.start();
       mediaRequest.resolve(media);
@@ -295,4 +307,90 @@ test("stop releases retained frames so late crops cannot send", async () => {
     const bytes = new Uint8Array(await sent.arrayBuffer());
     assert.notEqual(String.fromCharCode(...bytes.slice(0, 4)), "YOLO");
   }
+});
+
+test("detection upload is 640x480 q0.75 from the same video grab", async () => {
+  const app = await controller();
+  const socket = await app.connect();
+  app.capture();
+  const camera = app.elements.get("camera");
+  camera.videoWidth = 1280;
+  camera.videoHeight = 960;
+  socket.receive(detectionResponse({ frame_id: 1 }));
+  const detFn = app.captures[0];
+  const canvas = app.elements.get("canvas");
+  assert.equal(canvas.width, 640);
+  assert.equal(canvas.height, 480);
+  assert.equal(detFn.quality, 0.75);
+  // Single live grab: detection canvas draws the full canvas, which alone
+  // draws the camera. No second live draw feeds either version.
+  const full = app.created.at(-1);
+  assert.equal(full.width, 1280);
+  assert.equal(full.height, 960);
+  assert.equal(canvas.__ctx.calls.at(-1)[0], full);
+  assert.equal(full.__ctx.calls.length, 1);
+  assert.equal(full.__ctx.calls[0][0], camera);
+});
+
+test("crops are cut at full resolution with q0.85", async () => {
+  const app = await controller();
+  const socket = await app.connect();
+  app.capture();
+  const camera = app.elements.get("camera");
+  camera.videoWidth = 1280;
+  camera.videoHeight = 960;
+  socket.receive(detectionResponse({ frame_id: 2 }));
+  app.capture(); // frame 2 goes out at full capture resolution
+  socket.receive(detectionResponse({
+    frame_id: 3, crop_requests: [{
+      request_id: "3:7:1", frame_id: 3, track_id: 7, session_version: 0,
+      bbox: [100, 100, 300, 300], coord_space: "detect_640x480",
+      upload_width: 640, upload_height: 480, margin: 0.08,
+    }],
+  }));
+  const cropFn = app.captures[0];
+  assert.equal(cropFn.quality, 0.85);
+  app.capture();
+  const { header } = await parseEnvelope(socket.sent.at(-1));
+  assert.equal(header.request_id, "3:7:1");
+  // 2x capture scale maps the 200px box plus 8% margin to a 464px crop.
+  const cropCanvas = app.created.find((el) => el.width === 464 && el.height === 464);
+  assert.ok(cropCanvas, "crop canvas uses full-resolution mapping");
+});
+
+test("widescreen capture maps both axes from the same grab", async () => {
+  const app = await controller();
+  const socket = await app.connect();
+  app.capture();
+  const camera = app.elements.get("camera");
+  camera.videoWidth = 1280;
+  camera.videoHeight = 720;
+  socket.receive(detectionResponse({ frame_id: 4 }));
+  const full = app.created.at(-1);
+  assert.equal(full.width, 1280);
+  assert.equal(full.height, 720);
+  assert.equal(app.elements.get("canvas").__ctx.calls.at(-1).length, 5);
+  const rect = app.context.mapCropRect([100, 100, 300, 300], 1280, 720);
+  assert.ok(rect.w > 400 && rect.h > 300);
+});
+
+test("diag overlay reports network-inclusive and backend timings", async () => {
+  const app = await controller("?diag=1");
+  const socket = await app.connect();
+  app.capture();
+  socket.receive(detectionResponse({ frame_id: 6, detect_ms: 12.5 }));
+  const diag = app.elements.get("diag");
+  assert.match(diag.textContent, /det .*KB/);
+  assert.match(diag.textContent, /rtt .*ms \(net\+server\)/);
+  assert.match(diag.textContent, /backend 12\.5ms/);
+  assert.match(diag.textContent, /res\/s/);
+  assert.match(diag.textContent, /crops 0/);
+});
+
+test("diag overlay stays hidden without the flag", async () => {
+  const app = await controller();
+  const socket = await app.connect();
+  app.capture();
+  socket.receive(detectionResponse({ frame_id: 7, detect_ms: 9.5 }));
+  assert.equal(app.elements.has("diag"), false);
 });

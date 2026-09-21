@@ -24,26 +24,60 @@ let resultUrl = null;
 let sessionVersion = -1;
 let connectionGeneration = 0;
 
-// Stage 1: server-issued detection frame IDs with browser-retained uploads.
-// Detection uploads are unchanged raw JPEG (<=1280px wide, quality 0.85,
-// one frame in flight). Crop requests in a detection response reference the
-// exact upload frame via frame_id; crops are cut from the retained copy,
-// never from a newer live camera frame. See docs/detect-crop-protocol.md.
-// Detection coordinate space is 640x480 (origin top-left); the browser
-// scales to retained upload pixels, expands by CROP_MARGIN, clamps, drops
-// crops smaller than CROP_MIN_W/H, and sends JPEG quality CROP_JPEG_QUALITY.
+// Stage 2: detection uploads are exactly the backend processing size
+// (640x480, JPEG quality 0.75, plain stretch like the server's cv2.resize,
+// so geometry and the bag zone stay aligned). The original camera frame is
+// retained at capture resolution (<=1280px wide) for OCR. Both versions are
+// drawn from a single grab of the live video: video -> full canvas, then
+// full canvas -> 640x480 detection canvas. Crops are cut from the retained
+// full-resolution frame, never from the smaller detection JPEG. See
+// docs/detect-crop-protocol.md. Detection coordinate space stays 640x480
+// (origin top-left); the browser scales to retained pixels, expands by
+// CROP_MARGIN, clamps, drops crops smaller than CROP_MIN_W/H, and sends
+// crop JPEGs at CROP_JPEG_QUALITY.
 const DETECT_WIDTH = 640;
 const DETECT_HEIGHT = 480;
+const DETECT_JPEG_QUALITY = 0.75;
 const CROP_MARGIN = 0.08;
 const CROP_MIN_WIDTH = 60;
 const CROP_MIN_HEIGHT = 80;
 const CROP_JPEG_QUALITY = 0.85;
 const MAX_RETAINED_FRAMES = 4;
 const RETAINED_FRAME_TTL_MS = 15000;
-// Upload canvas for the last sent detection frame, awaiting its response.
+// Upload state for the last sent detection frame, awaiting its response.
 let pendingUpload = null;
-// Server frame_id -> {canvas, width, height, at} for crop extraction.
+// Server frame_id -> {canvas, width, height, detectWidth, detectHeight, at}.
 const retainedFrames = new Map();
+
+// Opt-in performance diagnostics (?diag=1): detection JPEG bytes,
+// send-to-response time (network-inclusive), backend detect_ms
+// (network-exclusive), received results per second, crop count/bytes.
+let diagEnabled = false;
+try {
+  diagEnabled = new URLSearchParams(location.search || "").has("diag");
+} catch (error) {
+  diagEnabled = false;
+}
+const diagTimes = [];
+const diag = { detBytes: 0, rttMs: null, backendMs: null, crops: 0, cropBytes: 0 };
+let diagSentAt = 0;
+const diagClock = () => ((typeof performance !== "undefined" && performance.now)
+  ? performance.now() : Date.now());
+
+function renderDiag() {
+  if (!diagEnabled) return;
+  const box = document.getElementById("diag");
+  if (!box) return;
+  const cutoff = diagClock() - 2000;
+  while (diagTimes.length && diagTimes[0] < cutoff) diagTimes.shift();
+  const rate = (diagTimes.length / 2).toFixed(1);
+  const rtt = diag.rttMs == null ? "?" : `${Math.round(diag.rttMs)}ms`;
+  const backend = diag.backendMs == null ? "?" : `${diag.backendMs}ms`;
+  box.textContent = `det ${(diag.detBytes / 1024).toFixed(1)}KB · ` +
+    `rtt ${rtt} (net+server) · backend ${backend} · ${rate} res/s · ` +
+    `crops ${diag.crops} (${(diag.cropBytes / 1024).toFixed(1)}KB)`;
+  box.style.display = "block";
+}
 
 function mapCropRect(bbox, retainedWidth, retainedHeight) {
   if (!Array.isArray(bbox) || bbox.length !== 4) return null;
@@ -99,7 +133,11 @@ function handleCropRequests(cropRequests, frameId) {
   for (const request of cropRequests) {
     if (!request || request.frame_id !== frameId) continue;
     if (typeof request.session_version === "number" && request.session_version < sessionVersion) continue;
-    if (request.upload_width !== entry.width || request.upload_height !== entry.height) continue;
+    // The request's upload dimensions describe the small detection JPEG;
+    // the retained frame is the full-resolution original from the same
+    // capture, so validate against the stored detection size and map the
+    // 640x480 box to the retained original.
+    if (request.upload_width !== entry.detectWidth || request.upload_height !== entry.detectHeight) continue;
     const rect = mapCropRect(request.bbox, entry.width, entry.height);
     if (!rect) continue;
     const source = entry.canvas;
@@ -123,6 +161,7 @@ function handleCropRequests(cropRequests, frameId) {
       if (!blob) return;
       if (!running || connection.readyState !== WebSocket.OPEN) return;
       try {
+        if (diagEnabled) { diag.crops += 1; diag.cropBytes += blob.size || 0; }
         connection.send(buildCropEnvelope(header, blob));
       } catch (error) {
         // Crop delivery is best-effort; detection continues regardless.
@@ -315,6 +354,12 @@ async function start() {
           renderCounts(response.visible_counts || {}, totalCount, classCounts, "No tracked products visible");
           renderIdentification(response.identification);
         }
+        if (diagEnabled && typeof response.detect_ms === "number") {
+          diag.rttMs = diagClock() - diagSentAt;
+          diag.backendMs = response.detect_ms;
+          diagTimes.push(diagClock());
+          renderDiag();
+        }
         if (typeof response.frame_id === "number" && pendingUpload) {
           retainedFrames.set(response.frame_id, pendingUpload);
           pendingUpload = null;
@@ -357,27 +402,31 @@ function sendNextFrame() {
     });
     return;
   }
-  // Detection runs on 640x480 server-side; uploads keep the higher camera
-  // resolution so OCR crops stay legible. One frame in flight at a time.
-  // Upload size and JPEG quality are frozen in stage 1; only the retained
-  // copy (exact pixels just uploaded) is new, for later crop extraction.
+  // Stage 2: one grab from the live video at capture resolution
+  // (<=1280px wide, unchanged). The 640x480 detection upload is derived
+  // from that same grab with a plain stretch to exactly DETECT_WIDTH x
+  // DETECT_HEIGHT, matching the server's cv2.resize with no letterbox or
+  // crop, so detection boxes, ROI alignment and the 640x480 coordinate
+  // space are preserved. The full-resolution grab is retained for OCR.
   const sourceWidth = camera.videoWidth || 640;
   const sourceHeight = camera.videoHeight || 480;
   const scale = Math.min(1, 1280 / sourceWidth);
-  canvas.width = Math.round(sourceWidth * scale);
-  canvas.height = Math.round(sourceHeight * scale);
-  canvas.getContext("2d", { alpha: false, desynchronized: true }).drawImage(camera, 0, 0, canvas.width, canvas.height);
-  try {
-    const copy = document.createElement("canvas");
-    copy.width = canvas.width;
-    copy.height = canvas.height;
-    copy.getContext("2d", { alpha: false, desynchronized: true }).drawImage(canvas, 0, 0);
-    pendingUpload = { canvas: copy, width: canvas.width, height: canvas.height, at: Date.now() };
-  } catch (error) {
-    pendingUpload = null;
-  }
+  const fullWidth = Math.round(sourceWidth * scale);
+  const fullHeight = Math.round(sourceHeight * scale);
+  const full = document.createElement("canvas");
+  full.width = fullWidth;
+  full.height = fullHeight;
+  full.getContext("2d", { alpha: false, desynchronized: true }).drawImage(camera, 0, 0, fullWidth, fullHeight);
+  canvas.width = DETECT_WIDTH;
+  canvas.height = DETECT_HEIGHT;
+  canvas.getContext("2d", { alpha: false, desynchronized: true }).drawImage(full, 0, 0, DETECT_WIDTH, DETECT_HEIGHT);
+  pendingUpload = {
+    canvas: full, width: fullWidth, height: fullHeight,
+    detectWidth: DETECT_WIDTH, detectHeight: DETECT_HEIGHT, at: Date.now(),
+  };
   frameInFlight = true;
   const connection = socket;
+  const sentAt = diagClock();
   canvas.toBlob((blob) => {
     if (socket !== connection) return;
     if (!blob) {
@@ -390,8 +439,9 @@ function sendNextFrame() {
       frameInFlight = false;
       return;
     }
+    if (diagEnabled) { diag.detBytes = blob.size || 0; diagSentAt = sentAt; }
     connection.send(blob);
-  }, "image/jpeg", 0.85);
+  }, "image/jpeg", DETECT_JPEG_QUALITY);
 }
 
 function stop(message = "Stopped. Packed items are preserved.") {
