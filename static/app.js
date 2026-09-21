@@ -24,6 +24,114 @@ let resultUrl = null;
 let sessionVersion = -1;
 let connectionGeneration = 0;
 
+// Stage 1: server-issued detection frame IDs with browser-retained uploads.
+// Detection uploads are unchanged raw JPEG (<=1280px wide, quality 0.85,
+// one frame in flight). Crop requests in a detection response reference the
+// exact upload frame via frame_id; crops are cut from the retained copy,
+// never from a newer live camera frame. See docs/detect-crop-protocol.md.
+// Detection coordinate space is 640x480 (origin top-left); the browser
+// scales to retained upload pixels, expands by CROP_MARGIN, clamps, drops
+// crops smaller than CROP_MIN_W/H, and sends JPEG quality CROP_JPEG_QUALITY.
+const DETECT_WIDTH = 640;
+const DETECT_HEIGHT = 480;
+const CROP_MARGIN = 0.08;
+const CROP_MIN_WIDTH = 60;
+const CROP_MIN_HEIGHT = 80;
+const CROP_JPEG_QUALITY = 0.85;
+const MAX_RETAINED_FRAMES = 4;
+const RETAINED_FRAME_TTL_MS = 15000;
+// Upload canvas for the last sent detection frame, awaiting its response.
+let pendingUpload = null;
+// Server frame_id -> {canvas, width, height, at} for crop extraction.
+const retainedFrames = new Map();
+
+function mapCropRect(bbox, retainedWidth, retainedHeight) {
+  if (!Array.isArray(bbox) || bbox.length !== 4) return null;
+  const [bx1, by1, bx2, by2] = bbox.map(Number);
+  if (![bx1, by1, bx2, by2].every(Number.isFinite)) return null;
+  if (!(bx2 > bx1) || !(by2 > by1)) return null;
+  if (!(retainedWidth > 0) || !(retainedHeight > 0)) return null;
+  const scaleX = retainedWidth / DETECT_WIDTH;
+  const scaleY = retainedHeight / DETECT_HEIGHT;
+  const width = bx2 - bx1;
+  const height = by2 - by1;
+  const x1 = Math.max(0, Math.round((bx1 - width * CROP_MARGIN) * scaleX));
+  const y1 = Math.max(0, Math.round((by1 - height * CROP_MARGIN) * scaleY));
+  const x2 = Math.min(retainedWidth, Math.round((bx2 + width * CROP_MARGIN) * scaleX));
+  const y2 = Math.min(retainedHeight, Math.round((by2 + height * CROP_MARGIN) * scaleY));
+  if (x2 - x1 < CROP_MIN_WIDTH || y2 - y1 < CROP_MIN_HEIGHT) return null;
+  return { x: x1, y: y1, w: x2 - x1, h: y2 - y1 };
+}
+
+function buildCropEnvelope(header, jpegBlob) {
+  // Single binary message: b"YOLO" + 0x01 + 0x02 + u32BE(header_len) +
+  // JSON header + JPEG. No base64 uploads.
+  const json = JSON.stringify(header);
+  const jsonBytes = new TextEncoder().encode(json);
+  const prefix = new Uint8Array(10);
+  prefix[0] = 0x59; prefix[1] = 0x4f; prefix[2] = 0x4c; prefix[3] = 0x4f;
+  prefix[4] = 0x01; prefix[5] = 0x02;
+  new DataView(prefix.buffer).setUint32(6, jsonBytes.length, false);
+  return new Blob([prefix, jsonBytes, jpegBlob], { type: "application/octet-stream" });
+}
+
+function pruneRetainedFrames(now = Date.now()) {
+  for (const [frameId, entry] of retainedFrames) {
+    if (now - entry.at > RETAINED_FRAME_TTL_MS) retainedFrames.delete(frameId);
+  }
+  while (retainedFrames.size > MAX_RETAINED_FRAMES) {
+    retainedFrames.delete(retainedFrames.keys().next().value);
+  }
+}
+
+function clearRetainedFrames() {
+  pendingUpload = null;
+  retainedFrames.clear();
+}
+
+function handleCropRequests(cropRequests, frameId) {
+  if (!Array.isArray(cropRequests) || !cropRequests.length) return;
+  const connection = socket;
+  if (!connection || connection.readyState !== WebSocket.OPEN) return;
+  const generation = connectionGeneration;
+  const entry = retainedFrames.get(frameId);
+  if (!entry) return;
+  for (const request of cropRequests) {
+    if (!request || request.frame_id !== frameId) continue;
+    if (typeof request.session_version === "number" && request.session_version < sessionVersion) continue;
+    if (request.upload_width !== entry.width || request.upload_height !== entry.height) continue;
+    const rect = mapCropRect(request.bbox, entry.width, entry.height);
+    if (!rect) continue;
+    const source = entry.canvas;
+    const cropCanvas = document.createElement("canvas");
+    cropCanvas.width = rect.w;
+    cropCanvas.height = rect.h;
+    try {
+      cropCanvas.getContext("2d", { alpha: false, desynchronized: true })
+        .drawImage(source, rect.x, rect.y, rect.w, rect.h, 0, 0, rect.w, rect.h);
+    } catch (error) {
+      continue;
+    }
+    const header = {
+      request_id: request.request_id,
+      frame_id: request.frame_id,
+      track_id: request.track_id,
+      session_version: request.session_version,
+    };
+    cropCanvas.toBlob((blob) => {
+      if (socket !== connection || generation !== connectionGeneration) return;
+      if (!blob) return;
+      if (!running || connection.readyState !== WebSocket.OPEN) return;
+      try {
+        connection.send(buildCropEnvelope(header, blob));
+      } catch (error) {
+        // Crop delivery is best-effort; detection continues regardless.
+      }
+      // Crop sends never touch frameInFlight and never trigger detection.
+    }, "image/jpeg", CROP_JPEG_QUALITY);
+  }
+}
+
 function setStatus(message) {
   statusText.textContent = message;
 }
@@ -176,6 +284,7 @@ async function start() {
     const connection = new WebSocket(`${protocol}://${location.host}/ws/detect`);
     socket = connection;
     sessionVersion = -1;
+    clearRetainedFrames();
     connection.onopen = () => {
       if (socket !== connection) return;
       running = true;
@@ -184,17 +293,43 @@ async function start() {
     };
     connection.onmessage = (event) => {
       if (socket !== connection) return;
+      let response = null;
+      try {
+        response = JSON.parse(event.data);
+      } catch (error) {
+        stop(`Cannot process camera result: ${error.message}`);
+        return;
+      }
+      // Crop acknowledgments must not clear the detection-in-flight flag
+      // and must never trigger a duplicate detection send.
+      if (response && response.type === "crop_ack") return;
+      if (response && response.error) {
+        stop(`Server: ${response.error}`);
+        return;
+      }
       frameInFlight = false;
       try {
-        const response = JSON.parse(event.data);
-        if (response.error) {
-          stop(`Server: ${response.error}`);
-          return;
-        }
+        // Missing type means a legacy detection response (tests/back-compat).
         if (renderSession(response)) {
           showImage(response.image);
           renderCounts(response.visible_counts || {}, totalCount, classCounts, "No tracked products visible");
           renderIdentification(response.identification);
+        }
+        if (typeof response.frame_id === "number" && pendingUpload) {
+          retainedFrames.set(response.frame_id, pendingUpload);
+          pendingUpload = null;
+          pruneRetainedFrames();
+        } else {
+          pendingUpload = null;
+        }
+        // Stale sessions render nothing and request no crops, but the next
+        // detection still goes out to keep the single-frame pipeline moving.
+        if (response.session_version >= sessionVersion) {
+          handleCropRequests(response.crop_requests, response.frame_id);
+        }
+        if (typeof response.frame_id === "number") {
+          retainedFrames.delete(response.frame_id);
+          pruneRetainedFrames();
         }
         sendNextFrame();
       } catch (error) {
@@ -224,21 +359,34 @@ function sendNextFrame() {
   }
   // Detection runs on 640x480 server-side; uploads keep the higher camera
   // resolution so OCR crops stay legible. One frame in flight at a time.
+  // Upload size and JPEG quality are frozen in stage 1; only the retained
+  // copy (exact pixels just uploaded) is new, for later crop extraction.
   const sourceWidth = camera.videoWidth || 640;
   const sourceHeight = camera.videoHeight || 480;
   const scale = Math.min(1, 1280 / sourceWidth);
   canvas.width = Math.round(sourceWidth * scale);
   canvas.height = Math.round(sourceHeight * scale);
   canvas.getContext("2d", { alpha: false, desynchronized: true }).drawImage(camera, 0, 0, canvas.width, canvas.height);
+  try {
+    const copy = document.createElement("canvas");
+    copy.width = canvas.width;
+    copy.height = canvas.height;
+    copy.getContext("2d", { alpha: false, desynchronized: true }).drawImage(canvas, 0, 0);
+    pendingUpload = { canvas: copy, width: canvas.width, height: canvas.height, at: Date.now() };
+  } catch (error) {
+    pendingUpload = null;
+  }
   frameInFlight = true;
   const connection = socket;
   canvas.toBlob((blob) => {
     if (socket !== connection) return;
     if (!blob) {
+      pendingUpload = null;
       stop("Could not capture camera frame.");
       return;
     }
     if (resetting || !running || connection.readyState !== WebSocket.OPEN) {
+      pendingUpload = null;
       frameInFlight = false;
       return;
     }
@@ -250,6 +398,7 @@ function stop(message = "Stopped. Packed items are preserved.") {
   connectionGeneration += 1;
   running = false;
   frameInFlight = false;
+  clearRetainedFrames();
   const connection = socket;
   socket = null;
   if (connection) connection.close();
@@ -271,6 +420,9 @@ async function resetSession() {
   if (resetting) return;
   resetting = true;
   resetButton.disabled = true;
+  // Drop retained uploads: pending crop requests are tied to the old
+  // session and the server rejects them after the version bump.
+  clearRetainedFrames();
   try {
     const response = await fetch("/api/reset", { method: "POST" });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);

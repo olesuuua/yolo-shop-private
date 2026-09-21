@@ -170,6 +170,10 @@ def reset_session():
 
 @app.websocket("/ws/detect")
 async def detect_websocket(websocket: WebSocket):
+    import uuid
+
+    from vision import parse_client_message
+
     await websocket.accept()
     # A persistent YOLO tracker cannot mix frames from different cameras.
     if app.state.active_camera is not None:
@@ -177,15 +181,49 @@ async def detect_websocket(websocket: WebSocket):
         await websocket.close(code=1008)
         return
     app.state.active_camera = websocket
+    connection_id = uuid.uuid4().hex
+    processor = app.state.processor
+    processor.set_connection(connection_id)
     try:
         while True:
-            image_bytes = await websocket.receive_bytes()
-            try:
-                response = await asyncio.to_thread(app.state.processor.process, image_bytes)
-            except ValueError as error:
-                await websocket.send_json({"error": str(error)})
-                continue
-            await websocket.send_json(response)
+            message = await websocket.receive()
+            if message["type"] == "websocket.disconnect":
+                break
+            if "bytes" in message and message["bytes"] is not None:
+                payload = message["bytes"]
+                try:
+                    kind, header, jpeg = parse_client_message(payload)
+                except ValueError as error:
+                    await websocket.send_json({"error": str(error)})
+                    continue
+                if kind == "crop":
+                    # Crop responses go straight to the background OCR
+                    # pipeline; they never advance the packing tracker.
+                    try:
+                        ack = await asyncio.to_thread(
+                            processor.process_crop_response, header, jpeg,
+                            connection_id)
+                    except Exception:
+                        logger.exception("Could not process OCR crop")
+                        ack = {"type": "crop_ack",
+                               "request_id": header.get("request_id", "")
+                               if isinstance(header, dict) else "",
+                               "ok": False, "reason": "internal"}
+                    await websocket.send_json(ack)
+                    continue
+                try:
+                    response = await asyncio.to_thread(
+                        processor.process_detect, jpeg, connection_id)
+                except ValueError as error:
+                    await websocket.send_json({"error": str(error)})
+                    continue
+                await websocket.send_json(response)
+            elif "text" in message and message["text"] is not None:
+                await websocket.send_json(
+                    {"error": "Use binary JPEG for detection frames and "
+                              "enveloped binary messages for OCR crops."})
+            else:
+                break
     except WebSocketDisconnect:
         pass
     except Exception:
@@ -196,5 +234,9 @@ async def detect_websocket(websocket: WebSocket):
         except (RuntimeError, WebSocketDisconnect):
             pass
     finally:
+        try:
+            processor.clear_connection(connection_id)
+        except Exception:
+            logger.exception("Could not release crop requests")
         if app.state.active_camera is websocket:
             app.state.active_camera = None

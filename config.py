@@ -162,3 +162,20 @@ OCR_CROP_JPEG_QUALITY = 85
 # while tolerating brief detection flicker. ByteTrack may reuse an ID for
 # a newly placed bottle, so evidence must not outlive a visible gap.
 IDENT_ABSENT_FRAMES = 3
+# Stage 1: browser-supplied OCR crops (detection frames stay raw JPEG).
+# The backend assigns each detection frame a frame_id, returns crop
+# requests in the detection response, and accepts crop JPEGs as enveloped
+# binary messages (see docs/detect-crop-protocol.md). Detection upload
+# resolution and JPEG quality are unchanged in this stage.
+# Pending crop requests per connection/session; one slot per track keeps
+# the latest view while already accumulated OCR evidence is preserved.
+MAX_PENDING_CROP_REQUESTS = 16
+# Upper bound on crop requests attached to a single detection response so
+# one crowded frame cannot flood the browser/uplink.
+MAX_CROP_REQUESTS_PER_FRAME = 4
+# Unanswered crop requests expire; late browser responses are rejected so
+# old evidence cannot attach to a reused track ID.
+CROP_REQUEST_TTL_S = 8.0
+# Crop JPEG responses share the detection frame size cap; larger payloads
+# are rejected instead of entering the OCR queue.
+MAX_CROP_RESPONSE_BYTES = 2_000_000

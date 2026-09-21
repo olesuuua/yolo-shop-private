@@ -379,6 +379,44 @@ class IdentificationService:
             if crop_wh:
                 evidence.last_crop_wh = tuple(crop_wh)
 
+    def touch(self, track_id, hint):
+        """Mark a track seen by detection without touching sharpness/crop
+        state. Stage 1 calls this per detection frame; sharpness and crop
+        dimensions are recorded later when the browser-supplied crop
+        arrives, keeping image-dependent quality checks on the backend."""
+        now = time.monotonic()
+        with self.lock:
+            evidence = self.tracks.get(track_id)
+            if evidence is None:
+                evidence = self.tracks[track_id] = TrackEvidence(hint=hint or "")
+            if hint:
+                evidence.hint = hint
+            evidence.last_seen_time = now
+            if evidence.first_seen_at is None:
+                evidence.first_seen_at = now
+            evidence.absent_frames = 0
+            return evidence
+
+    def request_due(self, track_id, hint=None):
+        """Read-only eligibility peek for crop requests (stage 1).
+
+        Mirrors submit() throttling/completion gates without consuming
+        quota or queueing work: True means the backend may ask the browser
+        for a fresh crop. The actual submit() on crop receipt re-checks
+        throttling, completion and duplicate-image state, so requests that
+        arrive too often only cost uplink, never duplicate OCR work."""
+        now = time.monotonic()
+        with self.lock:
+            evidence = self.tracks.get(track_id)
+            if evidence is not None and evidence.complete:
+                return False
+            if evidence is not None:
+                interval = (self.config.submit_interval_s if evidence.ocr_runs
+                            else self.config.submit_interval_empty_s)
+                if now - evidence.last_submit_time < interval:
+                    return False
+            return not self.ocr_gave_up
+
     def note_capture(self, upload_wh, fps, detect_ms):
         with self.lock:
             self.capture = {"upload_wh": tuple(upload_wh), "fps": round(fps, 2),
