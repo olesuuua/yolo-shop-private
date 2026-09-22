@@ -1,0 +1,32 @@
+[
+  {
+    "file": "data/local/videos/20260921_205640.mp4",
+    "width": 3840,
+    "height": 2160,
+    "fps": 59.06181826752462,
+    "frames": 2840,
+    "duration_s": 48.08521111111111,
+    "bytes": 312453058,
+    "sha256": "841927d09cad938f3e601b1b95f2edb0c4d195132aff81450cb8d6e05cea7739"
+  },
+  {
+    "file": "data/local/videos/20260921_205735.mp4",
+    "width": 3840,
+    "height": 2160,
+    "fps": 60.08172069113379,
+    "frames": 671,
+    "duration_s": 11.168122222222223,
+    "bytes": 72049743,
+    "sha256": "1540799418793371bcd45a2062dc081d71c60dc722cc88665560157c29389edf"
+  },
+  {
+    "file": "data/local/videos/20260921_205754.mp4",
+    "width": 3840,
+    "height": 2160,
+    "fps": 59.5323889140551,
+    "frames": 771,
+    "duration_s": 12.950933333333333,
+    "bytes": 83537631,
+    "sha256": "c0aa9b149bed11e346090745607efd913749f12e6a7ea24ca5ccef8dad52321f"
+  }
+]

@@ -502,3 +502,5 @@ or tracking accuracy.
   barcodes or custom training. It does not subtract items when they leave the bag.
 - Follow the existing Ultralytics/PyTorch platform requirements. GPU acceleration
   is optional; achievable frame rate depends on the computer.
+
+Browser video replay and evidence export: [instructions](docs/video-replay.md).

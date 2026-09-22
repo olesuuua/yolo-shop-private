@@ -1,0 +1,12 @@
+{
+  "capture": {
+    "upload_wh": [
+      640,
+      480
+    ],
+    "fps": 6.24,
+    "detect_ms": 159.4
+  },
+  "queue_depth": 0,
+  "tracks": {}
+}

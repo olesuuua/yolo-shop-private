@@ -1,0 +1,14 @@
+{
+  "platform": "Linux-7.0.0-31-generic-x86_64-with-glibc2.43",
+  "sha256": {
+    "static/app.js": "6d26ef4fd1dc9ed519ff2b169ac35097fb9ab2ed7b8622d99856df80f71773ae",
+    "static/index.html": "e38bbce1e366e7a5eecc14fa7da539653a106595ea7154029415ecd3e92c95a8",
+    "app.py": "e317dde91338d623af122d5f85046fc837e4156daf6bc4722907d646e6c786f6",
+    "vision.py": "857b512784060d3b14fceb8944d9db2f787caa4453dbe833380e8df00e27d69c",
+    "identification.py": "f0bdb1a10989c34b67cb87105a9633db73254aaf6fef860206519bd7b663a1f5",
+    "config.py": "8cf148927aa9b4ac764f32e74c453452ad649e9b1e438210606ebcb385590f56",
+    "jev_catalog.py": "a9f8162985b79b009aaf348237d265184c05cfaaa9cda3c2587d6c113e7f0285",
+    "data/local/catalog.json": "911ed31ad14b8a8f6f915cb29686f20865804c998fa6aaa8a7e21ae808c66a95",
+    "bytetrack-ppyoloe.yaml": "a009c54ba247485a416d85fb18cda351dace852cc5cfddfc2a98984c5dbfe35f"
+  }
+}

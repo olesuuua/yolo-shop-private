@@ -1,0 +1,284 @@
+{
+  "capture": {
+    "upload_wh": [
+      640,
+      480
+    ],
+    "fps": 1.23,
+    "detect_ms": 302.0
+  },
+  "queue_depth": 0,
+  "tracks": {
+    "1": {
+      "hint": "Bottle",
+      "status": "needs_more_evidence",
+      "complete": false,
+      "choice": null,
+      "confidence": null,
+      "submitted": 5,
+      "ocr_runs": 5,
+      "dedup_skips": 0,
+      "stale_replaced": 0,
+      "sharpness": 19.3,
+      "crop_wh": [
+        522,
+        1199
+      ],
+      "absent_frames": 0,
+      "jev_error": "Comparison Jev authorization cap reached; no external call made.",
+      "t_first_seen": 0.0,
+      "t_first_submit": 0.38,
+      "t_first_ocr_done": 0.8,
+      "t_first_ident": null,
+      "last_ocr_ms": 481.8,
+      "last_jev_ms": 0.1,
+      "lines": [
+        {
+          "text": "2,5%",
+          "score": 0.966,
+          "hits": 4
+        },
+        {
+          "text": "6LU8E112",
+          "score": 0.36,
+          "hits": 1
+        },
+        {
+          "text": "AU10",
+          "score": 0.324,
+          "hits": 1
+        },
+        {
+          "text": "MO",
+          "score": 0.897,
+          "hits": 1
+        },
+        {
+          "text": "POCTO",
+          "score": 0.92,
+          "hits": 1
+        },
+        {
+          "text": "S1",
+          "score": 0.3,
+          "hits": 1
+        },
+        {
+          "text": "U1",
+          "score": 0.392,
+          "hits": 1
+        },
+        {
+          "text": "МОЛОКО",
+          "score": 0.9,
+          "hits": 4
+        }
+      ]
+    },
+    "4": {
+      "hint": "Bottle",
+      "status": "needs_more_evidence",
+      "complete": false,
+      "choice": null,
+      "confidence": null,
+      "submitted": 5,
+      "ocr_runs": 5,
+      "dedup_skips": 0,
+      "stale_replaced": 0,
+      "sharpness": 20.8,
+      "crop_wh": [
+        511,
+        1008
+      ],
+      "absent_frames": 0,
+      "jev_error": "Comparison Jev authorization cap reached; no external call made.",
+      "t_first_seen": 0.0,
+      "t_first_submit": 0.4,
+      "t_first_ocr_done": 1.59,
+      "t_first_ident": 2.44,
+      "last_ocr_ms": 253.7,
+      "last_jev_ms": 0.1,
+      "lines": [
+        {
+          "text": "1M",
+          "score": 0.289,
+          "hits": 1
+        },
+        {
+          "text": "AKB",
+          "score": 0.99,
+          "hits": 4
+        },
+        {
+          "text": "AKBI",
+          "score": 0.858,
+          "hits": 1
+        },
+        {
+          "text": "CK",
+          "score": 0.783,
+          "hits": 1
+        },
+        {
+          "text": "CKA",
+          "score": 0.97,
+          "hits": 1
+        }
+      ]
+    },
+    "5": {
+      "hint": "Bottle",
+      "status": "needs_more_evidence",
+      "complete": false,
+      "choice": null,
+      "confidence": null,
+      "submitted": 3,
+      "ocr_runs": 3,
+      "dedup_skips": 0,
+      "stale_replaced": 0,
+      "sharpness": 14.9,
+      "crop_wh": [
+        642,
+        1126
+      ],
+      "absent_frames": 1,
+      "jev_error": "Comparison Jev authorization cap reached; no external call made.",
+      "t_first_seen": 0.0,
+      "t_first_submit": 1.49,
+      "t_first_ocr_done": 1.97,
+      "t_first_ident": null,
+      "last_ocr_ms": 246.4,
+      "last_jev_ms": 0.1,
+      "lines": [
+        {
+          "text": "CEНЕЖCKА",
+          "score": 0.567,
+          "hits": 1
+        },
+        {
+          "text": "СЕНЕЖCКА",
+          "score": 0.605,
+          "hits": 2
+        }
+      ]
+    },
+    "7": {
+      "hint": "Bottle",
+      "status": "needs_more_evidence",
+      "complete": false,
+      "choice": null,
+      "confidence": null,
+      "submitted": 3,
+      "ocr_runs": 3,
+      "dedup_skips": 0,
+      "stale_replaced": 0,
+      "sharpness": 19.0,
+      "crop_wh": [
+        514,
+        893
+      ],
+      "absent_frames": 0,
+      "jev_error": "Comparison Jev authorization cap reached; no external call made.",
+      "t_first_seen": 5.96,
+      "t_first_submit": 6.65,
+      "t_first_ocr_done": 7.33,
+      "t_first_ident": null,
+      "last_ocr_ms": 588.4,
+      "last_jev_ms": 0.0,
+      "lines": [
+        {
+          "text": "033",
+          "score": 0.997,
+          "hits": 2
+        },
+        {
+          "text": "2,5%",
+          "score": 0.761,
+          "hits": 1
+        },
+        {
+          "text": "UC",
+          "score": 0.888,
+          "hits": 1
+        },
+        {
+          "text": "UCr",
+          "score": 0.763,
+          "hits": 1
+        }
+      ]
+    },
+    "8": {
+      "hint": "Bottle",
+      "status": "needs_more_evidence",
+      "complete": false,
+      "choice": null,
+      "confidence": null,
+      "submitted": 2,
+      "ocr_runs": 2,
+      "dedup_skips": 0,
+      "stale_replaced": 0,
+      "sharpness": 19.7,
+      "crop_wh": [
+        786,
+        1179
+      ],
+      "absent_frames": 0,
+      "jev_error": "Comparison Jev authorization cap reached; no external call made.",
+      "t_first_seen": 6.96,
+      "t_first_submit": 7.67,
+      "t_first_ocr_done": 8.16,
+      "t_first_ident": null,
+      "last_ocr_ms": 631.9,
+      "last_jev_ms": 0.1,
+      "lines": [
+        {
+          "text": "12",
+          "score": 0.614,
+          "hits": 1
+        },
+        {
+          "text": "uc",
+          "score": 0.777,
+          "hits": 1
+        }
+      ]
+    },
+    "3": {
+      "hint": "Bottle",
+      "status": "needs_more_evidence",
+      "complete": false,
+      "choice": null,
+      "confidence": null,
+      "submitted": 1,
+      "ocr_runs": 1,
+      "dedup_skips": 0,
+      "stale_replaced": 0,
+      "sharpness": 23.3,
+      "crop_wh": [
+        516,
+        883
+      ],
+      "absent_frames": 0,
+      "jev_error": "Comparison Jev authorization cap reached; no external call made.",
+      "t_first_seen": 9.76,
+      "t_first_submit": 11.88,
+      "t_first_ocr_done": 13.33,
+      "t_first_ident": null,
+      "last_ocr_ms": 492.7,
+      "last_jev_ms": 0.1,
+      "lines": [
+        {
+          "text": "2,5%",
+          "score": 0.964,
+          "hits": 1
+        },
+        {
+          "text": "СЕНЕЖСКАЯ",
+          "score": 0.82,
+          "hits": 1
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "requests_checked": 329,
+  "jpeg_images_checked": 329,
+  "coordinate_scale": [
+    6,
+    4.5
+  ],
+  "margin": 0.08,
+  "mismatches": [],
+  "limitation": "Mapping numbers and JPEG dimensions match; original capture omitted at 4K, so exact decoded-frame identity is not independently verified."
+}

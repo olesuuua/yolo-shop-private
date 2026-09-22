@@ -1,0 +1,34 @@
+{
+  "v2-warm-b": {
+    "max_detection_inflight": 1,
+    "remaining_detection": 0,
+    "responses_older_than_reset_ack": []
+  },
+  "v3-warm-a": {
+    "max_detection_inflight": 1,
+    "remaining_detection": 0,
+    "responses_older_than_reset_ack": []
+  },
+  "v3-warm-b": {
+    "max_detection_inflight": 1,
+    "remaining_detection": 0,
+    "responses_older_than_reset_ack": []
+  },
+  "v2-warm-a": {
+    "max_detection_inflight": 1,
+    "remaining_detection": 0,
+    "responses_older_than_reset_ack": []
+  },
+  "v1-ocr-cold": {
+    "max_detection_inflight": 1,
+    "remaining_detection": 0,
+    "responses_older_than_reset_ack": []
+  },
+  "v1-warm": {
+    "max_detection_inflight": 1,
+    "remaining_detection": 0,
+    "responses_older_than_reset_ack": []
+  },
+  "cross_session_jev_sources": [],
+  "limit": "No deliberate reset during an in-flight Jev request; logs do not prove race freedom."
+}

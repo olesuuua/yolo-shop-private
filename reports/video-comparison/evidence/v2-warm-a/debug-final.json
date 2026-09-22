@@ -1,0 +1,192 @@
+{
+  "capture": {
+    "upload_wh": [
+      640,
+      480
+    ],
+    "fps": 1.36,
+    "detect_ms": 205.2
+  },
+  "queue_depth": 0,
+  "tracks": {
+    "1": {
+      "hint": "Bottle",
+      "status": "needs_more_evidence",
+      "complete": false,
+      "choice": null,
+      "confidence": null,
+      "submitted": 4,
+      "ocr_runs": 2,
+      "dedup_skips": 2,
+      "stale_replaced": 0,
+      "sharpness": 27.9,
+      "crop_wh": [
+        526,
+        1079
+      ],
+      "absent_frames": 0,
+      "jev_error": "",
+      "t_first_seen": 0.0,
+      "t_first_submit": 0.39,
+      "t_first_ocr_done": 1.31,
+      "t_first_ident": null,
+      "last_ocr_ms": 583.9,
+      "last_jev_ms": 843.0,
+      "lines": [
+        {
+          "text": "BЕР",
+          "score": 0.506,
+          "hits": 1
+        },
+        {
+          "text": "npo",
+          "score": 0.661,
+          "hits": 1
+        },
+        {
+          "text": "ФЕРМ",
+          "score": 0.738,
+          "hits": 1
+        }
+      ]
+    },
+    "2": {
+      "hint": "Bottle",
+      "status": "needs_more_evidence",
+      "complete": false,
+      "choice": null,
+      "confidence": null,
+      "submitted": 3,
+      "ocr_runs": 2,
+      "dedup_skips": 1,
+      "stale_replaced": 0,
+      "sharpness": 22.8,
+      "crop_wh": [
+        470,
+        746
+      ],
+      "absent_frames": 0,
+      "jev_error": "",
+      "t_first_seen": 0.0,
+      "t_first_submit": 3.82,
+      "t_first_ocr_done": 4.56,
+      "t_first_ident": null,
+      "last_ocr_ms": 161.3,
+      "last_jev_ms": 0.0,
+      "lines": []
+    },
+    "3": {
+      "hint": "Bottle",
+      "status": "needs_more_evidence",
+      "complete": false,
+      "choice": null,
+      "confidence": null,
+      "submitted": 4,
+      "ocr_runs": 4,
+      "dedup_skips": 0,
+      "stale_replaced": 0,
+      "sharpness": 44.7,
+      "crop_wh": [
+        439,
+        1051
+      ],
+      "absent_frames": 0,
+      "jev_error": "",
+      "t_first_seen": 0.0,
+      "t_first_submit": 0.4,
+      "t_first_ocr_done": 2.12,
+      "t_first_ident": null,
+      "last_ocr_ms": 601.1,
+      "last_jev_ms": 863.1,
+      "lines": [
+        {
+          "text": "2,5%",
+          "score": 0.959,
+          "hits": 4
+        },
+        {
+          "text": "681",
+          "score": 0.396,
+          "hits": 1
+        },
+        {
+          "text": "802",
+          "score": 0.349,
+          "hits": 1
+        },
+        {
+          "text": "МОЛОКО",
+          "score": 0.886,
+          "hits": 4
+        }
+      ]
+    },
+    "4": {
+      "hint": "Bottle",
+      "status": "candidate",
+      "complete": true,
+      "choice": "aqua-minerale-0-5l",
+      "confidence": 0.83,
+      "submitted": 2,
+      "ocr_runs": 1,
+      "dedup_skips": 0,
+      "stale_replaced": 0,
+      "sharpness": 17.9,
+      "crop_wh": [
+        453,
+        1011
+      ],
+      "absent_frames": 0,
+      "jev_error": "",
+      "t_first_seen": 0.0,
+      "t_first_submit": 0.4,
+      "t_first_ocr_done": 2.52,
+      "t_first_ident": 3.37,
+      "last_ocr_ms": 394.6,
+      "last_jev_ms": 853.4,
+      "lines": [
+        {
+          "text": "AKBA",
+          "score": 0.983,
+          "hits": 1
+        },
+        {
+          "text": "МИH",
+          "score": 0.401,
+          "hits": 1
+        }
+      ]
+    },
+    "5": {
+      "hint": "Bottle",
+      "status": "candidate",
+      "complete": true,
+      "choice": "senezhskaya-0-5l",
+      "confidence": 0.98,
+      "submitted": 2,
+      "ocr_runs": 1,
+      "dedup_skips": 0,
+      "stale_replaced": 0,
+      "sharpness": 25.0,
+      "crop_wh": [
+        496,
+        905
+      ],
+      "absent_frames": 0,
+      "jev_error": "",
+      "t_first_seen": 0.0,
+      "t_first_submit": 1.52,
+      "t_first_ocr_done": 3.12,
+      "t_first_ident": 3.94,
+      "last_ocr_ms": 594.5,
+      "last_jev_ms": 822.7,
+      "lines": [
+        {
+          "text": "СЕНЕЖСКАЯ",
+          "score": 0.831,
+          "hits": 1
+        }
+      ]
+    }
+  }
+}

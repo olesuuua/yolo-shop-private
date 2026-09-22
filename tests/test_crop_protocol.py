@@ -8,9 +8,10 @@ import cv2
 import numpy as np
 
 from config import (
-    FOOD_CLASSES, MAX_CROP_REQUESTS_PER_FRAME, MAX_PENDING_CROP_REQUESTS,
+    FOOD_CLASSES, MAX_CROP_REQUESTS_PER_FRAME, MAX_CROP_TOMBSTONES,
+    MAX_OUTSTANDING_CROP_REQUESTS_PER_TRACK, MAX_PENDING_CROP_REQUESTS,
 )
-from identification import IdentificationService
+from identification import IdentificationService, IdentConfig
 from vision import (
     CROP_COORD_SPACE, FrameProcessor, build_crop_envelope,
     parse_client_message, upload_crop_rect,
@@ -82,6 +83,13 @@ def processor_with(rows_per_frame, **kwargs):
 def detect(proc, model, rows, connection="conn-1"):
     model.frames.append(rows)
     return proc.process_detect(jpeg_bytes(), connection_id=connection)
+
+
+def issue_request(proc, model, track=7, connection="conn-1"):
+    response = detect(proc, model, [(BOX, CLASS_IDS[PRIMARY], track)],
+                      connection=connection)
+    assert len(response["crop_requests"]) == 1, response["crop_requests"]
+    return response["crop_requests"][0], response["frame_id"]
 
 
 class RoutingTests(unittest.TestCase):
@@ -185,27 +193,35 @@ class DetectionRequestTests(unittest.TestCase):
             track += 4
         self.assertLessEqual(len(proc2.crop_pending), MAX_PENDING_CROP_REQUESTS)
 
-    def test_latest_pending_per_track_replaces_but_keeps_evidence(self):
+    def test_outstanding_request_survives_newer_detections(self):
         proc, model, service = processor_with([])
         first = detect(proc, model, [(BOX, CLASS_IDS[PRIMARY], 7)])
-        request_id = first["crop_requests"][0]["request_id"]
+        request = first["crop_requests"][0]
         service._merge(7, PRIMARY, [{"text": "AQUA", "score": 0.9}])
         # Force re-eligibility: pretend the throttle interval has passed.
         service.tracks[7].last_submit_time -= 1000
         service.tracks[7].last_ocr_hash = None
-        second = detect(proc, model, [(BOX, CLASS_IDS[PRIMARY], 7)])
-        self.assertEqual(len(second["crop_requests"]), 1)
-        self.assertNotEqual(second["crop_requests"][0]["request_id"], request_id)
+        # Several newer detections must not invalidate the travelling crop
+        # or duplicate the outstanding request for this track.
+        for _ in range(5):
+            detect(proc, model, [(BOX, CLASS_IDS[PRIMARY], 7)])
         self.assertEqual(len(proc.crop_pending), 1)
+        self.assertIn(request["request_id"], proc.crop_pending)
+        header = {"request_id": request["request_id"], "frame_id": request["frame_id"],
+                  "track_id": request["track_id"],
+                  "session_version": request["session_version"]}
+        ack = proc.process_crop_response(header, sharp_crop_jpeg(),
+                                         connection_id="conn-1")
+        self.assertTrue(ack["ok"], ack)
+        self.assertEqual(ack["reason"], "accepted")
+        with service.slot_lock:
+            self.assertIn(request["track_id"], service.slots)
         self.assertIn("AQUA", service.tracks[7].lines)
 
 
 class CropResponseTests(unittest.TestCase):
     def request(self, proc, model, track=7, connection="conn-1"):
-        response = detect(proc, model, [(BOX, CLASS_IDS[PRIMARY], track)],
-                          connection=connection)
-        self.assertEqual(len(response["crop_requests"]), 1)
-        return response["crop_requests"][0], response["frame_id"]
+        return issue_request(proc, model, track=track, connection=connection)
 
     def test_accepted_crop_reaches_ocr_without_advancing_tracker(self):
         proc, model, service = processor_with([])
@@ -238,7 +254,7 @@ class CropResponseTests(unittest.TestCase):
         second = proc.process_crop_response(header, sharp_crop_jpeg(),
                                             connection_id="conn-1")
         self.assertFalse(second["ok"])
-        self.assertEqual(second["reason"], "unknown_request")
+        self.assertEqual(second["reason"], "duplicate")
 
     def test_mismatched_frame_track_and_bad_header_rejected(self):
         proc, model, _ = processor_with([])
@@ -306,7 +322,7 @@ class CropResponseTests(unittest.TestCase):
         ack = proc.process_crop_response(header, sharp_crop_jpeg(),
                                          connection_id="conn-1")
         self.assertFalse(ack["ok"])
-        self.assertIn(ack["reason"], ("unknown_request", "session_mismatch"))
+        self.assertEqual(ack["reason"], "session_mismatch")
 
         proc2, model2, _ = processor_with([])
         request2, _ = self.request(proc2, model2, connection="conn-A")
@@ -318,6 +334,7 @@ class CropResponseTests(unittest.TestCase):
         ack2 = proc2.process_crop_response(header2, sharp_crop_jpeg(),
                                            connection_id="conn-A")
         self.assertFalse(ack2["ok"])
+        self.assertEqual(ack2["reason"], "connection_mismatch")
 
         proc3, model3, service3 = processor_with([])
         request3, _ = self.request(proc3, model3, track=21)
@@ -331,10 +348,11 @@ class CropResponseTests(unittest.TestCase):
         ack3 = proc3.process_crop_response(header3, sharp_crop_jpeg(),
                                            connection_id="conn-1")
         self.assertFalse(ack3["ok"])
+        self.assertEqual(ack3["reason"], "expired")
 
     def test_track_expiry_cannot_attach_to_reused_id(self):
         proc, model, service = processor_with([])
-        request, _ = self.request(proc, model, track=7)
+        request, _ = issue_request(proc, model, track=7)
         header = {"request_id": request["request_id"], "frame_id": request["frame_id"],
                   "track_id": request["track_id"],
                   "session_version": request["session_version"]}
@@ -361,6 +379,81 @@ class CropResponseTests(unittest.TestCase):
                                          connection_id="conn-B")
         self.assertFalse(ack["ok"])
         self.assertEqual(ack["reason"], "connection_mismatch")
+
+
+class InFlightRequestTests(unittest.TestCase):
+    """A newer detection must not invalidate a travelling crop request."""
+
+    def test_expired_request_does_not_starve_the_next_request(self):
+        proc, model, service = processor_with([])
+        first = detect(proc, model, [(BOX, CLASS_IDS[PRIMARY], 7)])
+        first_id = first["crop_requests"][0]["request_id"]
+        # Age past the TTL and past the submit throttle, then detect again.
+        for record in proc.crop_pending.values():
+            record["issued_at"] -= 1000
+        service.tracks[7].last_submit_time -= 1000
+        second = detect(proc, model, [(BOX, CLASS_IDS[PRIMARY], 7)])
+        self.assertEqual(len(second["crop_requests"]), 1)
+        self.assertNotEqual(second["crop_requests"][0]["request_id"], first_id)
+        self.assertEqual(proc.crop_tombstones.get(first_id), "expired")
+        self.assertEqual(len(proc.crop_pending), 1)
+
+    def test_invalidated_track_request_is_retired_and_replaced(self):
+        proc, model, service = processor_with([])
+        request, _ = issue_request(proc, model, track=7)
+        old_ref = proc.crop_pending[request["request_id"]]["evidence_ref"]
+        from config import IDENT_ABSENT_FRAMES
+        for _ in range(IDENT_ABSENT_FRAMES + 2):
+            service.prune(set())
+        service.touch(7, PRIMARY)
+        response = detect(proc, model, [(BOX, CLASS_IDS[PRIMARY], 7)])
+        self.assertEqual(len(response["crop_requests"]), 1)
+        self.assertNotEqual(response["crop_requests"][0]["request_id"],
+                            request["request_id"])
+        self.assertEqual(proc.crop_tombstones.get(request["request_id"]),
+                         "track_expired")
+        # The old crop can never attach to the reused numeric ID.
+        header = {"request_id": request["request_id"], "frame_id": request["frame_id"],
+                  "track_id": request["track_id"],
+                  "session_version": request["session_version"]}
+        ack = proc.process_crop_response(header, sharp_crop_jpeg(),
+                                         connection_id="conn-1")
+        self.assertFalse(ack["ok"])
+        self.assertEqual(ack["reason"], "track_expired")
+
+    def test_out_of_order_crop_cannot_replace_newer_pending_work(self):
+        service = IdentificationService(
+            config=IdentConfig(submit_interval_empty_s=0))
+        self.assertTrue(service.submit(7, "bottle", b"newer", frame_id=10))
+        self.assertEqual(service.submit(7, "bottle", b"older", frame_id=2),
+                         "stale")
+        self.assertEqual(service._take_slot(), (7, b"newer"))
+        # The stale drop leaves the track able to submit newer work.
+        self.assertTrue(service.submit(7, "bottle", b"newest", frame_id=11))
+        self.assertEqual(service._take_slot(), (7, b"newest"))
+
+    def test_per_track_outstanding_limit_is_explicit(self):
+        proc, model, _ = processor_with([])
+        detect(proc, model, [(BOX, CLASS_IDS[PRIMARY], 7)])
+        self.assertLessEqual(len(proc.crop_by_track),
+                             MAX_OUTSTANDING_CROP_REQUESTS_PER_TRACK)
+        self.assertEqual(len(proc.crop_by_track), 1)
+
+    def test_tombstones_are_bounded(self):
+        proc, model, service = processor_with([])
+        for index in range(150):
+            response = detect(proc, model, [])
+            proc._tombstone(f"unknown-{index}", "duplicate")
+        self.assertLessEqual(len(proc.crop_tombstones), MAX_CROP_TOMBSTONES)
+
+    def test_detection_continues_while_crop_pending(self):
+        proc, model, _ = processor_with([])
+        first = detect(proc, model, [(BOX, CLASS_IDS[PRIMARY], 7)])
+        self.assertEqual(len(first["crop_requests"]), 1)
+        # The pending request does not gate detection frames.
+        second = detect(proc, model, [(BOX, CLASS_IDS[PRIMARY], 7)])
+        self.assertEqual(second["frame_id"], first["frame_id"] + 1)
+        self.assertEqual(second["crop_requests"], [])
 
 
 class Stage2Tests(unittest.TestCase):

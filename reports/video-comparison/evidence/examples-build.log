@@ -1,0 +1,80 @@
+[
+  {
+    "request_id": "361:2:4",
+    "sample_video_timestamp": 3.322726,
+    "reconstructed_time": 3.1211864406779664,
+    "match_ncc": 0.9972302515790027
+  },
+  {
+    "request_id": "374:4:13",
+    "sample_video_timestamp": 10.875196,
+    "reconstructed_time": 10.595593220338984,
+    "match_ncc": 0.9979997981866637
+  },
+  {
+    "request_id": "388:2:31",
+    "sample_video_timestamp": 19.43475,
+    "reconstructed_time": 19.301525423728812,
+    "match_ncc": 0.9951401733419285
+  },
+  {
+    "request_id": "404:2:61",
+    "sample_video_timestamp": 28.535681,
+    "reconstructed_time": 28.327966101694916,
+    "match_ncc": 0.9955100642063177
+  },
+  {
+    "request_id": "422:6:109",
+    "sample_video_timestamp": 39.419704,
+    "reconstructed_time": 39.1935593220339,
+    "match_ncc": 0.9984917731481119
+  },
+  {
+    "request_id": "437:4:122",
+    "sample_video_timestamp": 0.683088,
+    "reconstructed_time": 0.5992000000000001,
+    "match_ncc": 0.9964656990336236
+  },
+  {
+    "request_id": "553:4:285",
+    "sample_video_timestamp": 1.951667,
+    "reconstructed_time": 1.6144,
+    "match_ncc": 0.9927342003303007
+  },
+  {
+    "request_id": "437:3:121",
+    "sample_video_timestamp": 0.683088,
+    "reconstructed_time": 0.5992000000000001,
+    "match_ncc": 0.9980392215455846
+  },
+  {
+    "request_id": "452:4:140",
+    "sample_video_timestamp": 0.710214,
+    "reconstructed_time": 0.5736134453781513,
+    "match_ncc": 0.9961453433517949
+  },
+  {
+    "request_id": "463:7:160",
+    "sample_video_timestamp": 8.602287,
+    "reconstructed_time": 8.233613445378152,
+    "match_ncc": 0.9979010418183838
+  },
+  {
+    "request_id": "455:3:148",
+    "sample_video_timestamp": 2.725916,
+    "reconstructed_time": 2.5813445378151263,
+    "match_ncc": 0.9989993140960702
+  },
+  {
+    "request_id": "580:3:329",
+    "sample_video_timestamp": 12.25208,
+    "reconstructed_time": 11.952100840336135,
+    "match_ncc": 0.9977521592514559
+  },
+  {
+    "request_id": "571:3:311",
+    "sample_video_timestamp": 3.643612,
+    "reconstructed_time": 3.4250420168067226,
+    "match_ncc": 0.9987870123113871
+  }
+]

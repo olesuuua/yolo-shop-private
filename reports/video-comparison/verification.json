@@ -1,0 +1,12 @@
+{
+  "crop_records": 329,
+  "native_crop_files_verified": 329,
+  "gallery_panels_loaded_in_chrome": 13,
+  "external_attempts": 40,
+  "external_valid_results": 37,
+  "external_errors": 3,
+  "broken_report_links": [],
+  "project_source_unchanged": true,
+  "recognition_fixes_implemented": false,
+  "comparison_processes_stopped": true
+}

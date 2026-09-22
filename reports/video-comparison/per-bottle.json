@@ -1,0 +1,1574 @@
+[
+  {
+    "run": "v1-ocr-cold",
+    "physical_id": "A",
+    "expected_sku": "aqua-minerale-0-5l",
+    "first_detection_video_s": 1.726596,
+    "first_detection_frame_id": 358,
+    "track_ids": [
+      2,
+      4
+    ],
+    "first_ocr_submission_video_s": 3.322726,
+    "first_ocr_submission_request_id": "361:2:4",
+    "first_ocr_completion_request_id": "361:2:4",
+    "first_ocr_completion_video_of_crop_s": 3.322726,
+    "first_ocr_completion_observed": {
+      "request_id": "361:2:4",
+      "browser_observed_wall_s": 7.347
+    },
+    "first_correct_candidate": {
+      "browser_wall_since_play_s": 7.847,
+      "browser_ms": 7975.799999999814,
+      "track_id": 2,
+      "choice": "aqua-minerale-0-5l",
+      "confidence": 0.77,
+      "source_video_time_latest": 6.939285
+    },
+    "first_correct_completed": {
+      "browser_wall_since_play_s": 7.847,
+      "browser_ms": 7975.799999999814,
+      "track_id": 2,
+      "choice": "aqua-minerale-0-5l",
+      "confidence": 0.77,
+      "source_video_time_latest": 6.939285
+    },
+    "crop_requests": 59,
+    "accepted_submissions": 3,
+    "ocr_runs": 3,
+    "duplicate_skips": 0,
+    "rejections": {
+      "unknown_request": 5,
+      "blurry": 51
+    },
+    "source_bottle_height_px": {
+      "n": 75,
+      "median": 1452.08,
+      "min": 1153.02,
+      "p90": 1529.69,
+      "max": 1604.43
+    },
+    "observed_detection_to_completed_wall_s": 5.165,
+    "jev_calls": 2,
+    "jev_errors": 0,
+    "first_useful_brand_ocr_request": "361:2:4",
+    "first_useful_brand_ocr_video_s": 3.322726,
+    "brand_ocr_note": "brand-supporting OCR; not SKU verification",
+    "first_useful_variant_ocr_request": null,
+    "exact_size_confirmed_by_ocr": false,
+    "first_clear_label_opportunity_source_s": 2,
+    "opportunity_note": "manual inspected opportunity, not exact onset; readable brand versus generic label distinguished in ground-truth.md",
+    "jev_censored_by_call_cap": false,
+    "first_submission_server_monotonic": 2754.793121479,
+    "first_completion_server_monotonic_estimate": 2756.6511320239997,
+    "first_brand_completion_server_monotonic_estimate": 2756.6511320239997
+  },
+  {
+    "run": "v1-ocr-cold",
+    "physical_id": "S",
+    "expected_sku": "senezhskaya-0-5l",
+    "first_detection_video_s": 9.643809,
+    "first_detection_frame_id": 372,
+    "track_ids": [
+      2,
+      5
+    ],
+    "first_ocr_submission_video_s": 9.643809,
+    "first_ocr_submission_request_id": "372:2:11",
+    "first_ocr_completion_request_id": "372:2:11",
+    "first_ocr_completion_video_of_crop_s": 9.643809,
+    "first_ocr_completion_observed": {
+      "request_id": "372:2:11",
+      "browser_observed_wall_s": 12.201
+    },
+    "first_correct_candidate": {
+      "browser_wall_since_play_s": 12.736,
+      "browser_ms": 12865,
+      "track_id": 2,
+      "choice": "senezhskaya-0-5l",
+      "confidence": 1,
+      "source_video_time_latest": 11.763964
+    },
+    "first_correct_completed": {
+      "browser_wall_since_play_s": 12.736,
+      "browser_ms": 12865,
+      "track_id": 2,
+      "choice": "senezhskaya-0-5l",
+      "confidence": 1,
+      "source_video_time_latest": 11.763964
+    },
+    "crop_requests": 3,
+    "accepted_submissions": 2,
+    "ocr_runs": 2,
+    "duplicate_skips": 0,
+    "rejections": {
+      "blurry": 1
+    },
+    "source_bottle_height_px": {
+      "n": 61,
+      "median": 1181.15,
+      "min": 993.35,
+      "p90": 1437.14,
+      "max": 1498.64
+    },
+    "observed_detection_to_completed_wall_s": 2.099,
+    "jev_calls": 2,
+    "jev_errors": 0,
+    "first_useful_brand_ocr_request": "372:2:11",
+    "first_useful_brand_ocr_video_s": 9.643809,
+    "brand_ocr_note": "brand-supporting OCR; not SKU verification",
+    "first_useful_variant_ocr_request": "372:2:11",
+    "exact_size_confirmed_by_ocr": false,
+    "first_clear_label_opportunity_source_s": 10,
+    "opportunity_note": "manual inspected opportunity, not exact onset; readable brand versus generic label distinguished in ground-truth.md",
+    "jev_censored_by_call_cap": false,
+    "first_submission_server_monotonic": 2761.180713657,
+    "first_completion_server_monotonic_estimate": 2761.949464836,
+    "first_brand_completion_server_monotonic_estimate": 2761.949464836
+  },
+  {
+    "run": "v1-ocr-cold",
+    "physical_id": "W",
+    "expected_sku": "saint-spring-0-75l",
+    "first_detection_video_s": 18.871625,
+    "first_detection_frame_id": 387,
+    "track_ids": [
+      2,
+      6,
+      8
+    ],
+    "first_ocr_submission_video_s": null,
+    "first_ocr_submission_request_id": null,
+    "first_ocr_completion_request_id": null,
+    "first_ocr_completion_video_of_crop_s": null,
+    "first_ocr_completion_observed": null,
+    "first_correct_candidate": null,
+    "first_correct_completed": null,
+    "crop_requests": 24,
+    "accepted_submissions": 0,
+    "ocr_runs": 0,
+    "duplicate_skips": 0,
+    "rejections": {
+      "blurry": 24
+    },
+    "source_bottle_height_px": {
+      "n": 26,
+      "median": 1129.51,
+      "min": 922.71,
+      "p90": 1443.95,
+      "max": 1534.59
+    },
+    "jev_calls": 0,
+    "jev_errors": 0,
+    "first_useful_brand_ocr_request": null,
+    "first_useful_brand_ocr_video_s": null,
+    "brand_ocr_note": "none or generic/partial text only",
+    "first_useful_variant_ocr_request": null,
+    "exact_size_confirmed_by_ocr": false,
+    "first_clear_label_opportunity_source_s": 19,
+    "opportunity_note": "manual inspected opportunity, not exact onset; readable brand versus generic label distinguished in ground-truth.md",
+    "jev_censored_by_call_cap": false,
+    "first_submission_server_monotonic": null,
+    "first_completion_server_monotonic_estimate": null,
+    "first_brand_completion_server_monotonic_estimate": null
+  },
+  {
+    "run": "v1-ocr-cold",
+    "physical_id": "P",
+    "expected_sku": "prostokvashino-2-5-930ml",
+    "first_detection_video_s": 27.408553,
+    "first_detection_frame_id": 402,
+    "track_ids": [
+      2
+    ],
+    "first_ocr_submission_video_s": 38.140861,
+    "first_ocr_submission_request_id": "420:2:105",
+    "first_ocr_completion_request_id": "420:2:105",
+    "first_ocr_completion_video_of_crop_s": 38.140861,
+    "first_ocr_completion_observed": {
+      "request_id": "420:2:105",
+      "browser_observed_wall_s": 40.076
+    },
+    "first_correct_candidate": null,
+    "first_correct_completed": null,
+    "crop_requests": 22,
+    "accepted_submissions": 4,
+    "ocr_runs": 3,
+    "duplicate_skips": 1,
+    "rejections": {
+      "blurry": 18
+    },
+    "source_bottle_height_px": {
+      "n": 33,
+      "median": 1531.0,
+      "min": 1390.61,
+      "p90": 1661.22,
+      "max": 1682.85
+    },
+    "jev_calls": 1,
+    "jev_errors": 0,
+    "first_useful_brand_ocr_request": null,
+    "first_useful_brand_ocr_video_s": null,
+    "brand_ocr_note": "none or generic/partial text only",
+    "first_useful_variant_ocr_request": "420:2:105",
+    "exact_size_confirmed_by_ocr": false,
+    "first_clear_label_opportunity_source_s": 28,
+    "opportunity_note": "manual inspected opportunity, not exact onset; readable brand versus generic label distinguished in ground-truth.md",
+    "jev_censored_by_call_cap": false,
+    "first_submission_server_monotonic": 2789.711321189,
+    "first_completion_server_monotonic_estimate": 2790.522075891,
+    "first_brand_completion_server_monotonic_estimate": null
+  },
+  {
+    "run": "v1-ocr-cold",
+    "physical_id": "D",
+    "expected_sku": "domik-v-derevne-2-5-930ml",
+    "first_detection_video_s": 37.539617,
+    "first_detection_frame_id": 419,
+    "track_ids": [
+      6
+    ],
+    "first_ocr_submission_video_s": 39.419704,
+    "first_ocr_submission_request_id": "422:6:109",
+    "first_ocr_completion_request_id": "422:6:109",
+    "first_ocr_completion_video_of_crop_s": 39.419704,
+    "first_ocr_completion_observed": {
+      "request_id": "422:6:109",
+      "browser_observed_wall_s": 43.131
+    },
+    "first_correct_candidate": {
+      "browser_wall_since_play_s": 44.205,
+      "browser_ms": 44333.5,
+      "track_id": 6,
+      "choice": "domik-v-derevne-2-5-930ml",
+      "confidence": 0.56,
+      "source_video_time_latest": 43.246416
+    },
+    "first_correct_completed": {
+      "browser_wall_since_play_s": 56.889,
+      "browser_ms": 57018.39999999991,
+      "track_id": 6,
+      "choice": "domik-v-derevne-2-5-930ml",
+      "confidence": 0.77,
+      "source_video_time_latest": null
+    },
+    "crop_requests": 10,
+    "accepted_submissions": 3,
+    "ocr_runs": 2,
+    "duplicate_skips": 1,
+    "rejections": {
+      "blurry": 5,
+      "unknown_request": 1,
+      "throttled": 1
+    },
+    "source_bottle_height_px": {
+      "n": 16,
+      "median": 1752.57,
+      "min": 1485.25,
+      "p90": 1778.44,
+      "max": 1874.19
+    },
+    "observed_detection_to_completed_wall_s": 18.327,
+    "jev_calls": 2,
+    "jev_errors": 0,
+    "first_useful_brand_ocr_request": "422:6:109",
+    "first_useful_brand_ocr_video_s": 39.419704,
+    "brand_ocr_note": "brand-supporting OCR; not SKU verification",
+    "first_useful_variant_ocr_request": null,
+    "exact_size_confirmed_by_ocr": false,
+    "first_clear_label_opportunity_source_s": 39.4,
+    "opportunity_note": "manual inspected opportunity, not exact onset; readable brand versus generic label distinguished in ground-truth.md",
+    "jev_censored_by_call_cap": false,
+    "first_submission_server_monotonic": 2791.369410944,
+    "first_completion_server_monotonic_estimate": 2793.0685607849996,
+    "first_brand_completion_server_monotonic_estimate": 2793.0685607849996
+  },
+  {
+    "run": "v1-warm",
+    "physical_id": "A",
+    "expected_sku": "aqua-minerale-0-5l",
+    "first_detection_video_s": 1.66636,
+    "first_detection_frame_id": 473,
+    "track_ids": [
+      2,
+      3
+    ],
+    "first_ocr_submission_video_s": 4.412035,
+    "first_ocr_submission_request_id": "478:2:173",
+    "first_ocr_completion_request_id": "478:2:173",
+    "first_ocr_completion_video_of_crop_s": 4.412035,
+    "first_ocr_completion_observed": {
+      "request_id": "478:2:173",
+      "browser_observed_wall_s": 6.851
+    },
+    "first_correct_candidate": {
+      "browser_wall_since_play_s": 7.375,
+      "browser_ms": 146020.8999999999,
+      "track_id": 2,
+      "choice": "aqua-minerale-0-5l",
+      "confidence": 0.79,
+      "source_video_time_latest": null
+    },
+    "first_correct_completed": {
+      "browser_wall_since_play_s": 7.375,
+      "browser_ms": 146020.8999999999,
+      "track_id": 2,
+      "choice": "aqua-minerale-0-5l",
+      "confidence": 0.79,
+      "source_video_time_latest": null
+    },
+    "crop_requests": 50,
+    "accepted_submissions": 2,
+    "ocr_runs": 2,
+    "duplicate_skips": 0,
+    "rejections": {
+      "blurry": 43,
+      "unknown_request": 5
+    },
+    "source_bottle_height_px": {
+      "n": 75,
+      "median": 1454.95,
+      "min": 1200.51,
+      "p90": 1518.54,
+      "max": 1598.31
+    },
+    "observed_detection_to_completed_wall_s": 4.756,
+    "jev_calls": 2,
+    "jev_errors": 0,
+    "first_useful_brand_ocr_request": "478:2:173",
+    "first_useful_brand_ocr_video_s": 4.412035,
+    "brand_ocr_note": "brand-supporting OCR; not SKU verification",
+    "first_useful_variant_ocr_request": null,
+    "exact_size_confirmed_by_ocr": false,
+    "first_clear_label_opportunity_source_s": 2,
+    "opportunity_note": "manual inspected opportunity, not exact onset; readable brand versus generic label distinguished in ground-truth.md",
+    "jev_censored_by_call_cap": false,
+    "first_submission_server_monotonic": 2894.413875614,
+    "first_completion_server_monotonic_estimate": 2895.215585605,
+    "first_brand_completion_server_monotonic_estimate": 2895.215585605
+  },
+  {
+    "run": "v1-warm",
+    "physical_id": "S",
+    "expected_sku": "senezhskaya-0-5l",
+    "first_detection_video_s": 9.721829,
+    "first_detection_frame_id": 487,
+    "track_ids": [
+      2,
+      5
+    ],
+    "first_ocr_submission_video_s": 9.721829,
+    "first_ocr_submission_request_id": "487:2:180",
+    "first_ocr_completion_request_id": "487:2:180",
+    "first_ocr_completion_video_of_crop_s": 9.721829,
+    "first_ocr_completion_observed": {
+      "request_id": "487:2:180",
+      "browser_observed_wall_s": 12.679
+    },
+    "first_correct_candidate": {
+      "browser_wall_since_play_s": 12.679,
+      "browser_ms": 151325.19999999972,
+      "track_id": 2,
+      "choice": "senezhskaya-0-5l",
+      "confidence": 0.99,
+      "source_video_time_latest": null
+    },
+    "first_correct_completed": {
+      "browser_wall_since_play_s": 12.679,
+      "browser_ms": 151325.19999999972,
+      "track_id": 2,
+      "choice": "senezhskaya-0-5l",
+      "confidence": 0.99,
+      "source_video_time_latest": null
+    },
+    "crop_requests": 3,
+    "accepted_submissions": 2,
+    "ocr_runs": 2,
+    "duplicate_skips": 0,
+    "rejections": {
+      "blurry": 1
+    },
+    "source_bottle_height_px": {
+      "n": 60,
+      "median": 1180.17,
+      "min": 998.87,
+      "p90": 1436.26,
+      "max": 1500.57
+    },
+    "observed_detection_to_completed_wall_s": 1.987,
+    "jev_calls": 2,
+    "jev_errors": 0,
+    "first_useful_brand_ocr_request": "487:2:180",
+    "first_useful_brand_ocr_video_s": 9.721829,
+    "brand_ocr_note": "brand-supporting OCR; not SKU verification",
+    "first_useful_variant_ocr_request": "487:2:180",
+    "exact_size_confirmed_by_ocr": false,
+    "first_clear_label_opportunity_source_s": 10,
+    "opportunity_note": "manual inspected opportunity, not exact onset; readable brand versus generic label distinguished in ground-truth.md",
+    "jev_censored_by_call_cap": false,
+    "first_submission_server_monotonic": 2899.755016993,
+    "first_completion_server_monotonic_estimate": 2900.518028108,
+    "first_brand_completion_server_monotonic_estimate": 2900.518028108
+  },
+  {
+    "run": "v1-warm",
+    "physical_id": "W",
+    "expected_sku": "saint-spring-0-75l",
+    "first_detection_video_s": 18.640957,
+    "first_detection_frame_id": 502,
+    "track_ids": [
+      2,
+      6,
+      8
+    ],
+    "first_ocr_submission_video_s": null,
+    "first_ocr_submission_request_id": null,
+    "first_ocr_completion_request_id": null,
+    "first_ocr_completion_video_of_crop_s": null,
+    "first_ocr_completion_observed": null,
+    "first_correct_candidate": null,
+    "first_correct_completed": null,
+    "crop_requests": 25,
+    "accepted_submissions": 0,
+    "ocr_runs": 0,
+    "duplicate_skips": 0,
+    "rejections": {
+      "blurry": 25
+    },
+    "source_bottle_height_px": {
+      "n": 26,
+      "median": 1121.17,
+      "min": 913.74,
+      "p90": 1492.09,
+      "max": 1584.16
+    },
+    "jev_calls": 0,
+    "jev_errors": 0,
+    "first_useful_brand_ocr_request": null,
+    "first_useful_brand_ocr_video_s": null,
+    "brand_ocr_note": "none or generic/partial text only",
+    "first_useful_variant_ocr_request": null,
+    "exact_size_confirmed_by_ocr": false,
+    "first_clear_label_opportunity_source_s": 19,
+    "opportunity_note": "manual inspected opportunity, not exact onset; readable brand versus generic label distinguished in ground-truth.md",
+    "jev_censored_by_call_cap": false,
+    "first_submission_server_monotonic": null,
+    "first_completion_server_monotonic_estimate": null,
+    "first_brand_completion_server_monotonic_estimate": null
+  },
+  {
+    "run": "v1-warm",
+    "physical_id": "P",
+    "expected_sku": "prostokvashino-2-5-930ml",
+    "first_detection_video_s": 27.782793,
+    "first_detection_frame_id": 518,
+    "track_ids": [
+      2
+    ],
+    "first_ocr_submission_video_s": 38.159605,
+    "first_ocr_submission_request_id": "535:2:264",
+    "first_ocr_completion_request_id": "535:2:264",
+    "first_ocr_completion_video_of_crop_s": 38.159605,
+    "first_ocr_completion_observed": {
+      "request_id": "535:2:264",
+      "browser_observed_wall_s": 40.955
+    },
+    "first_correct_candidate": null,
+    "first_correct_completed": null,
+    "crop_requests": 22,
+    "accepted_submissions": 4,
+    "ocr_runs": 3,
+    "duplicate_skips": 1,
+    "rejections": {
+      "blurry": 17,
+      "unknown_request": 1
+    },
+    "source_bottle_height_px": {
+      "n": 31,
+      "median": 1529.8,
+      "min": 1394.61,
+      "p90": 1704.9,
+      "max": 1737.09
+    },
+    "jev_calls": 2,
+    "jev_errors": 0,
+    "first_useful_brand_ocr_request": null,
+    "first_useful_brand_ocr_video_s": null,
+    "brand_ocr_note": "none or generic/partial text only",
+    "first_useful_variant_ocr_request": "535:2:264",
+    "exact_size_confirmed_by_ocr": false,
+    "first_clear_label_opportunity_source_s": 28,
+    "opportunity_note": "manual inspected opportunity, not exact onset; readable brand versus generic label distinguished in ground-truth.md",
+    "jev_censored_by_call_cap": false,
+    "first_submission_server_monotonic": 2928.24102296,
+    "first_completion_server_monotonic_estimate": 2929.2200432659997,
+    "first_brand_completion_server_monotonic_estimate": null
+  },
+  {
+    "run": "v1-warm",
+    "physical_id": "D",
+    "expected_sku": "domik-v-derevne-2-5-930ml",
+    "first_detection_video_s": 37.558761,
+    "first_detection_frame_id": 534,
+    "track_ids": [
+      6
+    ],
+    "first_ocr_submission_video_s": 38.774096,
+    "first_ocr_submission_request_id": "536:6:266",
+    "first_ocr_completion_request_id": "536:6:266",
+    "first_ocr_completion_video_of_crop_s": 38.774096,
+    "first_ocr_completion_observed": {
+      "request_id": "536:6:266",
+      "browser_observed_wall_s": 41.729
+    },
+    "first_correct_candidate": {
+      "browser_wall_since_play_s": 65.373,
+      "browser_ms": 204018.59999999963,
+      "track_id": 6,
+      "choice": "domik-v-derevne-2-5-930ml",
+      "confidence": 0.96,
+      "source_video_time_latest": null
+    },
+    "first_correct_completed": {
+      "browser_wall_since_play_s": 65.373,
+      "browser_ms": 204018.59999999963,
+      "track_id": 6,
+      "choice": "domik-v-derevne-2-5-930ml",
+      "confidence": 0.96,
+      "source_video_time_latest": null
+    },
+    "crop_requests": 7,
+    "accepted_submissions": 4,
+    "ocr_runs": 4,
+    "duplicate_skips": 0,
+    "rejections": {
+      "blurry": 2,
+      "throttled": 1
+    },
+    "source_bottle_height_px": {
+      "n": 15,
+      "median": 1754.75,
+      "min": 1463.53,
+      "p90": 1778.6,
+      "max": 1810.23
+    },
+    "observed_detection_to_completed_wall_s": 26.794,
+    "jev_calls": 2,
+    "jev_errors": 1,
+    "first_useful_brand_ocr_request": "536:6:266",
+    "first_useful_brand_ocr_video_s": 38.774096,
+    "brand_ocr_note": "brand-supporting OCR; not SKU verification",
+    "first_useful_variant_ocr_request": null,
+    "exact_size_confirmed_by_ocr": false,
+    "first_clear_label_opportunity_source_s": 39.4,
+    "opportunity_note": "manual inspected opportunity, not exact onset; readable brand versus generic label distinguished in ground-truth.md",
+    "jev_censored_by_call_cap": false,
+    "first_submission_server_monotonic": 2929.17056339,
+    "first_completion_server_monotonic_estimate": 2930.662117139,
+    "first_brand_completion_server_monotonic_estimate": 2930.662117139
+  },
+  {
+    "run": "v2-warm-a",
+    "physical_id": "A",
+    "expected_sku": "aqua-minerale-0-5l",
+    "first_detection_video_s": 0.683088,
+    "first_detection_frame_id": 437,
+    "track_ids": [
+      4
+    ],
+    "first_ocr_submission_video_s": 0.683088,
+    "first_ocr_submission_request_id": "437:4:122",
+    "first_ocr_completion_request_id": "437:4:122",
+    "first_ocr_completion_video_of_crop_s": 0.683088,
+    "first_ocr_completion_observed": {
+      "request_id": "437:4:122",
+      "browser_observed_wall_s": 3.916
+    },
+    "first_correct_candidate": {
+      "browser_wall_since_play_s": 5.041,
+      "browser_ms": 75440.5,
+      "track_id": 4,
+      "choice": "aqua-minerale-0-5l",
+      "confidence": 0.83,
+      "source_video_time_latest": null
+    },
+    "first_correct_completed": {
+      "browser_wall_since_play_s": 5.041,
+      "browser_ms": 75440.5,
+      "track_id": 4,
+      "choice": "aqua-minerale-0-5l",
+      "confidence": 0.83,
+      "source_video_time_latest": null
+    },
+    "crop_requests": 2,
+    "accepted_submissions": 2,
+    "ocr_runs": 1,
+    "duplicate_skips": 0,
+    "rejections": {},
+    "source_bottle_height_px": {
+      "n": 13,
+      "median": 749.68,
+      "min": 730.17,
+      "p90": 964.68,
+      "max": 1043.43
+    },
+    "observed_detection_to_completed_wall_s": 3.421,
+    "jev_calls": 1,
+    "jev_errors": 0,
+    "first_useful_brand_ocr_request": "437:4:122",
+    "first_useful_brand_ocr_video_s": 0.683088,
+    "brand_ocr_note": "brand-supporting OCR; not SKU verification",
+    "first_useful_variant_ocr_request": null,
+    "exact_size_confirmed_by_ocr": false,
+    "first_clear_label_opportunity_source_s": 0,
+    "opportunity_note": "manual inspected opportunity, not exact onset; readable brand versus generic label distinguished in ground-truth.md",
+    "jev_censored_by_call_cap": false,
+    "first_submission_server_monotonic": 2822.422550721,
+    "first_completion_server_monotonic_estimate": 2824.537913938,
+    "first_brand_completion_server_monotonic_estimate": 2824.537913938
+  },
+  {
+    "run": "v2-warm-a",
+    "physical_id": "S",
+    "expected_sku": "senezhskaya-0-5l",
+    "first_detection_video_s": 0.683088,
+    "first_detection_frame_id": 437,
+    "track_ids": [
+      5
+    ],
+    "first_ocr_submission_video_s": 1.226769,
+    "first_ocr_submission_request_id": "438:5:124",
+    "first_ocr_completion_request_id": "438:5:124",
+    "first_ocr_completion_video_of_crop_s": 1.226769,
+    "first_ocr_completion_observed": {
+      "request_id": "438:5:124",
+      "browser_observed_wall_s": 5.041
+    },
+    "first_correct_candidate": {
+      "browser_wall_since_play_s": 6.09,
+      "browser_ms": 76489.09999999963,
+      "track_id": 5,
+      "choice": "senezhskaya-0-5l",
+      "confidence": 0.98,
+      "source_video_time_latest": 4.214535
+    },
+    "first_correct_completed": {
+      "browser_wall_since_play_s": 6.09,
+      "browser_ms": 76489.09999999963,
+      "track_id": 5,
+      "choice": "senezhskaya-0-5l",
+      "confidence": 0.98,
+      "source_video_time_latest": 4.214535
+    },
+    "crop_requests": 2,
+    "accepted_submissions": 2,
+    "ocr_runs": 1,
+    "duplicate_skips": 0,
+    "rejections": {},
+    "source_bottle_height_px": {
+      "n": 13,
+      "median": 732.96,
+      "min": 721.73,
+      "p90": 958.93,
+      "max": 1047.47
+    },
+    "observed_detection_to_completed_wall_s": 4.469,
+    "jev_calls": 1,
+    "jev_errors": 0,
+    "first_useful_brand_ocr_request": "438:5:124",
+    "first_useful_brand_ocr_video_s": 1.226769,
+    "brand_ocr_note": "brand-supporting OCR; not SKU verification",
+    "first_useful_variant_ocr_request": null,
+    "exact_size_confirmed_by_ocr": false,
+    "first_clear_label_opportunity_source_s": 0,
+    "opportunity_note": "manual inspected opportunity, not exact onset; readable brand versus generic label distinguished in ground-truth.md",
+    "jev_censored_by_call_cap": false,
+    "first_submission_server_monotonic": 2823.541496502,
+    "first_completion_server_monotonic_estimate": 2825.135227389,
+    "first_brand_completion_server_monotonic_estimate": 2825.135227389
+  },
+  {
+    "run": "v2-warm-a",
+    "physical_id": "W",
+    "expected_sku": "saint-spring-0-75l",
+    "first_detection_video_s": 0.683088,
+    "first_detection_frame_id": 437,
+    "track_ids": [
+      2
+    ],
+    "first_ocr_submission_video_s": 3.055506,
+    "first_ocr_submission_request_id": "440:2:129",
+    "first_ocr_completion_request_id": "440:2:129",
+    "first_ocr_completion_video_of_crop_s": 3.055506,
+    "first_ocr_completion_observed": {
+      "request_id": "440:2:129",
+      "browser_observed_wall_s": 6.11
+    },
+    "first_correct_candidate": null,
+    "first_correct_completed": null,
+    "crop_requests": 6,
+    "accepted_submissions": 3,
+    "ocr_runs": 2,
+    "duplicate_skips": 1,
+    "rejections": {
+      "blurry": 3
+    },
+    "source_bottle_height_px": {
+      "n": 13,
+      "median": 638.72,
+      "min": 624.7,
+      "p90": 767.99,
+      "max": 835.98
+    },
+    "jev_calls": 0,
+    "jev_errors": 0,
+    "first_useful_brand_ocr_request": null,
+    "first_useful_brand_ocr_video_s": null,
+    "brand_ocr_note": "none or generic/partial text only",
+    "first_useful_variant_ocr_request": null,
+    "exact_size_confirmed_by_ocr": false,
+    "first_clear_label_opportunity_source_s": 0,
+    "opportunity_note": "manual inspected opportunity, not exact onset; readable brand versus generic label distinguished in ground-truth.md",
+    "jev_censored_by_call_cap": false,
+    "first_submission_server_monotonic": 2825.833789092,
+    "first_completion_server_monotonic_estimate": 2826.573648556,
+    "first_brand_completion_server_monotonic_estimate": null
+  },
+  {
+    "run": "v2-warm-a",
+    "physical_id": "P",
+    "expected_sku": "prostokvashino-2-5-930ml",
+    "first_detection_video_s": 0.683088,
+    "first_detection_frame_id": 437,
+    "track_ids": [
+      3
+    ],
+    "first_ocr_submission_video_s": 0.683088,
+    "first_ocr_submission_request_id": "437:3:121",
+    "first_ocr_completion_request_id": "437:3:121",
+    "first_ocr_completion_video_of_crop_s": 0.683088,
+    "first_ocr_completion_observed": {
+      "request_id": "437:3:121",
+      "browser_observed_wall_s": 3.916
+    },
+    "first_correct_candidate": null,
+    "first_correct_completed": null,
+    "crop_requests": 4,
+    "accepted_submissions": 4,
+    "ocr_runs": 4,
+    "duplicate_skips": 0,
+    "rejections": {},
+    "source_bottle_height_px": {
+      "n": 13,
+      "median": 911.7,
+      "min": 890.71,
+      "p90": 1116.7,
+      "max": 1204.56
+    },
+    "jev_calls": 2,
+    "jev_errors": 0,
+    "first_useful_brand_ocr_request": null,
+    "first_useful_brand_ocr_video_s": null,
+    "brand_ocr_note": "none or generic/partial text only",
+    "first_useful_variant_ocr_request": "437:3:121",
+    "exact_size_confirmed_by_ocr": false,
+    "first_clear_label_opportunity_source_s": 0,
+    "opportunity_note": "manual inspected opportunity, not exact onset; readable brand versus generic label distinguished in ground-truth.md",
+    "jev_censored_by_call_cap": false,
+    "first_submission_server_monotonic": 2822.417817882,
+    "first_completion_server_monotonic_estimate": 2824.1403155119997,
+    "first_brand_completion_server_monotonic_estimate": null
+  },
+  {
+    "run": "v2-warm-a",
+    "physical_id": "D",
+    "expected_sku": "domik-v-derevne-2-5-930ml",
+    "first_detection_video_s": 0.683088,
+    "first_detection_frame_id": 437,
+    "track_ids": [
+      1
+    ],
+    "first_ocr_submission_video_s": 0.683088,
+    "first_ocr_submission_request_id": "437:1:119",
+    "first_ocr_completion_request_id": "437:1:119",
+    "first_ocr_completion_video_of_crop_s": 0.683088,
+    "first_ocr_completion_observed": {
+      "request_id": "437:1:119",
+      "browser_observed_wall_s": 2.747
+    },
+    "first_correct_candidate": null,
+    "first_correct_completed": null,
+    "crop_requests": 4,
+    "accepted_submissions": 4,
+    "ocr_runs": 2,
+    "duplicate_skips": 2,
+    "rejections": {},
+    "source_bottle_height_px": {
+      "n": 13,
+      "median": 928.63,
+      "min": 913.08,
+      "p90": 1169.25,
+      "max": 1274.15
+    },
+    "jev_calls": 2,
+    "jev_errors": 0,
+    "first_useful_brand_ocr_request": null,
+    "first_useful_brand_ocr_video_s": null,
+    "brand_ocr_note": "none or generic/partial text only",
+    "first_useful_variant_ocr_request": null,
+    "exact_size_confirmed_by_ocr": false,
+    "first_clear_label_opportunity_source_s": null,
+    "opportunity_note": "manual inspected opportunity, not exact onset; readable brand versus generic label distinguished in ground-truth.md",
+    "jev_censored_by_call_cap": false,
+    "first_submission_server_monotonic": 2822.409232561,
+    "first_completion_server_monotonic_estimate": 2823.330660423,
+    "first_brand_completion_server_monotonic_estimate": null
+  },
+  {
+    "run": "v2-warm-b",
+    "physical_id": "A",
+    "expected_sku": "aqua-minerale-0-5l",
+    "first_detection_video_s": 0.693222,
+    "first_detection_frame_id": 551,
+    "track_ids": [
+      4
+    ],
+    "first_ocr_submission_video_s": 1.951667,
+    "first_ocr_submission_request_id": "553:4:285",
+    "first_ocr_completion_request_id": "553:4:285",
+    "first_ocr_completion_video_of_crop_s": 1.951667,
+    "first_ocr_completion_observed": {
+      "request_id": "553:4:285",
+      "browser_observed_wall_s": 4.428
+    },
+    "first_correct_candidate": null,
+    "first_correct_completed": null,
+    "crop_requests": 6,
+    "accepted_submissions": 4,
+    "ocr_runs": 3,
+    "duplicate_skips": 1,
+    "rejections": {
+      "blurry": 2
+    },
+    "source_bottle_height_px": {
+      "n": 14,
+      "median": 747.47,
+      "min": 724.48,
+      "p90": 967.4,
+      "max": 1041.27
+    },
+    "jev_calls": 0,
+    "jev_errors": 0,
+    "first_useful_brand_ocr_request": null,
+    "first_useful_brand_ocr_video_s": null,
+    "brand_ocr_note": "none or generic/partial text only",
+    "first_useful_variant_ocr_request": null,
+    "exact_size_confirmed_by_ocr": false,
+    "first_clear_label_opportunity_source_s": 0,
+    "opportunity_note": "manual inspected opportunity, not exact onset; readable brand versus generic label distinguished in ground-truth.md",
+    "jev_censored_by_call_cap": false,
+    "first_submission_server_monotonic": 2962.741009085,
+    "first_completion_server_monotonic_estimate": 2963.42712288,
+    "first_brand_completion_server_monotonic_estimate": null
+  },
+  {
+    "run": "v2-warm-b",
+    "physical_id": "S",
+    "expected_sku": "senezhskaya-0-5l",
+    "first_detection_video_s": 0.693222,
+    "first_detection_frame_id": 551,
+    "track_ids": [
+      5
+    ],
+    "first_ocr_submission_video_s": 1.252791,
+    "first_ocr_submission_request_id": "552:5:282",
+    "first_ocr_completion_request_id": "552:5:282",
+    "first_ocr_completion_video_of_crop_s": 1.252791,
+    "first_ocr_completion_observed": {
+      "request_id": "552:5:282",
+      "browser_observed_wall_s": 3.41
+    },
+    "first_correct_candidate": {
+      "browser_wall_since_play_s": 27.07,
+      "browser_ms": 236018.3999999999,
+      "track_id": 5,
+      "choice": "senezhskaya-0-5l",
+      "confidence": 0.99,
+      "source_video_time_latest": null
+    },
+    "first_correct_completed": {
+      "browser_wall_since_play_s": 27.07,
+      "browser_ms": 236018.3999999999,
+      "track_id": 5,
+      "choice": "senezhskaya-0-5l",
+      "confidence": 0.99,
+      "source_video_time_latest": null
+    },
+    "crop_requests": 4,
+    "accepted_submissions": 4,
+    "ocr_runs": 3,
+    "duplicate_skips": 1,
+    "rejections": {},
+    "source_bottle_height_px": {
+      "n": 14,
+      "median": 735.73,
+      "min": 721.75,
+      "p90": 960.1,
+      "max": 1043.82
+    },
+    "observed_detection_to_completed_wall_s": 25.429,
+    "jev_calls": 2,
+    "jev_errors": 1,
+    "first_useful_brand_ocr_request": "552:5:282",
+    "first_useful_brand_ocr_video_s": 1.252791,
+    "brand_ocr_note": "brand-supporting OCR; not SKU verification",
+    "first_useful_variant_ocr_request": null,
+    "exact_size_confirmed_by_ocr": false,
+    "first_clear_label_opportunity_source_s": 0,
+    "opportunity_note": "manual inspected opportunity, not exact onset; readable brand versus generic label distinguished in ground-truth.md",
+    "jev_censored_by_call_cap": false,
+    "first_submission_server_monotonic": 2962.021065344,
+    "first_completion_server_monotonic_estimate": 2962.5637556019997,
+    "first_brand_completion_server_monotonic_estimate": 2962.5637556019997
+  },
+  {
+    "run": "v2-warm-b",
+    "physical_id": "W",
+    "expected_sku": "saint-spring-0-75l",
+    "first_detection_video_s": 0.693222,
+    "first_detection_frame_id": 551,
+    "track_ids": [
+      2
+    ],
+    "first_ocr_submission_video_s": 2.967501,
+    "first_ocr_submission_request_id": "554:2:286",
+    "first_ocr_completion_request_id": "554:2:286",
+    "first_ocr_completion_video_of_crop_s": 2.967501,
+    "first_ocr_completion_observed": {
+      "request_id": "554:2:286",
+      "browser_observed_wall_s": 5.229
+    },
+    "first_correct_candidate": null,
+    "first_correct_completed": null,
+    "crop_requests": 6,
+    "accepted_submissions": 3,
+    "ocr_runs": 2,
+    "duplicate_skips": 1,
+    "rejections": {
+      "blurry": 3
+    },
+    "source_bottle_height_px": {
+      "n": 14,
+      "median": 641.38,
+      "min": 623.33,
+      "p90": 766.25,
+      "max": 827.83
+    },
+    "jev_calls": 1,
+    "jev_errors": 0,
+    "first_useful_brand_ocr_request": null,
+    "first_useful_brand_ocr_video_s": null,
+    "brand_ocr_note": "none or generic/partial text only",
+    "first_useful_variant_ocr_request": null,
+    "exact_size_confirmed_by_ocr": false,
+    "first_clear_label_opportunity_source_s": 0,
+    "opportunity_note": "manual inspected opportunity, not exact onset; readable brand versus generic label distinguished in ground-truth.md",
+    "jev_censored_by_call_cap": false,
+    "first_submission_server_monotonic": 2963.744420369,
+    "first_completion_server_monotonic_estimate": 2963.927026114,
+    "first_brand_completion_server_monotonic_estimate": null
+  },
+  {
+    "run": "v2-warm-b",
+    "physical_id": "P",
+    "expected_sku": "prostokvashino-2-5-930ml",
+    "first_detection_video_s": 0.693222,
+    "first_detection_frame_id": 551,
+    "track_ids": [
+      3
+    ],
+    "first_ocr_submission_video_s": 0.693222,
+    "first_ocr_submission_request_id": "551:3:277",
+    "first_ocr_completion_request_id": "551:3:277",
+    "first_ocr_completion_video_of_crop_s": 0.693222,
+    "first_ocr_completion_observed": {
+      "request_id": "551:3:277",
+      "browser_observed_wall_s": 2.688
+    },
+    "first_correct_candidate": null,
+    "first_correct_completed": null,
+    "crop_requests": 4,
+    "accepted_submissions": 4,
+    "ocr_runs": 4,
+    "duplicate_skips": 0,
+    "rejections": {},
+    "source_bottle_height_px": {
+      "n": 14,
+      "median": 909.29,
+      "min": 891.16,
+      "p90": 1115.02,
+      "max": 1185.79
+    },
+    "jev_calls": 2,
+    "jev_errors": 0,
+    "first_useful_brand_ocr_request": null,
+    "first_useful_brand_ocr_video_s": null,
+    "brand_ocr_note": "none or generic/partial text only",
+    "first_useful_variant_ocr_request": "551:3:277",
+    "exact_size_confirmed_by_ocr": false,
+    "first_clear_label_opportunity_source_s": 0,
+    "opportunity_note": "manual inspected opportunity, not exact onset; readable brand versus generic label distinguished in ground-truth.md",
+    "jev_censored_by_call_cap": false,
+    "first_submission_server_monotonic": 2960.999463319,
+    "first_completion_server_monotonic_estimate": 2961.696156744,
+    "first_brand_completion_server_monotonic_estimate": null
+  },
+  {
+    "run": "v2-warm-b",
+    "physical_id": "D",
+    "expected_sku": "domik-v-derevne-2-5-930ml",
+    "first_detection_video_s": 0.693222,
+    "first_detection_frame_id": 551,
+    "track_ids": [
+      1
+    ],
+    "first_ocr_submission_video_s": 1.951667,
+    "first_ocr_submission_request_id": "553:1:283",
+    "first_ocr_completion_request_id": "553:1:283",
+    "first_ocr_completion_video_of_crop_s": 1.951667,
+    "first_ocr_completion_observed": {
+      "request_id": "553:1:283",
+      "browser_observed_wall_s": 4.428
+    },
+    "first_correct_candidate": null,
+    "first_correct_completed": null,
+    "crop_requests": 6,
+    "accepted_submissions": 4,
+    "ocr_runs": 2,
+    "duplicate_skips": 2,
+    "rejections": {
+      "blurry": 1,
+      "unknown_request": 1
+    },
+    "source_bottle_height_px": {
+      "n": 14,
+      "median": 928.79,
+      "min": 913.83,
+      "p90": 1169.03,
+      "max": 1258.49
+    },
+    "jev_calls": 0,
+    "jev_errors": 0,
+    "first_useful_brand_ocr_request": null,
+    "first_useful_brand_ocr_video_s": null,
+    "brand_ocr_note": "none or generic/partial text only",
+    "first_useful_variant_ocr_request": null,
+    "exact_size_confirmed_by_ocr": false,
+    "first_clear_label_opportunity_source_s": null,
+    "opportunity_note": "manual inspected opportunity, not exact onset; readable brand versus generic label distinguished in ground-truth.md",
+    "jev_censored_by_call_cap": false,
+    "first_submission_server_monotonic": 2962.731541225,
+    "first_completion_server_monotonic_estimate": 2963.184167058,
+    "first_brand_completion_server_monotonic_estimate": null
+  },
+  {
+    "run": "v3-warm-a",
+    "physical_id": "A",
+    "expected_sku": "aqua-minerale-0-5l",
+    "first_detection_video_s": 0.710214,
+    "first_detection_frame_id": 452,
+    "track_ids": [
+      4
+    ],
+    "first_ocr_submission_video_s": 0.710214,
+    "first_ocr_submission_request_id": "452:4:140",
+    "first_ocr_completion_request_id": "452:4:140",
+    "first_ocr_completion_video_of_crop_s": 0.710214,
+    "first_ocr_completion_observed": {
+      "request_id": "452:4:140",
+      "browser_observed_wall_s": 3.604
+    },
+    "first_correct_candidate": {
+      "browser_wall_since_play_s": 5.004,
+      "browser_ms": 108495.79999999981,
+      "track_id": 4,
+      "choice": "aqua-minerale-0-5l",
+      "confidence": 0.5,
+      "source_video_time_latest": 3.787207
+    },
+    "first_correct_completed": null,
+    "crop_requests": 6,
+    "accepted_submissions": 5,
+    "ocr_runs": 5,
+    "duplicate_skips": 0,
+    "rejections": {
+      "throttled": 1
+    },
+    "source_bottle_height_px": {
+      "n": 17,
+      "median": 845.87,
+      "min": 805.52,
+      "p90": 888.3,
+      "max": 889.11
+    },
+    "jev_calls": 2,
+    "jev_errors": 0,
+    "first_useful_brand_ocr_request": null,
+    "first_useful_brand_ocr_video_s": null,
+    "brand_ocr_note": "none or generic/partial text only",
+    "first_useful_variant_ocr_request": null,
+    "exact_size_confirmed_by_ocr": false,
+    "first_clear_label_opportunity_source_s": 0,
+    "opportunity_note": "manual inspected opportunity, not exact onset; readable brand versus generic label distinguished in ground-truth.md",
+    "jev_censored_by_call_cap": false,
+    "first_submission_server_monotonic": 2855.56490731,
+    "first_completion_server_monotonic_estimate": 2857.222835996,
+    "first_brand_completion_server_monotonic_estimate": null
+  },
+  {
+    "run": "v3-warm-a",
+    "physical_id": "S",
+    "expected_sku": "senezhskaya-0-5l",
+    "first_detection_video_s": 0.710214,
+    "first_detection_frame_id": 452,
+    "track_ids": [
+      5
+    ],
+    "first_ocr_submission_video_s": 1.248902,
+    "first_ocr_submission_request_id": "453:5:142",
+    "first_ocr_completion_request_id": "453:5:142",
+    "first_ocr_completion_video_of_crop_s": 1.248902,
+    "first_ocr_completion_observed": {
+      "request_id": "453:5:142",
+      "browser_observed_wall_s": 5.033
+    },
+    "first_correct_candidate": {
+      "browser_wall_since_play_s": 5.004,
+      "browser_ms": 108495.79999999981,
+      "track_id": 5,
+      "choice": "senezhskaya-0-5l",
+      "confidence": 0.98,
+      "source_video_time_latest": 3.787207
+    },
+    "first_correct_completed": {
+      "browser_wall_since_play_s": 5.004,
+      "browser_ms": 108495.79999999981,
+      "track_id": 5,
+      "choice": "senezhskaya-0-5l",
+      "confidence": 0.98,
+      "source_video_time_latest": 3.787207
+    },
+    "crop_requests": 1,
+    "accepted_submissions": 1,
+    "ocr_runs": 1,
+    "duplicate_skips": 0,
+    "rejections": {},
+    "source_bottle_height_px": {
+      "n": 16,
+      "median": 826.58,
+      "min": 808.92,
+      "p90": 967.55,
+      "max": 1014.59
+    },
+    "observed_detection_to_completed_wall_s": 3.325,
+    "jev_calls": 1,
+    "jev_errors": 0,
+    "first_useful_brand_ocr_request": "453:5:142",
+    "first_useful_brand_ocr_video_s": 1.248902,
+    "brand_ocr_note": "brand-supporting OCR; not SKU verification",
+    "first_useful_variant_ocr_request": null,
+    "exact_size_confirmed_by_ocr": false,
+    "first_clear_label_opportunity_source_s": 0,
+    "opportunity_note": "manual inspected opportunity, not exact onset; readable brand versus generic label distinguished in ground-truth.md",
+    "jev_censored_by_call_cap": false,
+    "first_submission_server_monotonic": 2856.335696758,
+    "first_completion_server_monotonic_estimate": 2857.4520060309997,
+    "first_brand_completion_server_monotonic_estimate": 2857.4520060309997
+  },
+  {
+    "run": "v3-warm-a",
+    "physical_id": "W",
+    "expected_sku": "saint-spring-0-75l",
+    "first_detection_video_s": 0.710214,
+    "first_detection_frame_id": 452,
+    "track_ids": [
+      2,
+      6,
+      7
+    ],
+    "first_ocr_submission_video_s": 5.822194,
+    "first_ocr_submission_request_id": "459:7:155",
+    "first_ocr_completion_request_id": "459:7:155",
+    "first_ocr_completion_video_of_crop_s": 5.822194,
+    "first_ocr_completion_observed": {
+      "request_id": "459:7:155",
+      "browser_observed_wall_s": 9.172
+    },
+    "first_correct_candidate": null,
+    "first_correct_completed": null,
+    "crop_requests": 7,
+    "accepted_submissions": 3,
+    "ocr_runs": 3,
+    "duplicate_skips": 0,
+    "rejections": {
+      "blurry": 4
+    },
+    "source_bottle_height_px": {
+      "n": 19,
+      "median": 704.65,
+      "min": 309.7,
+      "p90": 761.54,
+      "max": 774.35
+    },
+    "jev_calls": 2,
+    "jev_errors": 0,
+    "first_useful_brand_ocr_request": null,
+    "first_useful_brand_ocr_video_s": null,
+    "brand_ocr_note": "none or generic/partial text only",
+    "first_useful_variant_ocr_request": null,
+    "exact_size_confirmed_by_ocr": false,
+    "first_clear_label_opportunity_source_s": 0,
+    "opportunity_note": "manual inspected opportunity, not exact onset; readable brand versus generic label distinguished in ground-truth.md",
+    "jev_censored_by_call_cap": false,
+    "first_submission_server_monotonic": 2860.709967408,
+    "first_completion_server_monotonic_estimate": 2861.616991107,
+    "first_brand_completion_server_monotonic_estimate": null
+  },
+  {
+    "run": "v3-warm-a",
+    "physical_id": "P",
+    "expected_sku": "prostokvashino-2-5-930ml",
+    "first_detection_video_s": 0.710214,
+    "first_detection_frame_id": 452,
+    "track_ids": [
+      1
+    ],
+    "first_ocr_submission_video_s": 0.710214,
+    "first_ocr_submission_request_id": "452:1:137",
+    "first_ocr_completion_request_id": "452:1:137",
+    "first_ocr_completion_video_of_crop_s": 0.710214,
+    "first_ocr_completion_observed": {
+      "request_id": "452:1:137",
+      "browser_observed_wall_s": 3.593
+    },
+    "first_correct_candidate": null,
+    "first_correct_completed": null,
+    "crop_requests": 6,
+    "accepted_submissions": 5,
+    "ocr_runs": 5,
+    "duplicate_skips": 0,
+    "rejections": {
+      "blurry": 1
+    },
+    "source_bottle_height_px": {
+      "n": 17,
+      "median": 984.42,
+      "min": 771.53,
+      "p90": 1081.05,
+      "max": 1083.82
+    },
+    "jev_calls": 2,
+    "jev_errors": 0,
+    "first_useful_brand_ocr_request": null,
+    "first_useful_brand_ocr_video_s": null,
+    "brand_ocr_note": "none or generic/partial text only",
+    "first_useful_variant_ocr_request": "452:1:137",
+    "exact_size_confirmed_by_ocr": false,
+    "first_clear_label_opportunity_source_s": 0,
+    "opportunity_note": "manual inspected opportunity, not exact onset; readable brand versus generic label distinguished in ground-truth.md",
+    "jev_censored_by_call_cap": false,
+    "first_submission_server_monotonic": 2855.555316842,
+    "first_completion_server_monotonic_estimate": 2856.286624539,
+    "first_brand_completion_server_monotonic_estimate": null
+  },
+  {
+    "run": "v3-warm-a",
+    "physical_id": "D",
+    "expected_sku": "domik-v-derevne-2-5-930ml",
+    "first_detection_video_s": 0.710214,
+    "first_detection_frame_id": 452,
+    "track_ids": [
+      2,
+      3
+    ],
+    "first_ocr_submission_video_s": 0.710214,
+    "first_ocr_submission_request_id": "452:3:139",
+    "first_ocr_completion_request_id": "452:3:139",
+    "first_ocr_completion_video_of_crop_s": 0.710214,
+    "first_ocr_completion_observed": {
+      "request_id": "452:3:139",
+      "browser_observed_wall_s": 3.604
+    },
+    "first_correct_candidate": null,
+    "first_correct_completed": null,
+    "crop_requests": 9,
+    "accepted_submissions": 4,
+    "ocr_runs": 4,
+    "duplicate_skips": 0,
+    "rejections": {
+      "throttled": 1,
+      "blurry": 3,
+      "unknown_request": 1
+    },
+    "source_bottle_height_px": {
+      "n": 17,
+      "median": 862.55,
+      "min": 742.38,
+      "p90": 1070.39,
+      "max": 1112.39
+    },
+    "jev_calls": 2,
+    "jev_errors": 0,
+    "first_useful_brand_ocr_request": null,
+    "first_useful_brand_ocr_video_s": null,
+    "brand_ocr_note": "none or generic/partial text only",
+    "first_useful_variant_ocr_request": null,
+    "exact_size_confirmed_by_ocr": false,
+    "first_clear_label_opportunity_source_s": 3.5,
+    "opportunity_note": "manual inspected opportunity, not exact onset; readable brand versus generic label distinguished in ground-truth.md",
+    "jev_censored_by_call_cap": false,
+    "first_submission_server_monotonic": 2855.562521872,
+    "first_completion_server_monotonic_estimate": 2857.005066431,
+    "first_brand_completion_server_monotonic_estimate": null
+  },
+  {
+    "run": "v3-warm-b",
+    "physical_id": "A",
+    "expected_sku": "aqua-minerale-0-5l",
+    "first_detection_video_s": 0.703272,
+    "first_detection_frame_id": 567,
+    "track_ids": [
+      4
+    ],
+    "first_ocr_submission_video_s": 0.703272,
+    "first_ocr_submission_request_id": "567:4:304",
+    "first_ocr_completion_request_id": "567:4:304",
+    "first_ocr_completion_video_of_crop_s": 0.703272,
+    "first_ocr_completion_observed": {
+      "request_id": "567:4:304",
+      "browser_observed_wall_s": 3.524
+    },
+    "first_correct_candidate": {
+      "browser_wall_since_play_s": 5.027,
+      "browser_ms": 247748.5,
+      "track_id": 4,
+      "choice": "aqua-minerale-0-5l",
+      "confidence": 0.44,
+      "source_video_time_latest": 3.643612
+    },
+    "first_correct_completed": null,
+    "crop_requests": 5,
+    "accepted_submissions": 5,
+    "ocr_runs": 5,
+    "duplicate_skips": 0,
+    "rejections": {},
+    "source_bottle_height_px": {
+      "n": 14,
+      "median": 843.01,
+      "min": 805.52,
+      "p90": 876.77,
+      "max": 888.66
+    },
+    "jev_calls": 1,
+    "jev_errors": 0,
+    "first_useful_brand_ocr_request": null,
+    "first_useful_brand_ocr_video_s": null,
+    "brand_ocr_note": "none or generic/partial text only",
+    "first_useful_variant_ocr_request": null,
+    "exact_size_confirmed_by_ocr": false,
+    "first_clear_label_opportunity_source_s": 0,
+    "opportunity_note": "manual inspected opportunity, not exact onset; readable brand versus generic label distinguished in ground-truth.md",
+    "jev_censored_by_call_cap": true,
+    "first_submission_server_monotonic": 2994.797797319,
+    "first_completion_server_monotonic_estimate": 2995.995432997,
+    "first_brand_completion_server_monotonic_estimate": null
+  },
+  {
+    "run": "v3-warm-b",
+    "physical_id": "S",
+    "expected_sku": "senezhskaya-0-5l",
+    "first_detection_video_s": 0.703272,
+    "first_detection_frame_id": 567,
+    "track_ids": [
+      3,
+      5
+    ],
+    "first_ocr_submission_video_s": 1.261148,
+    "first_ocr_submission_request_id": "568:5:306",
+    "first_ocr_completion_request_id": "568:5:306",
+    "first_ocr_completion_video_of_crop_s": 1.261148,
+    "first_ocr_completion_observed": {
+      "request_id": "568:5:306",
+      "browser_observed_wall_s": 3.524
+    },
+    "first_correct_candidate": null,
+    "first_correct_completed": null,
+    "crop_requests": 6,
+    "accepted_submissions": 4,
+    "ocr_runs": 4,
+    "duplicate_skips": 0,
+    "rejections": {
+      "blurry": 2
+    },
+    "source_bottle_height_px": {
+      "n": 14,
+      "median": 822.84,
+      "min": 783.46,
+      "p90": 970.57,
+      "max": 1051.27
+    },
+    "jev_calls": 1,
+    "jev_errors": 1,
+    "first_useful_brand_ocr_request": "568:5:306",
+    "first_useful_brand_ocr_video_s": 1.261148,
+    "brand_ocr_note": "brand-supporting OCR; not SKU verification",
+    "first_useful_variant_ocr_request": null,
+    "exact_size_confirmed_by_ocr": false,
+    "first_clear_label_opportunity_source_s": 0,
+    "opportunity_note": "manual inspected opportunity, not exact onset; readable brand versus generic label distinguished in ground-truth.md",
+    "jev_censored_by_call_cap": true,
+    "first_submission_server_monotonic": 2995.886817661,
+    "first_completion_server_monotonic_estimate": 2996.366939878,
+    "first_brand_completion_server_monotonic_estimate": 2996.366939878
+  },
+  {
+    "run": "v3-warm-b",
+    "physical_id": "W",
+    "expected_sku": "saint-spring-0-75l",
+    "first_detection_video_s": 0.703272,
+    "first_detection_frame_id": 567,
+    "track_ids": [
+      2,
+      6,
+      7
+    ],
+    "first_ocr_submission_video_s": 3.643612,
+    "first_ocr_submission_request_id": "571:2:310",
+    "first_ocr_completion_request_id": "571:2:310",
+    "first_ocr_completion_video_of_crop_s": 3.643612,
+    "first_ocr_completion_observed": {
+      "request_id": "571:2:310",
+      "browser_observed_wall_s": 6.062
+    },
+    "first_correct_candidate": null,
+    "first_correct_completed": null,
+    "crop_requests": 8,
+    "accepted_submissions": 4,
+    "ocr_runs": 4,
+    "duplicate_skips": 0,
+    "rejections": {
+      "blurry": 4
+    },
+    "source_bottle_height_px": {
+      "n": 16,
+      "median": 716.91,
+      "min": 234.75,
+      "p90": 761.54,
+      "max": 769.71
+    },
+    "jev_calls": 1,
+    "jev_errors": 0,
+    "first_useful_brand_ocr_request": null,
+    "first_useful_brand_ocr_video_s": null,
+    "brand_ocr_note": "none or generic/partial text only",
+    "first_useful_variant_ocr_request": null,
+    "exact_size_confirmed_by_ocr": false,
+    "first_clear_label_opportunity_source_s": 0,
+    "opportunity_note": "manual inspected opportunity, not exact onset; readable brand versus generic label distinguished in ground-truth.md",
+    "jev_censored_by_call_cap": true,
+    "first_submission_server_monotonic": 2998.136119973,
+    "first_completion_server_monotonic_estimate": 2998.293303679,
+    "first_brand_completion_server_monotonic_estimate": null
+  },
+  {
+    "run": "v3-warm-b",
+    "physical_id": "P",
+    "expected_sku": "prostokvashino-2-5-930ml",
+    "first_detection_video_s": 0.703272,
+    "first_detection_frame_id": 567,
+    "track_ids": [
+      1
+    ],
+    "first_ocr_submission_video_s": 0.703272,
+    "first_ocr_submission_request_id": "567:1:301",
+    "first_ocr_completion_request_id": "567:1:301",
+    "first_ocr_completion_video_of_crop_s": 0.703272,
+    "first_ocr_completion_observed": {
+      "request_id": "567:1:301",
+      "browser_observed_wall_s": 2.778
+    },
+    "first_correct_candidate": null,
+    "first_correct_completed": null,
+    "crop_requests": 5,
+    "accepted_submissions": 5,
+    "ocr_runs": 5,
+    "duplicate_skips": 0,
+    "rejections": {},
+    "source_bottle_height_px": {
+      "n": 14,
+      "median": 998.69,
+      "min": 965.8,
+      "p90": 1071.8,
+      "max": 1078.19
+    },
+    "jev_calls": 1,
+    "jev_errors": 0,
+    "first_useful_brand_ocr_request": "579:1:325",
+    "first_useful_brand_ocr_video_s": 11.017837,
+    "brand_ocr_note": "partial POCTO only; not confirmed brand",
+    "first_useful_variant_ocr_request": "567:1:301",
+    "exact_size_confirmed_by_ocr": false,
+    "first_clear_label_opportunity_source_s": 0,
+    "opportunity_note": "manual inspected opportunity, not exact onset; readable brand versus generic label distinguished in ground-truth.md",
+    "jev_censored_by_call_cap": true,
+    "first_submission_server_monotonic": 2994.786004978,
+    "first_completion_server_monotonic_estimate": 2995.202062958,
+    "first_brand_completion_server_monotonic_estimate": 3006.389074696
+  },
+  {
+    "run": "v3-warm-b",
+    "physical_id": "D",
+    "expected_sku": "domik-v-derevne-2-5-930ml",
+    "first_detection_video_s": 0.703272,
+    "first_detection_frame_id": 567,
+    "track_ids": [
+      3,
+      8
+    ],
+    "first_ocr_submission_video_s": 0.703272,
+    "first_ocr_submission_request_id": "567:3:303",
+    "first_ocr_completion_request_id": "567:3:303",
+    "first_ocr_completion_video_of_crop_s": 0.703272,
+    "first_ocr_completion_observed": {
+      "request_id": "567:3:303",
+      "browser_observed_wall_s": 2.778
+    },
+    "first_correct_candidate": null,
+    "first_correct_completed": null,
+    "crop_requests": 4,
+    "accepted_submissions": 4,
+    "ocr_runs": 4,
+    "duplicate_skips": 0,
+    "rejections": {},
+    "source_bottle_height_px": {
+      "n": 12,
+      "median": 886.4,
+      "min": 769.95,
+      "p90": 1076.48,
+      "max": 1104.86
+    },
+    "jev_calls": 1,
+    "jev_errors": 0,
+    "first_useful_brand_ocr_request": null,
+    "first_useful_brand_ocr_video_s": null,
+    "brand_ocr_note": "none or generic/partial text only",
+    "first_useful_variant_ocr_request": null,
+    "exact_size_confirmed_by_ocr": false,
+    "first_clear_label_opportunity_source_s": 3.5,
+    "opportunity_note": "manual inspected opportunity, not exact onset; readable brand versus generic label distinguished in ground-truth.md",
+    "jev_censored_by_call_cap": true,
+    "first_submission_server_monotonic": 2994.794201815,
+    "first_completion_server_monotonic_estimate": 2995.6598994220003,
+    "first_brand_completion_server_monotonic_estimate": null
+  }
+]

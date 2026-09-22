@@ -1,0 +1,27 @@
+Analyzing file:///home/olesya/Projects/yolo-shop/data/local/videos/20260921_205754.mp4
+Done discovering file:///home/olesya/Projects/yolo-shop/data/local/videos/20260921_205754.mp4
+
+Properties:
+  Duration: 0:00:12.950700000
+  Seekable: yes
+  Live: no
+  container #0: Quicktime
+    video #1: H.265 (Main 10 Profile)
+      Stream ID: 3bc5471b2d8409e0d738dcd602633a8dc7c13041c962c5366d71aee0fbe0aa77/001
+      Width: 3840
+      Height: 2160
+      Depth: 30
+      Frame rate: 119/2
+      Pixel aspect ratio: 1/1
+      Interlaced: false
+      Bitrate: 51336398
+      Max bitrate: 0
+    audio #2: MPEG-4 AAC
+      Stream ID: 3bc5471b2d8409e0d738dcd602633a8dc7c13041c962c5366d71aee0fbe0aa77/002
+      Language: en
+      Channels: 2 (front-left, front-right)
+      Sample rate: 48000
+      Depth: 32
+      Bitrate: 256000
+      Max bitrate: 256000
+

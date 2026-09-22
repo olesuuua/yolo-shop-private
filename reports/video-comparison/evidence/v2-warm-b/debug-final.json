@@ -1,0 +1,192 @@
+{
+  "capture": {
+    "upload_wh": [
+      640,
+      480
+    ],
+    "fps": 1.46,
+    "detect_ms": 234.5
+  },
+  "queue_depth": 0,
+  "tracks": {
+    "1": {
+      "hint": "Bottle",
+      "status": "needs_more_evidence",
+      "complete": false,
+      "choice": null,
+      "confidence": null,
+      "submitted": 4,
+      "ocr_runs": 2,
+      "dedup_skips": 2,
+      "stale_replaced": 0,
+      "sharpness": 26.6,
+      "crop_wh": [
+        532,
+        1083
+      ],
+      "absent_frames": 0,
+      "jev_error": "",
+      "t_first_seen": 0.0,
+      "t_first_submit": 2.13,
+      "t_first_ocr_done": 2.58,
+      "t_first_ident": null,
+      "last_ocr_ms": 378.2,
+      "last_jev_ms": 0.0,
+      "lines": []
+    },
+    "2": {
+      "hint": "Bottle",
+      "status": "needs_more_evidence",
+      "complete": false,
+      "choice": null,
+      "confidence": null,
+      "submitted": 3,
+      "ocr_runs": 2,
+      "dedup_skips": 1,
+      "stale_replaced": 0,
+      "sharpness": 19.8,
+      "crop_wh": [
+        469,
+        748
+      ],
+      "absent_frames": 0,
+      "jev_error": "",
+      "t_first_seen": 0.0,
+      "t_first_submit": 3.14,
+      "t_first_ocr_done": 3.32,
+      "t_first_ident": null,
+      "last_ocr_ms": 211.7,
+      "last_jev_ms": 10824.4,
+      "lines": [
+        {
+          "text": "onis",
+          "score": 0.675,
+          "hits": 1
+        }
+      ]
+    },
+    "3": {
+      "hint": "Bottle",
+      "status": "needs_more_evidence",
+      "complete": false,
+      "choice": null,
+      "confidence": null,
+      "submitted": 4,
+      "ocr_runs": 4,
+      "dedup_skips": 0,
+      "stale_replaced": 0,
+      "sharpness": 41.3,
+      "crop_wh": [
+        447,
+        1057
+      ],
+      "absent_frames": 0,
+      "jev_error": "",
+      "t_first_seen": 0.0,
+      "t_first_submit": 0.4,
+      "t_first_ocr_done": 1.09,
+      "t_first_ident": null,
+      "last_ocr_ms": 638.2,
+      "last_jev_ms": 947.7,
+      "lines": [
+        {
+          "text": "2,5%",
+          "score": 0.967,
+          "hits": 4
+        },
+        {
+          "text": "6U5112",
+          "score": 0.438,
+          "hits": 1
+        },
+        {
+          "text": "6U81121",
+          "score": 0.427,
+          "hits": 1
+        },
+        {
+          "text": "82",
+          "score": 0.367,
+          "hits": 1
+        },
+        {
+          "text": "МОЛОКО",
+          "score": 0.892,
+          "hits": 4
+        }
+      ]
+    },
+    "4": {
+      "hint": "Bottle",
+      "status": "needs_more_evidence",
+      "complete": false,
+      "choice": null,
+      "confidence": null,
+      "submitted": 4,
+      "ocr_runs": 3,
+      "dedup_skips": 1,
+      "stale_replaced": 0,
+      "sharpness": 27.2,
+      "crop_wh": [
+        434,
+        871
+      ],
+      "absent_frames": 0,
+      "jev_error": "",
+      "t_first_seen": 0.0,
+      "t_first_submit": 2.14,
+      "t_first_ocr_done": 2.83,
+      "t_first_ident": null,
+      "last_ocr_ms": 139.7,
+      "last_jev_ms": 0.0,
+      "lines": [
+        {
+          "text": "AKB",
+          "score": 0.988,
+          "hits": 3
+        }
+      ]
+    },
+    "5": {
+      "hint": "Bottle",
+      "status": "candidate",
+      "complete": true,
+      "choice": "senezhskaya-0-5l",
+      "confidence": 0.99,
+      "submitted": 4,
+      "ocr_runs": 3,
+      "dedup_skips": 1,
+      "stale_replaced": 0,
+      "sharpness": 30.3,
+      "crop_wh": [
+        486,
+        847
+      ],
+      "absent_frames": 0,
+      "jev_error": "",
+      "t_first_seen": 0.0,
+      "t_first_submit": 1.42,
+      "t_first_ocr_done": 1.96,
+      "t_first_ident": 25.06,
+      "last_ocr_ms": 366.9,
+      "last_jev_ms": 800.2,
+      "lines": [
+        {
+          "text": "CEHЕЖCKA",
+          "score": 0.588,
+          "hits": 1
+        },
+        {
+          "text": "CEHЕЖCKА",
+          "score": 0.551,
+          "hits": 1
+        },
+        {
+          "text": "СЕНЕЖСКАЯ",
+          "score": 0.777,
+          "hits": 1
+        }
+      ]
+    }
+  }
+}

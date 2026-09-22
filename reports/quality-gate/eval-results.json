@@ -1,0 +1,277 @@
+{
+ "schema": "quality-gate-eval-2",
+ "pool_n": 158,
+ "extra_p_generic_only": 6,
+ "splits": {
+  "tuning": {
+   "n": 76,
+   "gates": {
+    "current_full15": {
+     "acc": 32,
+     "hit": 8,
+     "empty": 3,
+     "neighbor": 1,
+     "ocr_ms": 21084.0,
+     "ms_mean": 658.9,
+     "by_pid": {
+      "A": {
+       "acc": 7,
+       "hit": 2
+      },
+      "S": {
+       "acc": 6,
+       "hit": 6
+      },
+      "W": {
+       "acc": 5,
+       "hit": 0
+      },
+      "P": {
+       "acc": 10,
+       "hit": 0
+      },
+      "D": {
+       "acc": 4,
+       "hit": 0
+      }
+     },
+     "missed_hits": 15
+    },
+    "bypass": {
+     "acc": 76,
+     "hit": 23,
+     "empty": 10,
+     "neighbor": 1,
+     "ocr_ms": 62630.4,
+     "ms_mean": 824.1,
+     "by_pid": {
+      "A": {
+       "acc": 18,
+       "hit": 9
+      },
+      "S": {
+       "acc": 9,
+       "hit": 9
+      },
+      "W": {
+       "acc": 25,
+       "hit": 5
+      },
+      "P": {
+       "acc": 16,
+       "hit": 0
+      },
+      "D": {
+       "acc": 8,
+       "hit": 0
+      }
+     },
+     "missed_hits": 0
+    },
+    "norm1000_gte30": {
+     "acc": 30,
+     "hit": 11,
+     "empty": 0,
+     "neighbor": 1,
+     "ocr_ms": 33788.2,
+     "ms_mean": 1126.3,
+     "by_pid": {
+      "A": {
+       "acc": 8,
+       "hit": 6
+      },
+      "S": {
+       "acc": 3,
+       "hit": 3
+      },
+      "W": {
+       "acc": 2,
+       "hit": 2
+      },
+      "P": {
+       "acc": 12,
+       "hit": 0
+      },
+      "D": {
+       "acc": 5,
+       "hit": 0
+      }
+     },
+     "missed_hits": 12
+    },
+    "union_full15_or_n1000g30": {
+     "acc": 46,
+     "hit": 15,
+     "empty": 3,
+     "neighbor": 1,
+     "ocr_ms": 39532.5,
+     "ms_mean": 859.4,
+     "by_pid": {
+      "A": {
+       "acc": 14,
+       "hit": 7
+      },
+      "S": {
+       "acc": 6,
+       "hit": 6
+      },
+      "W": {
+       "acc": 7,
+       "hit": 2
+      },
+      "P": {
+       "acc": 12,
+       "hit": 0
+      },
+      "D": {
+       "acc": 7,
+       "hit": 0
+      }
+     },
+     "missed_hits": 8
+    }
+   }
+  },
+  "validation": {
+   "n": 79,
+   "gates": {
+    "current_full15": {
+     "acc": 30,
+     "hit": 5,
+     "empty": 6,
+     "neighbor": 1,
+     "ocr_ms": 17103.6,
+     "ms_mean": 570.1,
+     "by_pid": {
+      "A": {
+       "acc": 4,
+       "hit": 1
+      },
+      "S": {
+       "acc": 5,
+       "hit": 3
+      },
+      "W": {
+       "acc": 6,
+       "hit": 0
+      },
+      "P": {
+       "acc": 6,
+       "hit": 0
+      },
+      "D": {
+       "acc": 9,
+       "hit": 1
+      }
+     },
+     "missed_hits": 14
+    },
+    "bypass": {
+     "acc": 79,
+     "hit": 19,
+     "empty": 12,
+     "neighbor": 2,
+     "ocr_ms": 62386.2,
+     "ms_mean": 789.7,
+     "by_pid": {
+      "A": {
+       "acc": 16,
+       "hit": 5
+      },
+      "S": {
+       "acc": 6,
+       "hit": 4
+      },
+      "W": {
+       "acc": 28,
+       "hit": 9
+      },
+      "P": {
+       "acc": 13,
+       "hit": 0
+      },
+      "D": {
+       "acc": 16,
+       "hit": 1
+      }
+     },
+     "missed_hits": 0
+    },
+    "norm1000_gte30": {
+     "acc": 23,
+     "hit": 6,
+     "empty": 0,
+     "neighbor": 1,
+     "ocr_ms": 27851.0,
+     "ms_mean": 1210.9,
+     "by_pid": {
+      "A": {
+       "acc": 7,
+       "hit": 3
+      },
+      "S": {
+       "acc": 0,
+       "hit": 0
+      },
+      "W": {
+       "acc": 3,
+       "hit": 2
+      },
+      "P": {
+       "acc": 7,
+       "hit": 0
+      },
+      "D": {
+       "acc": 6,
+       "hit": 1
+      }
+     },
+     "missed_hits": 13
+    },
+    "union_full15_or_n1000g30": {
+     "acc": 46,
+     "hit": 9,
+     "empty": 6,
+     "neighbor": 1,
+     "ocr_ms": 37722.0,
+     "ms_mean": 820.0,
+     "by_pid": {
+      "A": {
+       "acc": 10,
+       "hit": 3
+      },
+      "S": {
+       "acc": 5,
+       "hit": 3
+      },
+      "W": {
+       "acc": 9,
+       "hit": 2
+      },
+      "P": {
+       "acc": 9,
+       "hit": 0
+      },
+      "D": {
+       "acc": 13,
+       "hit": 1
+      }
+     },
+     "missed_hits": 10
+    }
+   }
+  }
+ },
+ "full329_workload": {
+  "tuning": {
+   "n": 198,
+   "cur": 56,
+   "union": 125
+  },
+  "validation": {
+   "n": 131,
+   "cur": 49,
+   "union": 88
+  }
+ }
+}

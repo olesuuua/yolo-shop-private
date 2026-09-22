@@ -1,0 +1,11 @@
+{
+  "static/app.js": true,
+  "static/index.html": true,
+  "app.py": true,
+  "vision.py": true,
+  "identification.py": true,
+  "config.py": true,
+  "jev_catalog.py": true,
+  "data/local/catalog.json": true,
+  "bytetrack-ppyoloe.yaml": true
+}

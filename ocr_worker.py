@@ -35,6 +35,40 @@ def load_ocr(device):
     )
 
 
+def _line_entries(result):
+    """One entry per recognized line with crop-pixel geometry.
+
+    Coordinates are pixels of the exact submitted crop: the worker decodes
+    the sent JPEG and predicts on it, so rec_polys/rec_boxes map 1:1 to the
+    bytes the browser uploaded (origin top-left). Only the poly (4-point
+    textline polygon) and the axis-aligned box are exposed; det-time
+    polygons and recognition scores are unchanged, and nothing is
+    re-recognized or re-cropped.
+    """
+    import numpy as np
+
+    lines = []
+    for text, score, poly, box in zip(
+        result["rec_texts"], result["rec_scores"], result["rec_polys"],
+        result["rec_boxes"],
+    ):
+        entry = {"text": str(text), "score": float(score)}
+        try:
+            points = [[int(x), int(y)] for x, y in np.asarray(poly)][:4]
+            if len(points) == 4:
+                entry["poly"] = points
+        except (TypeError, ValueError):
+            pass
+        try:
+            box_values = [int(v) for v in np.asarray(box)][:4]
+            if len(box_values) == 4:
+                entry["box"] = box_values
+        except (TypeError, ValueError):
+            pass
+        lines.append(entry)
+    return lines
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--fd", type=int, required=True)
@@ -64,8 +98,7 @@ def main():
                     continue
                 lines = []
                 for result in ocr.predict(frame):
-                    for text, score in zip(result["rec_texts"], result["rec_scores"]):
-                        lines.append({"text": str(text), "score": float(score)})
+                    lines.extend(_line_entries(result))
                 send(connection, json.dumps({"type": "lines", "lines": lines}, ensure_ascii=False).encode())
         except Exception as error:
             traceback.print_exc()

@@ -1,0 +1,87 @@
+
+DevTools listening on ws://127.0.0.1:9223/devtools/browser/e2b17364-ab1a-4557-b67c-34e358fc557f
+[43336:43364:0921/211240.874304:ERROR:google_apis/gcm/engine/registration_request.cc:291] Registration response error message: PHONE_REGISTRATION_ERROR
+[43336:43364:0921/211240.877586:ERROR:google_apis/gcm/engine/registration_request.cc:291] Registration response error message: PHONE_REGISTRATION_ERROR
+[43336:43364:0921/211240.911435:ERROR:google_apis/gcm/engine/registration_request.cc:291] Registration response error message: PHONE_REGISTRATION_ERROR
+Created TensorFlow Lite XNNPACK delegate for CPU.
+[43336:43364:0921/211301.583084:ERROR:google_apis/gcm/engine/registration_request.cc:291] Registration response error message: DEPRECATED_ENDPOINT
+[43336:43364:0921/211353.494501:ERROR:google_apis/gcm/engine/registration_request.cc:291] Registration response error message: DEPRECATED_ENDPOINT
+[43336:43364:0921/211522.968537:ERROR:google_apis/gcm/engine/registration_request.cc:291] Registration response error message: DEPRECATED_ENDPOINT
+Warning: maxDynamicUniformBuffersPerPipelineLayout artificially reduced from 500000 to 16 to fit dynamic offset allocation limit.
+Warning: maxDynamicStorageBuffersPerPipelineLayout artificially reduced from 500000 to 16 to fit dynamic offset allocation limit.
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1790014537.955614   45594 environment.cc:525] Selected adapter: NVIDIA GeForce GTX 1050 Ti, arch=pascal, vendor=nvidia, backend=Vulkan, adapterType=Discrete GPU
+Warning: maxDynamicUniformBuffersPerPipelineLayout artificially reduced from 500000 to 16 to fit dynamic offset allocation limit.
+Warning: maxDynamicStorageBuffersPerPipelineLayout artificially reduced from 500000 to 16 to fit dynamic offset allocation limit.
+I0000 00:00:1790014538.014869   45617 environment.cc:525] Selected adapter: NVIDIA GeForce GTX 1050 Ti, arch=pascal, vendor=nvidia, backend=Vulkan, adapterType=Discrete GPU
+[43336:43364:0921/211921.963081:ERROR:google_apis/gcm/engine/registration_request.cc:291] Registration response error message: DEPRECATED_ENDPOINT
+[43336:43364:0921/212240.822043:ERROR:google_apis/gcm/engine/connection_factory_impl.cc:484] ConnectionHandler failed with net error: -2
+[43336:43364:0921/212529.577834:ERROR:google_apis/gcm/engine/registration_request.cc:291] Registration response error message: DEPRECATED_ENDPOINT
+[43336:43364:0921/213240.824244:ERROR:google_apis/gcm/engine/connection_factory_impl.cc:484] ConnectionHandler failed with net error: -2
+[43336:43364:0921/214240.826060:ERROR:google_apis/gcm/engine/connection_factory_impl.cc:484] ConnectionHandler failed with net error: -2
+[43336:43364:0921/215240.828462:ERROR:google_apis/gcm/engine/connection_factory_impl.cc:484] ConnectionHandler failed with net error: -2
+[43382:43387:0921/215308.908429:ERROR:net/socket/ssl_client_socket_impl.cc:949] handshake failed; returned -1, SSL error code 1, net_error -101
+[43336:43364:0921/215338.909711:ERROR:google_apis/gcm/engine/connection_factory_impl.cc:435] Failed to connect to MCS endpoint with error -7
+[43336:43364:0921/215434.127805:ERROR:google_apis/gcm/engine/connection_factory_impl.cc:435] Failed to connect to MCS endpoint with error -7
+[43336:43364:0921/215601.170207:ERROR:google_apis/gcm/engine/connection_factory_impl.cc:435] Failed to connect to MCS endpoint with error -7
+[43336:43364:0921/215830.838113:ERROR:google_apis/gcm/engine/connection_factory_impl.cc:435] Failed to connect to MCS endpoint with error -7
+[43336:43364:0921/220151.042211:ERROR:google_apis/gcm/engine/connection_factory_impl.cc:435] Failed to connect to MCS endpoint with error -7
+[43336:43364:0921/220836.365485:ERROR:google_apis/gcm/engine/connection_factory_impl.cc:435] Failed to connect to MCS endpoint with error -7
+[43336:43364:0921/222836.367921:ERROR:google_apis/gcm/engine/connection_factory_impl.cc:484] ConnectionHandler failed with net error: -2
+[43336:43364:0921/223836.369735:ERROR:google_apis/gcm/engine/connection_factory_impl.cc:484] ConnectionHandler failed with net error: -2
+[43336:43364:0921/224836.371460:ERROR:google_apis/gcm/engine/connection_factory_impl.cc:484] ConnectionHandler failed with net error: -2
+[43336:43364:0921/225836.373212:ERROR:google_apis/gcm/engine/connection_factory_impl.cc:484] ConnectionHandler failed with net error: -2
+[43336:43364:0921/230836.375226:ERROR:google_apis/gcm/engine/connection_factory_impl.cc:484] ConnectionHandler failed with net error: -2
+[43336:43364:0921/231836.376951:ERROR:google_apis/gcm/engine/connection_factory_impl.cc:484] ConnectionHandler failed with net error: -2
+[43336:43364:0921/232836.379609:ERROR:google_apis/gcm/engine/connection_factory_impl.cc:484] ConnectionHandler failed with net error: -2
+[43336:43364:0921/233836.423836:ERROR:google_apis/gcm/engine/connection_factory_impl.cc:484] ConnectionHandler failed with net error: -2
+[43336:43364:0921/234836.426177:ERROR:google_apis/gcm/engine/connection_factory_impl.cc:484] ConnectionHandler failed with net error: -2
+[43336:43364:0921/235836.427177:ERROR:google_apis/gcm/engine/connection_factory_impl.cc:484] ConnectionHandler failed with net error: -2
+[43336:43364:0922/000836.429301:ERROR:google_apis/gcm/engine/connection_factory_impl.cc:484] ConnectionHandler failed with net error: -2
+[43336:43364:0922/001836.431366:ERROR:google_apis/gcm/engine/connection_factory_impl.cc:484] ConnectionHandler failed with net error: -2
+[43336:43364:0922/002836.433406:ERROR:google_apis/gcm/engine/connection_factory_impl.cc:484] ConnectionHandler failed with net error: -2
+[43336:43364:0922/003836.435285:ERROR:google_apis/gcm/engine/connection_factory_impl.cc:484] ConnectionHandler failed with net error: -2
+[43336:43364:0922/004836.436704:ERROR:google_apis/gcm/engine/connection_factory_impl.cc:484] ConnectionHandler failed with net error: -2
+[43336:43364:0922/005836.438176:ERROR:google_apis/gcm/engine/connection_factory_impl.cc:484] ConnectionHandler failed with net error: -2
+[43336:43364:0922/010836.440374:ERROR:google_apis/gcm/engine/connection_factory_impl.cc:484] ConnectionHandler failed with net error: -2
+[43336:43364:0922/011836.442956:ERROR:google_apis/gcm/engine/connection_factory_impl.cc:484] ConnectionHandler failed with net error: -2
+[43336:43364:0922/012836.445531:ERROR:google_apis/gcm/engine/connection_factory_impl.cc:484] ConnectionHandler failed with net error: -2
+[43336:43364:0922/013836.447887:ERROR:google_apis/gcm/engine/connection_factory_impl.cc:484] ConnectionHandler failed with net error: -2
+[43336:43364:0922/014836.449970:ERROR:google_apis/gcm/engine/connection_factory_impl.cc:484] ConnectionHandler failed with net error: -2
+[43336:43364:0922/015836.451748:ERROR:google_apis/gcm/engine/connection_factory_impl.cc:484] ConnectionHandler failed with net error: -2
+[43336:43364:0922/020836.453756:ERROR:google_apis/gcm/engine/connection_factory_impl.cc:484] ConnectionHandler failed with net error: -2
+[43336:43364:0922/021836.456715:ERROR:google_apis/gcm/engine/connection_factory_impl.cc:484] ConnectionHandler failed with net error: -2
+[43336:43364:0922/022836.458845:ERROR:google_apis/gcm/engine/connection_factory_impl.cc:484] ConnectionHandler failed with net error: -2
+[43336:43364:0922/023836.461166:ERROR:google_apis/gcm/engine/connection_factory_impl.cc:484] ConnectionHandler failed with net error: -2
+[43336:43364:0922/024836.462580:ERROR:google_apis/gcm/engine/connection_factory_impl.cc:484] ConnectionHandler failed with net error: -2
+[43336:43364:0922/025836.464079:ERROR:google_apis/gcm/engine/connection_factory_impl.cc:484] ConnectionHandler failed with net error: -2
+[43336:43364:0922/030836.466661:ERROR:google_apis/gcm/engine/connection_factory_impl.cc:484] ConnectionHandler failed with net error: -2
+[43336:43364:0922/031333.921475:ERROR:google_apis/gcm/engine/connection_factory_impl.cc:484] ConnectionHandler failed with net error: -2
+[43336:43364:0922/032336.561357:ERROR:google_apis/gcm/engine/connection_factory_impl.cc:484] ConnectionHandler failed with net error: -2
+[43336:43364:0922/033336.602729:ERROR:google_apis/gcm/engine/connection_factory_impl.cc:484] ConnectionHandler failed with net error: -2
+[43336:43364:0922/034336.643718:ERROR:google_apis/gcm/engine/connection_factory_impl.cc:484] ConnectionHandler failed with net error: -2
+[43336:43364:0922/035336.684468:ERROR:google_apis/gcm/engine/connection_factory_impl.cc:484] ConnectionHandler failed with net error: -2
+[43336:43364:0922/040336.725699:ERROR:google_apis/gcm/engine/connection_factory_impl.cc:484] ConnectionHandler failed with net error: -2
+[43336:43364:0922/041336.767760:ERROR:google_apis/gcm/engine/connection_factory_impl.cc:484] ConnectionHandler failed with net error: -2
+[43336:43364:0922/042336.809103:ERROR:google_apis/gcm/engine/connection_factory_impl.cc:484] ConnectionHandler failed with net error: -2
+[43336:43364:0922/043336.851052:ERROR:google_apis/gcm/engine/connection_factory_impl.cc:484] ConnectionHandler failed with net error: -2
+[43336:43364:0922/044336.891915:ERROR:google_apis/gcm/engine/connection_factory_impl.cc:484] ConnectionHandler failed with net error: -2
+[43336:43364:0922/045336.933276:ERROR:google_apis/gcm/engine/connection_factory_impl.cc:484] ConnectionHandler failed with net error: -2
+[43336:43364:0922/050336.974870:ERROR:google_apis/gcm/engine/connection_factory_impl.cc:484] ConnectionHandler failed with net error: -2
+[43336:43364:0922/051343.402551:ERROR:google_apis/gcm/engine/connection_factory_impl.cc:484] ConnectionHandler failed with net error: -2
+[43336:43364:0922/052343.443232:ERROR:google_apis/gcm/engine/connection_factory_impl.cc:484] ConnectionHandler failed with net error: -2
+[43336:43364:0922/053343.484055:ERROR:google_apis/gcm/engine/connection_factory_impl.cc:484] ConnectionHandler failed with net error: -2
+[43336:43364:0922/054343.525457:ERROR:google_apis/gcm/engine/connection_factory_impl.cc:484] ConnectionHandler failed with net error: -2
+[43336:43364:0922/055343.567146:ERROR:google_apis/gcm/engine/connection_factory_impl.cc:484] ConnectionHandler failed with net error: -2
+[43336:43364:0922/060343.608993:ERROR:google_apis/gcm/engine/connection_factory_impl.cc:484] ConnectionHandler failed with net error: -2
+[43336:43364:0922/061343.650039:ERROR:google_apis/gcm/engine/connection_factory_impl.cc:484] ConnectionHandler failed with net error: -2
+[43336:43364:0922/062343.693683:ERROR:google_apis/gcm/engine/connection_factory_impl.cc:484] ConnectionHandler failed with net error: -2
+[43336:43364:0922/063343.736524:ERROR:google_apis/gcm/engine/connection_factory_impl.cc:484] ConnectionHandler failed with net error: -2
+[43336:43364:0922/064343.780449:ERROR:google_apis/gcm/engine/connection_factory_impl.cc:484] ConnectionHandler failed with net error: -2
+[43336:43364:0922/064413.784287:ERROR:google_apis/gcm/engine/connection_factory_impl.cc:435] Failed to connect to MCS endpoint with error -7
+[43336:43364:0922/064504.472385:ERROR:google_apis/gcm/engine/connection_factory_impl.cc:435] Failed to connect to MCS endpoint with error -7
+[43336:43364:0922/064628.384166:ERROR:google_apis/gcm/engine/connection_factory_impl.cc:435] Failed to connect to MCS endpoint with error -7
+[43336:43364:0922/064840.915132:ERROR:google_apis/gcm/engine/connection_factory_impl.cc:435] Failed to connect to MCS endpoint with error -7
+[43336:43364:0922/065236.063165:ERROR:google_apis/gcm/engine/connection_factory_impl.cc:435] Failed to connect to MCS endpoint with error -7
+[43336:43364:0922/065940.657463:ERROR:google_apis/gcm/engine/connection_factory_impl.cc:435] Failed to connect to MCS endpoint with error -7
+[43336:43364:0922/071940.660420:ERROR:google_apis/gcm/engine/connection_factory_impl.cc:484] ConnectionHandler failed with net error: -2

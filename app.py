@@ -1,5 +1,6 @@
 import asyncio
 import hashlib
+import json
 import logging
 import shutil
 from contextlib import asynccontextmanager
@@ -219,9 +220,20 @@ async def detect_websocket(websocket: WebSocket):
                     continue
                 await websocket.send_json(response)
             elif "text" in message and message["text"] is not None:
-                await websocket.send_json(
-                    {"error": "Use binary JPEG for detection frames and "
-                              "enveloped binary messages for OCR crops."})
+                command = json.loads(message["text"])
+                if command.get("type") == "reset":
+                    state = await asyncio.to_thread(processor.reset)
+                    await websocket.send_json({**state, "type": "reset_ack"})
+                elif command.get("type") == "status":
+                    with processor.lock:
+                        state = processor._snapshot()
+                        identifier = processor.identifier
+                        state["identification"] = identifier.snapshot() if identifier else {}
+                        if identifier and command.get("diagnostics"):
+                            state["diagnostics"] = identifier.replay_debug()
+                    await websocket.send_json({**state, "type": "status"})
+                else:
+                    await websocket.send_json({"error": "Unknown command"})
             else:
                 break
     except WebSocketDisconnect:

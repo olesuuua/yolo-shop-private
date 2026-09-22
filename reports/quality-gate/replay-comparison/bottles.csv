@@ -1,0 +1,61 @@
+run,gate,video,bottle,first_detection_wall,first_opportunity,first_brand_wall,first_brand_delay_s,first_brand_request,first_brand_track,first_brand_text,first_brand_video_ts,brand_validity,brand_note,n_ocr_exec,n_brand_ocr
+v1-a1,A,v1,A,51481.38,"{""request_id"": ""7:2:9"", ""video_timestamp"": 1.53}",51484.54,3.16,11:2:12,2,"[""AKBA""]",3.701573,unreviewed,,1,1
+v1-a1,A,v1,S,51488.63,"{""request_id"": ""20:4:16"", ""video_timestamp"": 8.75}",51498.57,9.94,34:6:36,6,"[""A"", ""СЕНЕЖСКАЯ"", ""питьсоля"", ""AHNA""]",17.06762,unreviewed,,3,1
+v1-a1,A,v1,W,51497.58,"{""request_id"": ""35:4:37"", ""video_timestamp"": 17.63}",51523.78,26.2,68:8:115,8,"[""СВЯТО"", ""%"", ""13"", ""oмик""]",39.950655,contaminated,68:8:115 Domik-owned grouped crop; W ghost through bottle; neighbor text dominant,3,0
+v1-a1,A,v1,P,51506.66,"{""request_id"": ""48:4:64"", ""video_timestamp"": 26.71}",,,,,[],,unresolved,,1,0
+v1-a1,A,v1,D,51515.45,"{""request_id"": ""62:4:98"", ""video_timestamp"": 35.58}",,,,,[],,unresolved,,12,0
+v1-a2,A,v1,A,51877.55,"{""request_id"": ""215:2:293"", ""video_timestamp"": 1.62}",51880.88,3.33,219:2:296,2,"[""AKBA""]",3.780183,unreviewed,,1,1
+v1-a2,A,v1,S,51884.75,"{""request_id"": ""228:3:302"", ""video_timestamp"": 8.8}",51887.85,3.1,231:4:307,4,"[""СЕНЕЖСКAЯ"", ""ПИТЬЕВАЯ"", ""НЕГАЗИРОВАННАЯ""]",10.49887,unreviewed,,4,2
+v1-a2,A,v1,W,51894.24,"{""request_id"": ""243:3:319"", ""video_timestamp"": 18.16}",51917.38,23.14,274:7:398,7,"[""СВЯТ"", ""УСТОЧН"", ""OMиK"", ""Вдеревне""]",38.447263,contaminated,274:7:398 same class as v1-a1 W hit; neighbor text dominant,3,0
+v1-a2,A,v1,P,51902.39,"{""request_id"": ""256:3:348"", ""video_timestamp"": 26.38}",,,,,[],,unresolved,,2,0
+v1-a2,A,v1,D,51911.71,"{""request_id"": ""270:7:386"", ""video_timestamp"": 35.7}",,,,,[],,unresolved,,12,0
+v1-b1,B,v1,A,51734.05,"{""request_id"": ""81:2:133"", ""video_timestamp"": 1.61}",51735.51,1.46,82:2:134,2,"[""AKBA""]",2.146788,unreviewed,,2,2
+v1-b1,B,v1,S,51741.22,"{""request_id"": ""93:3:139"", ""video_timestamp"": 8.78}",51743.47,2.25,95:2:142,2,"[""СЕНЕЖСКAЯ""]",9.884406,unreviewed,,6,3
+v1-b1,B,v1,W,51750.35,"{""request_id"": ""108:5:152"", ""video_timestamp"": 18.45}",51755.4,5.05,111:2:156,2,"[""Jniss"", """", ""CВЯТОИ"", ""ИСТОЧНИК""]",21.423323,valid,111:2:156 solo-window W close label; polys on brand; full 11.07/norm 30.82,6,1
+v1-b1,B,v1,P,51759.25,"{""request_id"": ""117:3:163"", ""video_timestamp"": 26.6}",,,,,[],,unresolved,,8,0
+v1-b1,B,v1,D,51768.17,"{""request_id"": ""128:7:181"", ""video_timestamp"": 35.41}",,,,,[],,unresolved,,12,0
+v1-b2,B,v1,A,51805.62,"{""request_id"": ""147:1:217"", ""video_timestamp"": 1.61}",51807.33,1.71,148:1:218,1,"[""AKBA"", ""EC""]",2.131422,unreviewed,,2,2
+v1-b2,B,v1,S,51813.16,"{""request_id"": ""161:2:223"", ""video_timestamp"": 9.66}",51814.99,1.83,161:1:224,1,"[""СЕНЕЖСКAЯ"", ""НЕГАЗHРОВАННАЯ""]",9.662302,unreviewed,,6,2
+v1-b2,B,v1,W,51822.17,"{""request_id"": ""174:3:234"", ""video_timestamp"": 18.04}",51825.44,3.27,172:2:232,1,"[""3hs"", """", ""СВЯТОЙ"", ""ИСТОЧНИК""]",16.786206,invalid,"172:2:232 shows Aqua+Senezhskaya, no W; W text is OCR misread; W unresolved here",7,1
+v1-b2,B,v1,P,51830.68,"{""request_id"": ""185:1:247"", ""video_timestamp"": 26.43}",,,,,[],,unresolved,,7,0
+v1-b2,B,v1,D,51839.48,"{""request_id"": ""197:6:259"", ""video_timestamp"": 35.28}",,,,,[],,unresolved,,12,0
+v2-a1,A,v2,A,51947.51,"{""request_id"": null, ""video_timestamp"": null, ""note"": ""all bottles continuously present""}",51949.43,1.92,285:3:413,3,"[""AKBA""]",0.002592,unreviewed,,,0
+v2-a1,A,v2,S,51947.51,"{""request_id"": null, ""video_timestamp"": null, ""note"": ""all bottles continuously present""}",51950.46,2.95,286:5:415,5,"["""", ""СЕНЕЖСKАЯ""]",0.573386,unreviewed,,,0
+v2-a1,A,v2,W,51947.51,"{""request_id"": null, ""video_timestamp"": null, ""note"": ""all bottles continuously present""}",,,,,[],,unresolved,,,0
+v2-a1,A,v2,P,51947.51,"{""request_id"": null, ""video_timestamp"": null, ""note"": ""all bottles continuously present""}",,,,,[],,unresolved,,,0
+v2-a1,A,v2,D,51947.51,"{""request_id"": null, ""video_timestamp"": null, ""note"": ""all bottles continuously present""}",,,,,[],,unresolved,,,0
+v2-a2,A,v2,A,52049.89,"{""request_id"": null, ""video_timestamp"": null, ""note"": ""all bottles continuously present""}",52051.59,1.7,326:3:487,3,"[""AKBA""]",0.004061,unreviewed,,,0
+v2-a2,A,v2,S,52049.89,"{""request_id"": null, ""video_timestamp"": null, ""note"": ""all bottles continuously present""}",52052.47,2.58,327:5:489,5,"["""", ""СЕНЕЖСKАЯ""]",0.567284,unreviewed,,,0
+v2-a2,A,v2,W,52049.89,"{""request_id"": null, ""video_timestamp"": null, ""note"": ""all bottles continuously present""}",,,,,[],,unresolved,,,0
+v2-a2,A,v2,P,52049.89,"{""request_id"": null, ""video_timestamp"": null, ""note"": ""all bottles continuously present""}",,,,,[],,unresolved,,,0
+v2-a2,A,v2,D,52049.89,"{""request_id"": null, ""video_timestamp"": null, ""note"": ""all bottles continuously present""}",,,,,[],,unresolved,,,0
+v2-b1,B,v2,A,51981.77,"{""request_id"": null, ""video_timestamp"": null, ""note"": ""all bottles continuously present""}",51985.15,3.38,298:4:438,4,"[""AKBA"", ""МИНЕ""]",0,unreviewed,,,0
+v2-b1,B,v2,S,51981.77,"{""request_id"": null, ""video_timestamp"": null, ""note"": ""all bottles continuously present""}",51985.37,3.6,301:5:446,5,"[""СЕНЕЖСКА""]",1.966675,unreviewed,,,0
+v2-b1,B,v2,W,51981.77,"{""request_id"": null, ""video_timestamp"": null, ""note"": ""all bottles continuously present""}",,,,,[],,unresolved,,,0
+v2-b1,B,v2,P,51981.77,"{""request_id"": null, ""video_timestamp"": null, ""note"": ""all bottles continuously present""}",,,,,[],,unresolved,,,0
+v2-b1,B,v2,D,51981.77,"{""request_id"": null, ""video_timestamp"": null, ""note"": ""all bottles continuously present""}",,,,,[],,unresolved,,,0
+v2-b2,B,v2,A,52015.17,"{""request_id"": null, ""video_timestamp"": null, ""note"": ""all bottles continuously present""}",52018.07,2.9,313:4:465,4,"[""AKBA"", ""МИНЕ""]",0,unreviewed,,,0
+v2-b2,B,v2,S,52015.17,"{""request_id"": null, ""video_timestamp"": null, ""note"": ""all bottles continuously present""}",52018.74,3.57,313:1:462,5,"["""", ""СЕНЕЖСКАЯ""]",0,unreviewed,,,0
+v2-b2,B,v2,W,52015.17,"{""request_id"": null, ""video_timestamp"": null, ""note"": ""all bottles continuously present""}",,,,,[],,unresolved,,,0
+v2-b2,B,v2,P,52015.17,"{""request_id"": null, ""video_timestamp"": null, ""note"": ""all bottles continuously present""}",,,,,[],,unresolved,,,0
+v2-b2,B,v2,D,52015.17,"{""request_id"": null, ""video_timestamp"": null, ""note"": ""all bottles continuously present""}",,,,,[],,unresolved,,,0
+v3-a1,A,v3,A,52084.45,"{""request_id"": null, ""video_timestamp"": null, ""note"": ""all bottles continuously present""}",,,,,[],,unresolved,,,0
+v3-a1,A,v3,S,52084.45,"{""request_id"": null, ""video_timestamp"": null, ""note"": ""all bottles continuously present""}",52092.3,7.85,349:5:527,5,"[""СЕНЕЖСК""]",6.198786,partial,Senezhskaya label genuine; OCR keeps 7-char root only,,0
+v3-a1,A,v3,W,52084.45,"{""request_id"": null, ""video_timestamp"": null, ""note"": ""all bottles continuously present""}",,,,,[],,unresolved,,,0
+v3-a1,A,v3,P,52084.45,"{""request_id"": null, ""video_timestamp"": null, ""note"": ""all bottles continuously present""}",,,,,[],,unresolved,,,0
+v3-a1,A,v3,D,52084.45,"{""request_id"": null, ""video_timestamp"": null, ""note"": ""all bottles continuously present""}",,,,,[],,unresolved,,,0
+v3-a2,A,v3,A,52194.36,"{""request_id"": null, ""video_timestamp"": null, ""note"": ""all bottles continuously present""}",,,,,[],,unresolved,,,0
+v3-a2,A,v3,S,52194.36,"{""request_id"": null, ""video_timestamp"": null, ""note"": ""all bottles continuously present""}",,,,,[],,unresolved,,,0
+v3-a2,A,v3,W,52194.36,"{""request_id"": null, ""video_timestamp"": null, ""note"": ""all bottles continuously present""}",,,,,[],,unresolved,,,0
+v3-a2,A,v3,P,52194.36,"{""request_id"": null, ""video_timestamp"": null, ""note"": ""all bottles continuously present""}",,,,,[],,unresolved,,,0
+v3-a2,A,v3,D,52194.36,"{""request_id"": null, ""video_timestamp"": null, ""note"": ""all bottles continuously present""}",,,,,[],,unresolved,,,0
+v3-b1,B,v3,A,52120.41,"{""request_id"": null, ""video_timestamp"": null, ""note"": ""all bottles continuously present""}",,,,,[],,unresolved,,,0
+v3-b1,B,v3,S,52120.41,"{""request_id"": null, ""video_timestamp"": null, ""note"": ""all bottles continuously present""}",52128.24,7.83,365:5:550,5,"[""СЕНЕЖCК""]",6.437906,partial,same as v3-a1 S,,0
+v3-b1,B,v3,W,52120.41,"{""request_id"": null, ""video_timestamp"": null, ""note"": ""all bottles continuously present""}",,,,,[],,unresolved,,,0
+v3-b1,B,v3,P,52120.41,"{""request_id"": null, ""video_timestamp"": null, ""note"": ""all bottles continuously present""}",,,,,[],,unresolved,,,0
+v3-b1,B,v3,D,52120.41,"{""request_id"": null, ""video_timestamp"": null, ""note"": ""all bottles continuously present""}",,,,,[],,unresolved,,,0
+v3-b2,B,v3,A,52157.93,"{""request_id"": null, ""video_timestamp"": null, ""note"": ""all bottles continuously present""}",,,,,[],,unresolved,,,0
+v3-b2,B,v3,S,52157.93,"{""request_id"": null, ""video_timestamp"": null, ""note"": ""all bottles continuously present""}",52165.61,7.68,381:5:576,5,"[""СЕНЕЖСК""]",6.366525,partial,same as v3-a1 S,,0
+v3-b2,B,v3,W,52157.93,"{""request_id"": null, ""video_timestamp"": null, ""note"": ""all bottles continuously present""}",,,,,[],,unresolved,,,0
+v3-b2,B,v3,P,52157.93,"{""request_id"": null, ""video_timestamp"": null, ""note"": ""all bottles continuously present""}",,,,,[],,unresolved,,,0
+v3-b2,B,v3,D,52157.93,"{""request_id"": null, ""video_timestamp"": null, ""note"": ""all bottles continuously present""}",,,,,[],,unresolved,,,0

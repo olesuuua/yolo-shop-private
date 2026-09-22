@@ -99,8 +99,27 @@ def useful_evidence(norms):
     return bool(solid) or len(small) >= 2
 
 
+def _diagnostic_line(line):
+    """Text/score plus crop-pixel textline geometry (poly/box) when present.
+
+    Coordinates map 1:1 to the exact submitted crop JPEG bytes (the worker
+    predicts on the decoded upload), so the evidence panel can overlay text
+    boxes on the displayed crop without any further mapping.
+    """
+    entry = {"text": str(line.get("text", ""))[:1000], "score": line.get("score")}
+    poly = line.get("poly")
+    if isinstance(poly, list) and len(poly) == 4:
+        entry["poly"] = poly
+    box = line.get("box")
+    if isinstance(box, list) and len(box) == 4:
+        entry["box"] = box
+    return entry
+
+
 @dataclass
 class TrackEvidence:
+    sources: dict = field(default_factory=dict)
+    sources_dropped: int = 0
     complete: bool = False
     hint: str = ""
     lines: dict = field(default_factory=dict)  # norm -> {text, score, hits}
@@ -223,6 +242,9 @@ class IdentificationService:
         # Per-track pending slots: track_id -> jpeg bytes. A newer crop
         # replaces a stale one; the worker serves tracks round-robin.
         self.slots = {}
+        self.slot_meta = {}
+        self.diagnostics = {}
+        self.diagnostic_dropped = 0
         self.slot_order = deque()
         self.slot_lock = threading.Lock()
         self.wake = threading.Event()
@@ -290,8 +312,11 @@ class IdentificationService:
         with self.lock:
             self.tracks = {}
             self.jev_inflight.clear()
+            self.diagnostics.clear()
+            self.diagnostic_dropped = 0
         with self.slot_lock:
             self.slots = {}
+            self.slot_meta.clear()
             self.slot_order.clear()
 
     def prune(self, active_ids):
@@ -314,16 +339,28 @@ class IdentificationService:
                     if (evidence.absent_frames > IDENT_ABSENT_FRAMES
                             or now - evidence.last_seen_time > TRACK_TTL_S):
                         del self.tracks[track_id]
+                        self.jev_inflight.discard(track_id)
                         with self.slot_lock:
+                            meta = self.slot_meta.pop(track_id, None)
+                            if meta and meta[2] is not None: meta[2]["ocr_status"] = "track_expired"
                             self.slots.pop(track_id, None)
 
-    def submit(self, track_id, hint, jpeg_bytes, crop_wh=None):
-        """Queue the newest crop for a track; replaces a stale pending one."""
+    def submit(self, track_id, hint, jpeg_bytes, crop_wh=None, *,
+               expected=None, diagnostic=None, frame_id=None):
+        """Queue the newest crop for a track; replaces a stale pending one.
+
+        Returns True on success or a falsy rejection reason. An
+        out-of-order crop (an older frame than one already pending for the
+        track) is deliberately dropped with the "stale" sentinel instead
+        of overwriting newer pending evidence.
+        """
         if not jpeg_bytes or self.ocr_gave_up:
             return False
         now = time.monotonic()
         with self.lock:
             evidence = self.tracks.get(track_id)
+            if expected is not None and evidence is not expected:
+                return False
             if evidence is None:
                 evidence = self.tracks[track_id] = TrackEvidence(hint=hint or "")
             if hint:
@@ -333,6 +370,11 @@ class IdentificationService:
                 evidence.first_seen_at = now
             if evidence.complete:
                 return False
+            with self.slot_lock:
+                old_meta = self.slot_meta.get(track_id)
+                if (frame_id is not None and old_meta is not None
+                        and old_meta[3] is not None and old_meta[3] > frame_id):
+                    return "stale"
             # Empty tracks retry faster so a brief label view is still caught.
             interval = (self.config.submit_interval_s if evidence.ocr_runs
                         else self.config.submit_interval_empty_s)
@@ -351,6 +393,14 @@ class IdentificationService:
                     evidence.stale_replaced += 1
                 else:
                     self.slot_order.append(track_id)
+                old = self.slot_meta.get(track_id)
+                if old and old[2]: old[2]["ocr_status"] = "replaced"
+                if diagnostic is not None:
+                    self.diagnostics[diagnostic["request_id"]] = diagnostic
+                    while len(self.diagnostics) > 200:
+                        del self.diagnostics[next(iter(self.diagnostics))]
+                        self.diagnostic_dropped += 1
+                self.slot_meta[track_id] = (evidence, now, diagnostic, frame_id)
                 self.slots[track_id] = bytes(jpeg_bytes)
         self.wake.set()
         return True
@@ -360,11 +410,13 @@ class IdentificationService:
             evidence = self.tracks.get(track_id)
             return evidence is not None and evidence.complete
 
-    def note(self, track_id, hint, sharpness, crop_wh=None):
+    def note(self, track_id, hint, sharpness, crop_wh=None, expected=None):
         """Record a seen crop (even a rejected one) so the overlay can show
         collection state instead of nothing."""
         with self.lock:
             evidence = self.tracks.get(track_id)
+            if expected is not None and evidence is not expected:
+                return
             if evidence is None:
                 evidence = self.tracks[track_id] = TrackEvidence(hint=hint or "")
             if hint:
@@ -488,6 +540,12 @@ class IdentificationService:
                 },
             }
 
+    def replay_debug(self):
+        import copy
+        with self.lock:
+            return {"requests": copy.deepcopy(list(self.diagnostics.values())),
+                    "dropped": self.diagnostic_dropped}
+
     def readiness(self):
         from dotenv import load_dotenv
         load_dotenv(ROOT / ".env")
@@ -505,7 +563,7 @@ class IdentificationService:
             "jev_workers": self.config.jev_workers,
         }
 
-    def _merge(self, track_id, hint, lines, expected=None):
+    def _merge(self, track_id, hint, lines, expected=None, request_id=None):
         with self.lock:
             evidence = self.tracks.get(track_id)
             if expected is not None and evidence is not expected:
@@ -526,6 +584,10 @@ class IdentificationService:
                 norm = normalize(text)
                 if len(norm) < 2:
                     continue
+                if request_id:
+                    sources = evidence.sources.get(norm, []) + [request_id]
+                    evidence.sources_dropped += max(0, len(sources)-200)
+                    evidence.sources[norm] = sources[-200:]
                 entry = evidence.lines.get(norm)
                 score = float(line.get("score", 0) or 0)
                 if entry is None:
@@ -553,13 +615,14 @@ class IdentificationService:
     def _identify(self, track_id, evidence):
         with self.lock:
             if self.tracks.get(track_id) is not evidence or evidence.complete:
-                self.jev_inflight.discard(track_id)
+                if self.tracks.get(track_id) is evidence:
+                    self.jev_inflight.discard(track_id)
                 return
             request_fingerprint = evidence.fingerprint
-        lines = [
-            {"text": evidence.lines[n]["text"], "score": evidence.lines[n]["score"]}
-            for n in request_fingerprint[:MAX_JEV_LINES]
-        ]
+            source_ids = sorted({r for n in request_fingerprint[:MAX_JEV_LINES]
+                                 for r in evidence.sources.get(n, [])})
+            lines = [{"text": evidence.lines[n]["text"], "score": evidence.lines[n]["score"]}
+                     for n in request_fingerprint[:MAX_JEV_LINES]]
         started = time.monotonic()
         call_completed = False
         try:
@@ -588,9 +651,19 @@ class IdentificationService:
         with self.lock:
             if call_completed:
                 self.jev_calls += 1
-            self.jev_inflight.discard(track_id)
+            if self.tracks.get(track_id) is evidence:
+                self.jev_inflight.discard(track_id)
             current = self.tracks.get(track_id)
             if current is evidence:
+                for request_id in source_ids:
+                    diagnostic = self.diagnostics.get(request_id)
+                    if diagnostic is not None:
+                        if "jev" in diagnostic:
+                            diagnostic["jev_outcomes_replaced"] = diagnostic.get("jev_outcomes_replaced", 0) + 1
+                        diagnostic["jev"] = {"source_request_ids": source_ids, "lines": lines,
+                                             "result": result, "duration_ms": elapsed_ms,
+                                             "source_ids_dropped": evidence.sources_dropped,
+                                             "error": bool(error_text)}
                 evidence.result = result
                 confidence = result.get("confidence")
                 evidence.complete = (
@@ -601,6 +674,8 @@ class IdentificationService:
                 )
                 if evidence.complete:
                     with self.slot_lock:
+                        meta = self.slot_meta.pop(track_id, None)
+                        if meta and meta[2] is not None: meta[2]["ocr_status"] = "complete"
                         self.slots.pop(track_id, None)
                         self.slot_order = deque(t for t in self.slot_order if t != track_id)
                 evidence.jev_error = error_text
@@ -624,7 +699,7 @@ class IdentificationService:
             self.ocr_error = str(error)
             logger.warning("OCR worker unavailable: %s", error)
 
-    def _take_slot(self):
+    def _take_slot(self, with_meta=False):
         """Next pending crop; each track holds at most one, so turns rotate
         fairly and this is always the newest view of that bottle."""
         with self.slot_lock:
@@ -632,7 +707,8 @@ class IdentificationService:
                 track_id = self.slot_order.popleft()
                 jpeg = self.slots.pop(track_id, None)
                 if jpeg is not None:
-                    return track_id, jpeg
+                    meta = self.slot_meta.pop(track_id, (None, time.monotonic(), None, None))
+                    return (track_id, jpeg, meta) if with_meta else (track_id, jpeg)
             return None
 
     def _loop(self):
@@ -646,14 +722,16 @@ class IdentificationService:
             if pending:
                 self._ensure_ocr()
             while not self.stop_event.is_set():
-                item = self._take_slot()
+                item = self._take_slot(with_meta=True)
                 if item is None:
                     break
-                track_id, jpeg = item
+                track_id, jpeg, (expected, queued, diagnostic, _frame) = item
                 with self.lock:
                     evidence = self.tracks.get(track_id)
                     hint = evidence.hint if evidence is not None else ""
-                if evidence is None or evidence.complete or self.ocr is None:
+                if evidence is not expected or evidence is None or evidence.complete or self.ocr is None:
+                    with self.lock:
+                        if diagnostic is not None: diagnostic["ocr_status"] = "track_expired_or_unavailable"
                     continue
                 if self.config.dedup:
                     # A held-still bottle yields effectively identical crops;
@@ -665,13 +743,19 @@ class IdentificationService:
                         with self.lock:
                             if self.tracks.get(track_id) is evidence:
                                 evidence.dedup_skips += 1
+                                if diagnostic is not None: diagnostic["ocr_status"] = "duplicate"
                         continue
                 else:
                     digest = None
                 started = time.monotonic()
+                with self.lock:
+                    if diagnostic is not None:
+                        diagnostic.update(ocr_status="running", queue_wait_ms=(started-queued)*1000)
                 try:
                     lines = self.ocr.predict(jpeg)
                 except Exception as error:
+                    with self.lock:
+                        if diagnostic is not None: diagnostic["ocr_status"] = "error"
                     logger.warning("OCR failed for track %s: %s", track_id, error)
                     continue
                 ocr_ms = (time.monotonic() - started) * 1000
@@ -686,7 +770,14 @@ class IdentificationService:
                         evidence.last_ocr_hash = digest
                     if evidence.first_ocr_done_at is None:
                         evidence.first_ocr_done_at = time.monotonic()
-                merged = self._merge(track_id, hint, lines or [], expected=evidence)
+                with self.lock:
+                    if diagnostic is not None:
+                        diagnostic.update(ocr_status="done", ocr_ms=ocr_ms,
+                                          lines=[_diagnostic_line(x) for x in (lines or [])[:100]],
+                                          lines_dropped=max(0, len(lines or [])-100),
+                                          text_truncated=any(len(str(x.get("text", ""))) > 1000 for x in (lines or [])[:100]))
+                merged = self._merge(track_id, hint, lines or [], expected=evidence,
+                                     request_id=diagnostic["request_id"] if diagnostic else None)
                 if merged is not None and self._jev_due(merged):
                     if self.config.jev_inline:
                         self._identify(track_id, merged)

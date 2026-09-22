@@ -293,6 +293,22 @@ class ApiTests(unittest.TestCase):
             self.assertEqual(selected, FOOD_CLASSES)
             self.assertTrue(selected.isdisjoint(excluded))
 
+    def test_ordered_socket_reset_and_idle_status(self):
+        with self.client.websocket_connect("/ws/detect") as ws:
+            ws.send_bytes(jpeg())
+            ws.send_json({"type": "reset"})
+            before = ws.receive_json()
+            reset = ws.receive_json()
+            self.assertEqual(reset["type"], "reset_ack")
+            self.assertGreater(reset["session_version"], before["session_version"])
+            ws.send_json({"type": "status", "diagnostics": True})
+            status = ws.receive_json()
+            self.assertEqual(status["type"], "status")
+            self.assertEqual(status["session_version"], reset["session_version"])
+            self.assertEqual(status["packed_counts"], {})
+            ws.send_bytes(jpeg())
+            self.assertEqual(ws.receive_json()["session_version"], reset["session_version"])
+
     def test_malformed_frame_does_not_kill_stream(self):
         with self.client.websocket_connect("/ws/detect") as ws:
             ws.send_bytes(b"not a jpeg")

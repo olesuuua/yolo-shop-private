@@ -1,0 +1,229 @@
+{
+  "capture": {
+    "upload_wh": [
+      640,
+      480
+    ],
+    "fps": 1.62,
+    "detect_ms": 215.9
+  },
+  "queue_depth": 0,
+  "tracks": {
+    "4": {
+      "hint": "Bottle",
+      "status": "candidate",
+      "complete": true,
+      "choice": "aqua-minerale-0-5l",
+      "confidence": 0.8,
+      "submitted": 1,
+      "ocr_runs": 1,
+      "dedup_skips": 0,
+      "stale_replaced": 0,
+      "sharpness": 16.1,
+      "crop_wh": [
+        782,
+        1522
+      ],
+      "absent_frames": 0,
+      "jev_error": "",
+      "t_first_seen": 0.0,
+      "t_first_submit": 32.08,
+      "t_first_ocr_done": 32.77,
+      "t_first_ident": 33.59,
+      "last_ocr_ms": 687.2,
+      "last_jev_ms": 817.4,
+      "lines": [
+        {
+          "text": "2992",
+          "score": 0.339,
+          "hits": 1
+        },
+        {
+          "text": "AKBA",
+          "score": 0.964,
+          "hits": 1
+        },
+        {
+          "text": "КAЯ",
+          "score": 0.549,
+          "hits": 1
+        }
+      ]
+    },
+    "5": {
+      "hint": "Bottle",
+      "status": "candidate",
+      "complete": true,
+      "choice": "senezhskaya-0-5l",
+      "confidence": 0.96,
+      "submitted": 1,
+      "ocr_runs": 1,
+      "dedup_skips": 0,
+      "stale_replaced": 0,
+      "sharpness": 20.7,
+      "crop_wh": [
+        935,
+        1361
+      ],
+      "absent_frames": 0,
+      "jev_error": "",
+      "t_first_seen": 8.87,
+      "t_first_submit": 9.85,
+      "t_first_ocr_done": 10.7,
+      "t_first_ident": 11.51,
+      "last_ocr_ms": 839.7,
+      "last_jev_ms": 807.1,
+      "lines": [
+        {
+          "text": "пнтосиля",
+          "score": 0.255,
+          "hits": 1
+        },
+        {
+          "text": "СEНЕЖCKAЯ",
+          "score": 0.568,
+          "hits": 1
+        }
+      ]
+    },
+    "2": {
+      "hint": "Bottle",
+      "status": "needs_more_evidence",
+      "complete": false,
+      "choice": null,
+      "confidence": null,
+      "submitted": 4,
+      "ocr_runs": 3,
+      "dedup_skips": 1,
+      "stale_replaced": 0,
+      "sharpness": 19.6,
+      "crop_wh": [
+        679,
+        1508
+      ],
+      "absent_frames": 0,
+      "jev_error": "",
+      "t_first_seen": 20.0,
+      "t_first_submit": 31.2,
+      "t_first_ocr_done": 32.01,
+      "t_first_ident": null,
+      "last_ocr_ms": 712.9,
+      "last_jev_ms": 928.0,
+      "lines": [
+        {
+          "text": "2,5%",
+          "score": 0.978,
+          "hits": 3
+        },
+        {
+          "text": "in",
+          "score": 0.266,
+          "hits": 1
+        },
+        {
+          "text": "МОЛОКО",
+          "score": 0.91,
+          "hits": 3
+        }
+      ]
+    },
+    "6": {
+      "hint": "Bottle",
+      "status": "candidate",
+      "complete": true,
+      "choice": "domik-v-derevne-2-5-930ml",
+      "confidence": 0.77,
+      "submitted": 3,
+      "ocr_runs": 2,
+      "dedup_skips": 1,
+      "stale_replaced": 0,
+      "sharpness": 23.4,
+      "crop_wh": [
+        902,
+        1789
+      ],
+      "absent_frames": 0,
+      "jev_error": "",
+      "t_first_seen": 22.37,
+      "t_first_submit": 32.86,
+      "t_first_ocr_done": 34.56,
+      "t_first_ident": 35.4,
+      "last_ocr_ms": 1299.7,
+      "last_jev_ms": 791.1,
+      "lines": [
+        {
+          "text": "MOΛOK",
+          "score": 0.586,
+          "hits": 1
+        },
+        {
+          "text": "OMUK",
+          "score": 0.562,
+          "hits": 1
+        },
+        {
+          "text": "TOU",
+          "score": 0.641,
+          "hits": 1
+        },
+        {
+          "text": "uc",
+          "score": 0.546,
+          "hits": 1
+        },
+        {
+          "text": "БОЛЬШЕ",
+          "score": 0.958,
+          "hits": 1
+        },
+        {
+          "text": "Вдеревне",
+          "score": 0.547,
+          "hits": 1
+        },
+        {
+          "text": "СВЯТОЙ",
+          "score": 0.673,
+          "hits": 1
+        },
+        {
+          "text": "ФЕПМ",
+          "score": 0.666,
+          "hits": 1
+        },
+        {
+          "text": "ФЕРМ",
+          "score": 0.741,
+          "hits": 1
+        },
+        {
+          "text": "•УЗНАТЬ",
+          "score": 0.876,
+          "hits": 1
+        }
+      ]
+    },
+    "8": {
+      "hint": "Bottle",
+      "status": "needs_more_evidence",
+      "complete": false,
+      "choice": null,
+      "confidence": null,
+      "submitted": 0,
+      "ocr_runs": 0,
+      "dedup_skips": 0,
+      "stale_replaced": 0,
+      "sharpness": 0.0,
+      "crop_wh": [],
+      "absent_frames": 0,
+      "jev_error": "",
+      "t_first_seen": 39.54,
+      "t_first_submit": null,
+      "t_first_ocr_done": null,
+      "t_first_ident": null,
+      "last_ocr_ms": 0.0,
+      "last_jev_ms": 0.0,
+      "lines": []
+    }
+  }
+}

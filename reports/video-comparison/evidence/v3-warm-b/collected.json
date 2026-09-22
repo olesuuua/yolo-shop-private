@@ -1,0 +1,3252 @@
+{
+  "frames": [
+    {
+      "frame_id": 565,
+      "session_version": 19,
+      "video_timestamp": 0,
+      "source_dimensions": [
+        3840,
+        2160
+      ],
+      "detection_dimensions": [
+        640,
+        480
+      ],
+      "tracks": []
+    },
+    {
+      "frame_id": 566,
+      "session_version": 19,
+      "video_timestamp": 0.130679,
+      "source_dimensions": [
+        3840,
+        2160
+      ],
+      "detection_dimensions": [
+        640,
+        480
+      ],
+      "tracks": []
+    },
+    {
+      "frame_id": 567,
+      "session_version": 19,
+      "video_timestamp": 0.703272,
+      "source_dimensions": [
+        3840,
+        2160
+      ],
+      "detection_dimensions": [
+        640,
+        480
+      ],
+      "tracks": [
+        {
+          "track_id": 1,
+          "bbox": [
+            237.66249084472656,
+            118.1170654296875,
+            306.11785888671875,
+            332.7391052246094
+          ]
+        },
+        {
+          "track_id": 2,
+          "bbox": [
+            69.0227279663086,
+            204.88414001464844,
+            145.21414184570312,
+            355.6837463378906
+          ]
+        },
+        {
+          "track_id": 3,
+          "bbox": [
+            156.51223754882812,
+            214.83563232421875,
+            232.8600311279297,
+            413.1033935546875
+          ]
+        },
+        {
+          "track_id": 4,
+          "bbox": [
+            381.6755065917969,
+            206.35862731933594,
+            447.1549987792969,
+            385.3622131347656
+          ]
+        },
+        {
+          "track_id": 5,
+          "bbox": [
+            320.3590393066406,
+            285.324462890625,
+            396.638916015625,
+            467.82305908203125
+          ]
+        }
+      ]
+    },
+    {
+      "frame_id": 568,
+      "session_version": 19,
+      "video_timestamp": 1.261148,
+      "source_dimensions": [
+        3840,
+        2160
+      ],
+      "detection_dimensions": [
+        640,
+        480
+      ],
+      "tracks": [
+        {
+          "track_id": 1,
+          "bbox": [
+            235.7739715576172,
+            123.40374755859375,
+            304.26800537109375,
+            338.0893249511719
+          ]
+        },
+        {
+          "track_id": 2,
+          "bbox": [
+            49.249549865722656,
+            208.98814392089844,
+            133.90321350097656,
+            378.2196960449219
+          ]
+        },
+        {
+          "track_id": 3,
+          "bbox": [
+            159.08798217773438,
+            243.61843872070312,
+            226.80517578125,
+            418.6181945800781
+          ]
+        },
+        {
+          "track_id": 4,
+          "bbox": [
+            380.5267639160156,
+            212.87648010253906,
+            447.406494140625,
+            395.7633056640625
+          ]
+        },
+        {
+          "track_id": 5,
+          "bbox": [
+            319.1409912109375,
+            291.60711669921875,
+            395.0674743652344,
+            473.0960388183594
+          ]
+        },
+        {
+          "track_id": 6,
+          "bbox": [
+            71.66442108154297,
+            208.85816955566406,
+            98.68692016601562,
+            301.43682861328125
+          ]
+        }
+      ]
+    },
+    {
+      "frame_id": 569,
+      "session_version": 19,
+      "video_timestamp": 1.970083,
+      "source_dimensions": [
+        3840,
+        2160
+      ],
+      "detection_dimensions": [
+        640,
+        480
+      ],
+      "tracks": [
+        {
+          "track_id": 1,
+          "bbox": [
+            229.03817749023438,
+            125.32244873046875,
+            298.1078796386719,
+            341.6013488769531
+          ]
+        },
+        {
+          "track_id": 2,
+          "bbox": [
+            45.81721496582031,
+            209.59237670898438,
+            128.45455932617188,
+            375.556884765625
+          ]
+        },
+        {
+          "track_id": 3,
+          "bbox": [
+            151.1533966064453,
+            252.02940368652344,
+            218.734375,
+            425.1206970214844
+          ]
+        },
+        {
+          "track_id": 4,
+          "bbox": [
+            376.0523681640625,
+            216.9544677734375,
+            443.45172119140625,
+            401.3540954589844
+          ]
+        },
+        {
+          "track_id": 5,
+          "bbox": [
+            313.7360534667969,
+            295.6258850097656,
+            390.4971618652344,
+            478.8354797363281
+          ]
+        },
+        {
+          "track_id": 6,
+          "bbox": [
+            66.85588836669922,
+            209.2308349609375,
+            87.2005615234375,
+            277.4248046875
+          ]
+        }
+      ]
+    },
+    {
+      "frame_id": 570,
+      "session_version": 19,
+      "video_timestamp": 3.050989,
+      "source_dimensions": [
+        3840,
+        2160
+      ],
+      "detection_dimensions": [
+        640,
+        480
+      ],
+      "tracks": [
+        {
+          "track_id": 1,
+          "bbox": [
+            224.1926727294922,
+            125.51526641845703,
+            293.7894592285156,
+            343.1993408203125
+          ]
+        },
+        {
+          "track_id": 2,
+          "bbox": [
+            45.27616882324219,
+            200.0702362060547,
+            128.25579833984375,
+            367.5301208496094
+          ]
+        },
+        {
+          "track_id": 3,
+          "bbox": [
+            141.0227813720703,
+            226.22093200683594,
+            225.82765197753906,
+            443.7352600097656
+          ]
+        },
+        {
+          "track_id": 4,
+          "bbox": [
+            372.18438720703125,
+            219.7161102294922,
+            439.4258117675781,
+            403.69903564453125
+          ]
+        },
+        {
+          "track_id": 5,
+          "bbox": [
+            308.91265869140625,
+            298.2987365722656,
+            385.519287109375,
+            480.65313720703125
+          ]
+        },
+        {
+          "track_id": 6,
+          "bbox": [
+            63.53646469116211,
+            207.0818634033203,
+            79.70240020751953,
+            259.2474670410156
+          ]
+        }
+      ]
+    },
+    {
+      "frame_id": 571,
+      "session_version": 19,
+      "video_timestamp": 3.643612,
+      "source_dimensions": [
+        3840,
+        2160
+      ],
+      "detection_dimensions": [
+        640,
+        480
+      ],
+      "tracks": [
+        {
+          "track_id": 1,
+          "bbox": [
+            221.56121826171875,
+            125.48222351074219,
+            291.7171936035156,
+            344.57403564453125
+          ]
+        },
+        {
+          "track_id": 2,
+          "bbox": [
+            44.078426361083984,
+            204.2076416015625,
+            96.98157501220703,
+            310.9169616699219
+          ]
+        },
+        {
+          "track_id": 3,
+          "bbox": [
+            142.1553497314453,
+            254.21743774414062,
+            219.25650024414062,
+            449.90704345703125
+          ]
+        },
+        {
+          "track_id": 4,
+          "bbox": [
+            370.4658508300781,
+            220.8738250732422,
+            438.0212707519531,
+            405.6659851074219
+          ]
+        },
+        {
+          "track_id": 5,
+          "bbox": [
+            306.60467529296875,
+            300.0350341796875,
+            382.8778076171875,
+            480.9682922363281
+          ]
+        }
+      ]
+    },
+    {
+      "frame_id": 572,
+      "session_version": 19,
+      "video_timestamp": 4.319014,
+      "source_dimensions": [
+        3840,
+        2160
+      ],
+      "detection_dimensions": [
+        640,
+        480
+      ],
+      "tracks": [
+        {
+          "track_id": 1,
+          "bbox": [
+            220.19992065429688,
+            125.19007873535156,
+            290.5290222167969,
+            344.3202819824219
+          ]
+        },
+        {
+          "track_id": 2,
+          "bbox": [
+            45.526458740234375,
+            204.8353271484375,
+            85.96697235107422,
+            286.21392822265625
+          ]
+        },
+        {
+          "track_id": 3,
+          "bbox": [
+            142.01907348632812,
+            265.0898132324219,
+            215.43789672851562,
+            449.1570129394531
+          ]
+        },
+        {
+          "track_id": 4,
+          "bbox": [
+            369.181396484375,
+            220.82102966308594,
+            436.11517333984375,
+            403.67523193359375
+          ]
+        },
+        {
+          "track_id": 5,
+          "bbox": [
+            304.5842590332031,
+            299.3240661621094,
+            381.4571228027344,
+            480.9944152832031
+          ]
+        }
+      ]
+    },
+    {
+      "frame_id": 573,
+      "session_version": 19,
+      "video_timestamp": 5.31777,
+      "source_dimensions": [
+        3840,
+        2160
+      ],
+      "detection_dimensions": [
+        640,
+        480
+      ],
+      "tracks": [
+        {
+          "track_id": 1,
+          "bbox": [
+            227.9771270751953,
+            120.35263061523438,
+            298.5130920410156,
+            339.671875
+          ]
+        },
+        {
+          "track_id": 4,
+          "bbox": [
+            375.9100036621094,
+            219.05609130859375,
+            443.7502746582031,
+            404.3063049316406
+          ]
+        },
+        {
+          "track_id": 5,
+          "bbox": [
+            311.361083984375,
+            295.88690185546875,
+            389.0400085449219,
+            478.31646728515625
+          ]
+        }
+      ]
+    },
+    {
+      "frame_id": 574,
+      "session_version": 19,
+      "video_timestamp": 6.350823,
+      "source_dimensions": [
+        3840,
+        2160
+      ],
+      "detection_dimensions": [
+        640,
+        480
+      ],
+      "tracks": [
+        {
+          "track_id": 1,
+          "bbox": [
+            230.8341522216797,
+            107.61849212646484,
+            303.4843444824219,
+            332.5965576171875
+          ]
+        },
+        {
+          "track_id": 4,
+          "bbox": [
+            383.02777099609375,
+            213.0745849609375,
+            452.6160888671875,
+            402.4955139160156
+          ]
+        },
+        {
+          "track_id": 5,
+          "bbox": [
+            314.9994812011719,
+            295.1474609375,
+            393.7076416015625,
+            478.474365234375
+          ]
+        },
+        {
+          "track_id": 7,
+          "bbox": [
+            65.80162048339844,
+            173.44410705566406,
+            137.0313720703125,
+            334.1047058105469
+          ]
+        }
+      ]
+    },
+    {
+      "frame_id": 575,
+      "session_version": 19,
+      "video_timestamp": 7.215562,
+      "source_dimensions": [
+        3840,
+        2160
+      ],
+      "detection_dimensions": [
+        640,
+        480
+      ],
+      "tracks": [
+        {
+          "track_id": 1,
+          "bbox": [
+            222.83541870117188,
+            93.68659973144531,
+            297.2008056640625,
+            323.2442321777344
+          ]
+        },
+        {
+          "track_id": 4,
+          "bbox": [
+            379.7729187011719,
+            202.79127502441406,
+            450.0954895019531,
+            393.9494323730469
+          ]
+        },
+        {
+          "track_id": 5,
+          "bbox": [
+            308.5613708496094,
+            286.12615966796875,
+            390.4095153808594,
+            475.56494140625
+          ]
+        },
+        {
+          "track_id": 7,
+          "bbox": [
+            55.89305114746094,
+            159.2397918701172,
+            127.55848693847656,
+            320.6405029296875
+          ]
+        },
+        {
+          "track_id": 8,
+          "bbox": [
+            -14.15103816986084,
+            180.11300659179688,
+            78.76121520996094,
+            365.7586975097656
+          ]
+        }
+      ]
+    },
+    {
+      "frame_id": 576,
+      "session_version": 19,
+      "video_timestamp": 8.216764,
+      "source_dimensions": [
+        3840,
+        2160
+      ],
+      "detection_dimensions": [
+        640,
+        480
+      ],
+      "tracks": [
+        {
+          "track_id": 1,
+          "bbox": [
+            206.17764282226562,
+            71.27650451660156,
+            283.4776916503906,
+            309.454345703125
+          ]
+        },
+        {
+          "track_id": 4,
+          "bbox": [
+            368.12750244140625,
+            185.43606567382812,
+            440.1059265136719,
+            380.10406494140625
+          ]
+        },
+        {
+          "track_id": 5,
+          "bbox": [
+            295.68389892578125,
+            272.59942626953125,
+            380.70977783203125,
+            467.8978576660156
+          ]
+        },
+        {
+          "track_id": 7,
+          "bbox": [
+            80.31364440917969,
+            137.8627166748047,
+            153.3986053466797,
+            302.2255554199219
+          ]
+        },
+        {
+          "track_id": 8,
+          "bbox": [
+            -4.070852756500244,
+            125.17581176757812,
+            98.86853790283203,
+            330.9658203125
+          ]
+        }
+      ]
+    },
+    {
+      "frame_id": 577,
+      "session_version": 19,
+      "video_timestamp": 9.253052,
+      "source_dimensions": [
+        3840,
+        2160
+      ],
+      "detection_dimensions": [
+        640,
+        480
+      ],
+      "tracks": [
+        {
+          "track_id": 1,
+          "bbox": [
+            194.34376525878906,
+            67.10140228271484,
+            272.1551208496094,
+            306.69866943359375
+          ]
+        },
+        {
+          "track_id": 4,
+          "bbox": [
+            356.65228271484375,
+            178.93502807617188,
+            428.9054870605469,
+            373.7736511230469
+          ]
+        },
+        {
+          "track_id": 5,
+          "bbox": [
+            285.1156921386719,
+            266.7832336425781,
+            369.4507751464844,
+            459.67950439453125
+          ]
+        },
+        {
+          "track_id": 7,
+          "bbox": [
+            117.89978790283203,
+            136.3975372314453,
+            190.2530975341797,
+            299.94573974609375
+          ]
+        },
+        {
+          "track_id": 8,
+          "bbox": [
+            40.96355056762695,
+            160.59896850585938,
+            127.16585540771484,
+            331.6996154785156
+          ]
+        }
+      ]
+    },
+    {
+      "frame_id": 578,
+      "session_version": 19,
+      "video_timestamp": 10.143397,
+      "source_dimensions": [
+        3840,
+        2160
+      ],
+      "detection_dimensions": [
+        640,
+        480
+      ],
+      "tracks": [
+        {
+          "track_id": 1,
+          "bbox": [
+            193.34442138671875,
+            73.73789978027344,
+            266.6512145996094,
+            298.2818908691406
+          ]
+        },
+        {
+          "track_id": 4,
+          "bbox": [
+            352.1714172363281,
+            181.6407012939453,
+            424.14276123046875,
+            376.2627868652344
+          ]
+        },
+        {
+          "track_id": 5,
+          "bbox": [
+            277.7474365234375,
+            224.20989990234375,
+            379.2104187011719,
+            457.82501220703125
+          ]
+        },
+        {
+          "track_id": 7,
+          "bbox": [
+            135.4991455078125,
+            144.92332458496094,
+            203.23231506347656,
+            298.5928039550781
+          ]
+        },
+        {
+          "track_id": 8,
+          "bbox": [
+            43.378517150878906,
+            110.25502014160156,
+            156.3524627685547,
+            336.0669860839844
+          ]
+        },
+        {
+          "track_id": 3,
+          "bbox": [
+            155.05812072753906,
+            286.62384033203125,
+            213.6500701904297,
+            422.9117736816406
+          ]
+        }
+      ]
+    },
+    {
+      "frame_id": 579,
+      "session_version": 19,
+      "video_timestamp": 11.017837,
+      "source_dimensions": [
+        3840,
+        2160
+      ],
+      "detection_dimensions": [
+        640,
+        480
+      ],
+      "tracks": [
+        {
+          "track_id": 1,
+          "bbox": [
+            186.779052734375,
+            75.25736999511719,
+            261.790283203125,
+            304.9949645996094
+          ]
+        },
+        {
+          "track_id": 4,
+          "bbox": [
+            341.598388671875,
+            179.61767578125,
+            414.9788513183594,
+            377.0970458984375
+          ]
+        },
+        {
+          "track_id": 5,
+          "bbox": [
+            268.0268859863281,
+            240.67010498046875,
+            360.2959289550781,
+            456.353271484375
+          ]
+        },
+        {
+          "track_id": 7,
+          "bbox": [
+            132.56558227539062,
+            147.39035034179688,
+            201.88719177246094,
+            305.35772705078125
+          ]
+        },
+        {
+          "track_id": 8,
+          "bbox": [
+            38.95463562011719,
+            95.64347839355469,
+            160.888916015625,
+            341.1678771972656
+          ]
+        }
+      ]
+    },
+    {
+      "frame_id": 580,
+      "session_version": 19,
+      "video_timestamp": 12.25208,
+      "source_dimensions": [
+        3840,
+        2160
+      ],
+      "detection_dimensions": [
+        640,
+        480
+      ],
+      "tracks": [
+        {
+          "track_id": 1,
+          "bbox": [
+            202.7317352294922,
+            82.09750366210938,
+            277.2292175292969,
+            310.2198181152344
+          ]
+        },
+        {
+          "track_id": 4,
+          "bbox": [
+            348.3248291015625,
+            187.19967651367188,
+            421.7705993652344,
+            380.3485107421875
+          ]
+        },
+        {
+          "track_id": 7,
+          "bbox": [
+            147.4234161376953,
+            151.89437866210938,
+            221.32754516601562,
+            322.9402770996094
+          ]
+        },
+        {
+          "track_id": 8,
+          "bbox": [
+            58.07698059082031,
+            92.68589782714844,
+            175.48670959472656,
+            331.9041442871094
+          ]
+        },
+        {
+          "track_id": 3,
+          "bbox": [
+            173.05625915527344,
+            297.69390869140625,
+            247.2262725830078,
+            471.7964172363281
+          ]
+        }
+      ]
+    }
+  ],
+  "requests": [
+    {
+      "request_id": "567:1:301",
+      "frame_id": 567,
+      "track_id": 1,
+      "session_version": 19,
+      "bbox": [
+        237.66249084472656,
+        118.1170654296875,
+        306.11785888671875,
+        332.7391052246094
+      ],
+      "coord_space": "detect_640x480",
+      "upload_width": 640,
+      "upload_height": 480,
+      "margin": 0.08,
+      "video_timestamp": 0.703272,
+      "mapped_rect": {
+        "x": 1393,
+        "y": 454,
+        "w": 477,
+        "h": 1121
+      },
+      "status": "accepted",
+      "reason": "accepted",
+      "source_dimensions": [
+        3840,
+        2160
+      ],
+      "bytes": 143774,
+      "image_dropped": "original exceeds per-image limit",
+      "ack": {
+        "type": "crop_ack",
+        "request_id": "567:1:301",
+        "ok": true,
+        "reason": "accepted",
+        "session_version": 19,
+        "request_to_receipt_ms": 381.97
+      },
+      "backend": {
+        "request_id": "567:1:301",
+        "frame_id": 567,
+        "track_id": 1,
+        "session_version": 19,
+        "ocr_status": "done",
+        "queue_wait_ms": 1.2920350000058534,
+        "ocr_ms": 414.7659449999992,
+        "lines": [
+          {
+            "text": "",
+            "score": 0
+          },
+          {
+            "text": "U1",
+            "score": 0.39244168996810913
+          },
+          {
+            "text": "МОЛОКО",
+            "score": 0.900402843952179
+          },
+          {
+            "text": "2,5%",
+            "score": 0.945024847984314
+          }
+        ],
+        "lines_dropped": 0,
+        "text_truncated": false,
+        "jev": {
+          "source_request_ids": [
+            "567:1:301",
+            "570:1:308",
+            "573:1:314",
+            "576:1:319",
+            "579:1:325"
+          ],
+          "lines": [
+            {
+              "text": "2,5%",
+              "score": 0.9661796689033508
+            },
+            {
+              "text": "6LU8E112",
+              "score": 0.35986796021461487
+            },
+            {
+              "text": "AU10",
+              "score": 0.32374903559684753
+            },
+            {
+              "text": "MO",
+              "score": 0.8970581293106079
+            },
+            {
+              "text": "POCTO",
+              "score": 0.9198495745658875
+            },
+            {
+              "text": "S1",
+              "score": 0.2995334267616272
+            },
+            {
+              "text": "U1",
+              "score": 0.39244168996810913
+            },
+            {
+              "text": "МОЛОКО",
+              "score": 0.900402843952179
+            }
+          ],
+          "result": {
+            "status": "needs_more_evidence",
+            "choice": null,
+            "confidence": null,
+            "probabilities": null
+          },
+          "duration_ms": 0.060880000091856346,
+          "source_ids_dropped": 0,
+          "error": true
+        },
+        "jev_outcomes_replaced": 1
+      },
+      "crop_jpeg_path": "567_1_301-crop_jpeg.jpg"
+    },
+    {
+      "request_id": "567:2:302",
+      "frame_id": 567,
+      "track_id": 2,
+      "session_version": 19,
+      "bbox": [
+        69.0227279663086,
+        204.88414001464844,
+        145.21414184570312,
+        355.6837463378906
+      ],
+      "coord_space": "detect_640x480",
+      "upload_width": 640,
+      "upload_height": 480,
+      "margin": 0.08,
+      "video_timestamp": 0.703272,
+      "mapped_rect": {
+        "x": 378,
+        "y": 868,
+        "w": 530,
+        "h": 787
+      },
+      "status": "rejected",
+      "reason": "blurry",
+      "source_dimensions": [
+        3840,
+        2160
+      ],
+      "bytes": 94966,
+      "image_dropped": "original exceeds per-image limit",
+      "ack": {
+        "type": "crop_ack",
+        "request_id": "567:2:302",
+        "ok": false,
+        "reason": "blurry",
+        "session_version": 19,
+        "request_to_receipt_ms": 384.93
+      },
+      "crop_jpeg_path": "567_2_302-crop_jpeg.jpg"
+    },
+    {
+      "request_id": "567:3:303",
+      "frame_id": 567,
+      "track_id": 3,
+      "session_version": 19,
+      "bbox": [
+        156.51223754882812,
+        214.83563232421875,
+        232.8600311279297,
+        413.1033935546875
+      ],
+      "coord_space": "detect_640x480",
+      "upload_width": 640,
+      "upload_height": 480,
+      "margin": 0.08,
+      "video_timestamp": 0.703272,
+      "mapped_rect": {
+        "x": 902,
+        "y": 895,
+        "w": 532,
+        "h": 1035
+      },
+      "status": "accepted",
+      "reason": "accepted",
+      "source_dimensions": [
+        3840,
+        2160
+      ],
+      "bytes": 141838,
+      "image_dropped": "original exceeds per-image limit",
+      "ack": {
+        "type": "crop_ack",
+        "request_id": "567:3:303",
+        "ok": true,
+        "reason": "accepted",
+        "session_version": 19,
+        "request_to_receipt_ms": 388.99
+      },
+      "backend": {
+        "request_id": "567:3:303",
+        "frame_id": 567,
+        "track_id": 3,
+        "session_version": 19,
+        "ocr_status": "done",
+        "queue_wait_ms": 409.8374159998457,
+        "ocr_ms": 455.8601910002835,
+        "lines": [
+          {
+            "text": "382",
+            "score": 0.26122021675109863
+          },
+          {
+            "text": "io",
+            "score": 0.665249228477478
+          },
+          {
+            "text": "nРО",
+            "score": 0.5384777784347534
+          },
+          {
+            "text": "BE",
+            "score": 0.9634328484535217
+          }
+        ],
+        "lines_dropped": 0,
+        "text_truncated": false,
+        "jev": {
+          "source_request_ids": [
+            "567:3:303"
+          ],
+          "lines": [
+            {
+              "text": "382",
+              "score": 0.26122021675109863
+            },
+            {
+              "text": "BE",
+              "score": 0.9634328484535217
+            },
+            {
+              "text": "io",
+              "score": 0.665249228477478
+            },
+            {
+              "text": "nРО",
+              "score": 0.5384777784347534
+            }
+          ],
+          "result": {
+            "status": "needs_more_evidence",
+            "choice": null,
+            "confidence": null,
+            "probabilities": null
+          },
+          "duration_ms": 858.9973190000819,
+          "source_ids_dropped": 0,
+          "error": false
+        }
+      },
+      "crop_jpeg_path": "567_3_303-crop_jpeg.jpg"
+    },
+    {
+      "request_id": "567:4:304",
+      "frame_id": 567,
+      "track_id": 4,
+      "session_version": 19,
+      "bbox": [
+        381.6755065917969,
+        206.35862731933594,
+        447.1549987792969,
+        385.3622131347656
+      ],
+      "coord_space": "detect_640x480",
+      "upload_width": 640,
+      "upload_height": 480,
+      "margin": 0.08,
+      "video_timestamp": 0.703272,
+      "mapped_rect": {
+        "x": 2259,
+        "y": 864,
+        "w": 455,
+        "h": 935
+      },
+      "status": "accepted",
+      "reason": "accepted",
+      "source_dimensions": [
+        3840,
+        2160
+      ],
+      "bytes": 132246,
+      "image_dropped": "original exceeds per-image limit",
+      "ack": {
+        "type": "crop_ack",
+        "request_id": "567:4:304",
+        "ok": true,
+        "reason": "accepted",
+        "session_version": 19,
+        "request_to_receipt_ms": 392.81
+      },
+      "backend": {
+        "request_id": "567:4:304",
+        "frame_id": 567,
+        "track_id": 4,
+        "session_version": 19,
+        "ocr_status": "done",
+        "queue_wait_ms": 864.0340480001214,
+        "ocr_ms": 333.60162999997556,
+        "lines": [
+          {
+            "text": "AKB",
+            "score": 0.9812813401222229
+          },
+          {
+            "text": "CKA",
+            "score": 0.9698147177696228
+          }
+        ],
+        "lines_dropped": 0,
+        "text_truncated": false,
+        "jev": {
+          "source_request_ids": [
+            "567:4:304",
+            "571:4:312",
+            "574:4:315",
+            "577:4:320",
+            "580:4:327"
+          ],
+          "lines": [
+            {
+              "text": "1M",
+              "score": 0.28895217180252075
+            },
+            {
+              "text": "AKB",
+              "score": 0.9900264143943787
+            },
+            {
+              "text": "AKBI",
+              "score": 0.8583201169967651
+            },
+            {
+              "text": "CK",
+              "score": 0.7832353115081787
+            },
+            {
+              "text": "CKA",
+              "score": 0.9698147177696228
+            }
+          ],
+          "result": {
+            "status": "needs_more_evidence",
+            "choice": null,
+            "confidence": null,
+            "probabilities": null
+          },
+          "duration_ms": 0.059684999996534316,
+          "source_ids_dropped": 0,
+          "error": true
+        },
+        "jev_outcomes_replaced": 1
+      },
+      "crop_jpeg_path": "567_4_304-crop_jpeg.jpg"
+    },
+    {
+      "request_id": "568:2:305",
+      "frame_id": 568,
+      "track_id": 2,
+      "session_version": 19,
+      "bbox": [
+        49.249549865722656,
+        208.98814392089844,
+        133.90321350097656,
+        378.2196960449219
+      ],
+      "coord_space": "detect_640x480",
+      "upload_width": 640,
+      "upload_height": 480,
+      "margin": 0.08,
+      "video_timestamp": 1.261148,
+      "mapped_rect": {
+        "x": 255,
+        "y": 880,
+        "w": 589,
+        "h": 883
+      },
+      "status": "rejected",
+      "reason": "blurry",
+      "source_dimensions": [
+        3840,
+        2160
+      ],
+      "bytes": 115014,
+      "image_dropped": "original exceeds per-image limit",
+      "ack": {
+        "type": "crop_ack",
+        "request_id": "568:2:305",
+        "ok": false,
+        "reason": "blurry",
+        "session_version": 19,
+        "request_to_receipt_ms": 765.42
+      },
+      "crop_jpeg_path": "568_2_305-crop_jpeg.jpg"
+    },
+    {
+      "request_id": "568:5:306",
+      "frame_id": 568,
+      "track_id": 5,
+      "session_version": 19,
+      "bbox": [
+        319.1409912109375,
+        291.60711669921875,
+        395.0674743652344,
+        473.0960388183594
+      ],
+      "coord_space": "detect_640x480",
+      "upload_width": 640,
+      "upload_height": 480,
+      "margin": 0.08,
+      "video_timestamp": 1.261148,
+      "mapped_rect": {
+        "x": 1878,
+        "y": 1247,
+        "w": 529,
+        "h": 913
+      },
+      "status": "accepted",
+      "reason": "accepted",
+      "source_dimensions": [
+        3840,
+        2160
+      ],
+      "bytes": 155958,
+      "image_dropped": "original exceeds per-image limit",
+      "ack": {
+        "type": "crop_ack",
+        "request_id": "568:5:306",
+        "ok": true,
+        "reason": "accepted",
+        "session_version": 19,
+        "request_to_receipt_ms": 772.43
+      },
+      "backend": {
+        "request_id": "568:5:306",
+        "frame_id": 568,
+        "track_id": 5,
+        "session_version": 19,
+        "ocr_status": "done",
+        "queue_wait_ms": 111.01088899977185,
+        "ocr_ms": 369.11132800014457,
+        "lines": [
+          {
+            "text": "CEНЕЖCKА",
+            "score": 0.566695511341095
+          }
+        ],
+        "lines_dropped": 0,
+        "text_truncated": false,
+        "jev": {
+          "source_request_ids": [
+            "568:5:306",
+            "572:5:313",
+            "575:5:317"
+          ],
+          "lines": [
+            {
+              "text": "CEНЕЖCKА",
+              "score": 0.566695511341095
+            },
+            {
+              "text": "СЕНЕЖCКА",
+              "score": 0.6053337454795837
+            }
+          ],
+          "result": {
+            "status": "needs_more_evidence",
+            "choice": null,
+            "confidence": null,
+            "probabilities": null
+          },
+          "duration_ms": 0.059717999647546094,
+          "source_ids_dropped": 0,
+          "error": true
+        },
+        "jev_outcomes_replaced": 1
+      },
+      "crop_jpeg_path": "568_5_306-crop_jpeg.jpg"
+    },
+    {
+      "request_id": "569:2:307",
+      "frame_id": 569,
+      "track_id": 2,
+      "session_version": 19,
+      "bbox": [
+        45.81721496582031,
+        209.59237670898438,
+        128.45455932617188,
+        375.556884765625
+      ],
+      "coord_space": "detect_640x480",
+      "upload_width": 640,
+      "upload_height": 480,
+      "margin": 0.08,
+      "video_timestamp": 1.970083,
+      "mapped_rect": {
+        "x": 235,
+        "y": 883,
+        "w": 575,
+        "h": 867
+      },
+      "status": "rejected",
+      "reason": "blurry",
+      "source_dimensions": [
+        3840,
+        2160
+      ],
+      "bytes": 105438,
+      "image_dropped": "original exceeds per-image limit",
+      "ack": {
+        "type": "crop_ack",
+        "request_id": "569:2:307",
+        "ok": false,
+        "reason": "blurry",
+        "session_version": 19,
+        "request_to_receipt_ms": 415.38
+      },
+      "crop_jpeg_path": "569_2_307-crop_jpeg.jpg"
+    },
+    {
+      "request_id": "570:1:308",
+      "frame_id": 570,
+      "track_id": 1,
+      "session_version": 19,
+      "bbox": [
+        224.1926727294922,
+        125.51526641845703,
+        293.7894592285156,
+        343.1993408203125
+      ],
+      "coord_space": "detect_640x480",
+      "upload_width": 640,
+      "upload_height": 480,
+      "margin": 0.08,
+      "video_timestamp": 3.050989,
+      "mapped_rect": {
+        "x": 1312,
+        "y": 486,
+        "w": 484,
+        "h": 1137
+      },
+      "status": "accepted",
+      "reason": "accepted",
+      "source_dimensions": [
+        3840,
+        2160
+      ],
+      "bytes": 144014,
+      "image_dropped": "original exceeds per-image limit",
+      "ack": {
+        "type": "crop_ack",
+        "request_id": "570:1:308",
+        "ok": true,
+        "reason": "accepted",
+        "session_version": 19,
+        "request_to_receipt_ms": 430.36
+      },
+      "backend": {
+        "request_id": "570:1:308",
+        "frame_id": 570,
+        "track_id": 1,
+        "session_version": 19,
+        "ocr_status": "done",
+        "queue_wait_ms": 1.5996590000213473,
+        "ocr_ms": 586.2620670000069,
+        "lines": [
+          {
+            "text": "",
+            "score": 0
+          },
+          {
+            "text": "8",
+            "score": 0.26330724358558655
+          },
+          {
+            "text": "МОЛОКО",
+            "score": 0.8814519047737122
+          },
+          {
+            "text": "2,5%",
+            "score": 0.9661796689033508
+          }
+        ],
+        "lines_dropped": 0,
+        "text_truncated": false,
+        "jev": {
+          "source_request_ids": [
+            "567:1:301",
+            "570:1:308",
+            "573:1:314",
+            "576:1:319",
+            "579:1:325"
+          ],
+          "lines": [
+            {
+              "text": "2,5%",
+              "score": 0.9661796689033508
+            },
+            {
+              "text": "6LU8E112",
+              "score": 0.35986796021461487
+            },
+            {
+              "text": "AU10",
+              "score": 0.32374903559684753
+            },
+            {
+              "text": "MO",
+              "score": 0.8970581293106079
+            },
+            {
+              "text": "POCTO",
+              "score": 0.9198495745658875
+            },
+            {
+              "text": "S1",
+              "score": 0.2995334267616272
+            },
+            {
+              "text": "U1",
+              "score": 0.39244168996810913
+            },
+            {
+              "text": "МОЛОКО",
+              "score": 0.900402843952179
+            }
+          ],
+          "result": {
+            "status": "needs_more_evidence",
+            "choice": null,
+            "confidence": null,
+            "probabilities": null
+          },
+          "duration_ms": 0.060880000091856346,
+          "source_ids_dropped": 0,
+          "error": true
+        }
+      },
+      "crop_jpeg_path": "570_1_308-crop_jpeg.jpg"
+    },
+    {
+      "request_id": "570:2:309",
+      "frame_id": 570,
+      "track_id": 2,
+      "session_version": 19,
+      "bbox": [
+        45.27616882324219,
+        200.0702362060547,
+        128.25579833984375,
+        367.5301208496094
+      ],
+      "coord_space": "detect_640x480",
+      "upload_width": 640,
+      "upload_height": 480,
+      "margin": 0.08,
+      "video_timestamp": 3.050989,
+      "mapped_rect": {
+        "x": 232,
+        "y": 840,
+        "w": 577,
+        "h": 874
+      },
+      "status": "rejected",
+      "reason": "blurry",
+      "source_dimensions": [
+        3840,
+        2160
+      ],
+      "bytes": 115214,
+      "image_dropped": "original exceeds per-image limit",
+      "ack": {
+        "type": "crop_ack",
+        "request_id": "570:2:309",
+        "ok": false,
+        "reason": "blurry",
+        "session_version": 19,
+        "request_to_receipt_ms": 433.26
+      },
+      "crop_jpeg_path": "570_2_309-crop_jpeg.jpg"
+    },
+    {
+      "request_id": "571:2:310",
+      "frame_id": 571,
+      "track_id": 2,
+      "session_version": 19,
+      "bbox": [
+        44.078426361083984,
+        204.2076416015625,
+        96.98157501220703,
+        310.9169616699219
+      ],
+      "coord_space": "detect_640x480",
+      "upload_width": 640,
+      "upload_height": 480,
+      "margin": 0.08,
+      "video_timestamp": 3.643612,
+      "mapped_rect": {
+        "x": 239,
+        "y": 881,
+        "w": 368,
+        "h": 557
+      },
+      "status": "accepted",
+      "reason": "accepted",
+      "source_dimensions": [
+        3840,
+        2160
+      ],
+      "bytes": 56838,
+      "image_dropped": "original exceeds per-image limit",
+      "ack": {
+        "type": "crop_ack",
+        "request_id": "571:2:310",
+        "ok": true,
+        "reason": "accepted",
+        "session_version": 19,
+        "request_to_receipt_ms": 673.69
+      },
+      "backend": {
+        "request_id": "571:2:310",
+        "frame_id": 571,
+        "track_id": 2,
+        "session_version": 19,
+        "ocr_status": "done",
+        "queue_wait_ms": 0.6687239997518191,
+        "ocr_ms": 156.5149820003171,
+        "lines": [
+          {
+            "text": "DruS",
+            "score": 0.3538157343864441
+          }
+        ],
+        "lines_dropped": 0,
+        "text_truncated": false,
+        "jev": {
+          "source_request_ids": [
+            "571:2:310"
+          ],
+          "lines": [
+            {
+              "text": "DruS",
+              "score": 0.3538157343864441
+            }
+          ],
+          "result": {
+            "status": "needs_more_evidence",
+            "choice": null,
+            "confidence": null,
+            "probabilities": null
+          },
+          "duration_ms": 842.6370680003856,
+          "source_ids_dropped": 0,
+          "error": false
+        }
+      },
+      "crop_jpeg_path": "571_2_310-crop_jpeg.jpg"
+    },
+    {
+      "request_id": "571:3:311",
+      "frame_id": 571,
+      "track_id": 3,
+      "session_version": 19,
+      "bbox": [
+        142.1553497314453,
+        254.21743774414062,
+        219.25650024414062,
+        449.90704345703125
+      ],
+      "coord_space": "detect_640x480",
+      "upload_width": 640,
+      "upload_height": 480,
+      "margin": 0.08,
+      "video_timestamp": 3.643612,
+      "mapped_rect": {
+        "x": 816,
+        "y": 1074,
+        "w": 537,
+        "h": 1021
+      },
+      "status": "accepted",
+      "reason": "accepted",
+      "source_dimensions": [
+        3840,
+        2160
+      ],
+      "bytes": 147470,
+      "image_dropped": "original exceeds per-image limit",
+      "ack": {
+        "type": "crop_ack",
+        "request_id": "571:3:311",
+        "ok": true,
+        "reason": "accepted",
+        "session_version": 19,
+        "request_to_receipt_ms": 678.39
+      },
+      "backend": {
+        "request_id": "571:3:311",
+        "frame_id": 571,
+        "track_id": 3,
+        "session_version": 19,
+        "ocr_status": "done",
+        "queue_wait_ms": 152.4172979998184,
+        "ocr_ms": 340.1974230000633,
+        "lines": [],
+        "lines_dropped": 0,
+        "text_truncated": false
+      },
+      "crop_jpeg_path": "571_3_311-crop_jpeg.jpg"
+    },
+    {
+      "request_id": "571:4:312",
+      "frame_id": 571,
+      "track_id": 4,
+      "session_version": 19,
+      "bbox": [
+        370.4658508300781,
+        220.8738250732422,
+        438.0212707519531,
+        405.6659851074219
+      ],
+      "coord_space": "detect_640x480",
+      "upload_width": 640,
+      "upload_height": 480,
+      "margin": 0.08,
+      "video_timestamp": 3.643612,
+      "mapped_rect": {
+        "x": 2190,
+        "y": 927,
+        "w": 471,
+        "h": 965
+      },
+      "status": "accepted",
+      "reason": "accepted",
+      "source_dimensions": [
+        3840,
+        2160
+      ],
+      "bytes": 136350,
+      "image_dropped": "original exceeds per-image limit",
+      "ack": {
+        "type": "crop_ack",
+        "request_id": "571:4:312",
+        "ok": true,
+        "reason": "accepted",
+        "session_version": 19,
+        "request_to_receipt_ms": 682.85
+      },
+      "backend": {
+        "request_id": "571:4:312",
+        "frame_id": 571,
+        "track_id": 4,
+        "session_version": 19,
+        "ocr_status": "done",
+        "queue_wait_ms": 490.9774180000568,
+        "ocr_ms": 245.51197899972976,
+        "lines": [
+          {
+            "text": "AKB",
+            "score": 0.9900264143943787
+          }
+        ],
+        "lines_dropped": 0,
+        "text_truncated": false,
+        "jev": {
+          "source_request_ids": [
+            "567:4:304",
+            "571:4:312",
+            "574:4:315",
+            "577:4:320",
+            "580:4:327"
+          ],
+          "lines": [
+            {
+              "text": "1M",
+              "score": 0.28895217180252075
+            },
+            {
+              "text": "AKB",
+              "score": 0.9900264143943787
+            },
+            {
+              "text": "AKBI",
+              "score": 0.8583201169967651
+            },
+            {
+              "text": "CK",
+              "score": 0.7832353115081787
+            },
+            {
+              "text": "CKA",
+              "score": 0.9698147177696228
+            }
+          ],
+          "result": {
+            "status": "needs_more_evidence",
+            "choice": null,
+            "confidence": null,
+            "probabilities": null
+          },
+          "duration_ms": 0.059684999996534316,
+          "source_ids_dropped": 0,
+          "error": true
+        }
+      },
+      "crop_jpeg_path": "571_4_312-crop_jpeg.jpg"
+    },
+    {
+      "request_id": "572:5:313",
+      "frame_id": 572,
+      "track_id": 5,
+      "session_version": 19,
+      "bbox": [
+        304.5842590332031,
+        299.3240661621094,
+        381.4571228027344,
+        480.9944152832031
+      ],
+      "coord_space": "detect_640x480",
+      "upload_width": 640,
+      "upload_height": 480,
+      "margin": 0.08,
+      "video_timestamp": 4.319014,
+      "mapped_rect": {
+        "x": 1791,
+        "y": 1282,
+        "w": 535,
+        "h": 878
+      },
+      "status": "accepted",
+      "reason": "accepted",
+      "source_dimensions": [
+        3840,
+        2160
+      ],
+      "bytes": 154894,
+      "image_dropped": "original exceeds per-image limit",
+      "ack": {
+        "type": "crop_ack",
+        "request_id": "572:5:313",
+        "ok": true,
+        "reason": "accepted",
+        "session_version": 19,
+        "request_to_receipt_ms": 699.58
+      },
+      "backend": {
+        "request_id": "572:5:313",
+        "frame_id": 572,
+        "track_id": 5,
+        "session_version": 19,
+        "ocr_status": "done",
+        "queue_wait_ms": 2.47218000004068,
+        "ocr_ms": 358.4972700000435,
+        "lines": [
+          {
+            "text": "СЕНЕЖCКА",
+            "score": 0.6053337454795837
+          }
+        ],
+        "lines_dropped": 0,
+        "text_truncated": false,
+        "jev": {
+          "source_request_ids": [
+            "568:5:306",
+            "572:5:313",
+            "575:5:317"
+          ],
+          "lines": [
+            {
+              "text": "CEНЕЖCKА",
+              "score": 0.566695511341095
+            },
+            {
+              "text": "СЕНЕЖCКА",
+              "score": 0.6053337454795837
+            }
+          ],
+          "result": {
+            "status": "needs_more_evidence",
+            "choice": null,
+            "confidence": null,
+            "probabilities": null
+          },
+          "duration_ms": 0.059717999647546094,
+          "source_ids_dropped": 0,
+          "error": true
+        }
+      },
+      "crop_jpeg_path": "572_5_313-crop_jpeg.jpg"
+    },
+    {
+      "request_id": "573:1:314",
+      "frame_id": 573,
+      "track_id": 1,
+      "session_version": 19,
+      "bbox": [
+        227.9771270751953,
+        120.35263061523438,
+        298.5130920410156,
+        339.671875
+      ],
+      "coord_space": "detect_640x480",
+      "upload_width": 640,
+      "upload_height": 480,
+      "margin": 0.08,
+      "video_timestamp": 5.31777,
+      "mapped_rect": {
+        "x": 1334,
+        "y": 463,
+        "w": 491,
+        "h": 1144
+      },
+      "status": "accepted",
+      "reason": "accepted",
+      "source_dimensions": [
+        3840,
+        2160
+      ],
+      "bytes": 142486,
+      "image_dropped": "original exceeds per-image limit",
+      "ack": {
+        "type": "crop_ack",
+        "request_id": "573:1:314",
+        "ok": true,
+        "reason": "accepted",
+        "session_version": 19,
+        "request_to_receipt_ms": 527.04
+      },
+      "backend": {
+        "request_id": "573:1:314",
+        "frame_id": 573,
+        "track_id": 1,
+        "session_version": 19,
+        "ocr_status": "done",
+        "queue_wait_ms": 2.827672999956121,
+        "ocr_ms": 766.6722799999661,
+        "lines": [
+          {
+            "text": "S1",
+            "score": 0.2995334267616272
+          },
+          {
+            "text": "AU10",
+            "score": 0.32374903559684753
+          },
+          {
+            "text": "МОЛОКО",
+            "score": 0.9002845883369446
+          },
+          {
+            "text": "2,5%",
+            "score": 0.9477125406265259
+          }
+        ],
+        "lines_dropped": 0,
+        "text_truncated": false,
+        "jev": {
+          "source_request_ids": [
+            "567:1:301",
+            "570:1:308",
+            "573:1:314",
+            "576:1:319",
+            "579:1:325"
+          ],
+          "lines": [
+            {
+              "text": "2,5%",
+              "score": 0.9661796689033508
+            },
+            {
+              "text": "6LU8E112",
+              "score": 0.35986796021461487
+            },
+            {
+              "text": "AU10",
+              "score": 0.32374903559684753
+            },
+            {
+              "text": "MO",
+              "score": 0.8970581293106079
+            },
+            {
+              "text": "POCTO",
+              "score": 0.9198495745658875
+            },
+            {
+              "text": "S1",
+              "score": 0.2995334267616272
+            },
+            {
+              "text": "U1",
+              "score": 0.39244168996810913
+            },
+            {
+              "text": "МОЛОКО",
+              "score": 0.900402843952179
+            }
+          ],
+          "result": {
+            "status": "needs_more_evidence",
+            "choice": null,
+            "confidence": null,
+            "probabilities": null
+          },
+          "duration_ms": 0.060880000091856346,
+          "source_ids_dropped": 0,
+          "error": true
+        }
+      },
+      "crop_jpeg_path": "573_1_314-crop_jpeg.jpg"
+    },
+    {
+      "request_id": "574:4:315",
+      "frame_id": 574,
+      "track_id": 4,
+      "session_version": 19,
+      "bbox": [
+        383.02777099609375,
+        213.0745849609375,
+        452.6160888671875,
+        402.4955139160156
+      ],
+      "coord_space": "detect_640x480",
+      "upload_width": 640,
+      "upload_height": 480,
+      "margin": 0.08,
+      "video_timestamp": 6.350823,
+      "mapped_rect": {
+        "x": 2265,
+        "y": 891,
+        "w": 484,
+        "h": 988
+      },
+      "status": "accepted",
+      "reason": "accepted",
+      "source_dimensions": [
+        3840,
+        2160
+      ],
+      "bytes": 138390,
+      "image_dropped": "original exceeds per-image limit",
+      "ack": {
+        "type": "crop_ack",
+        "request_id": "574:4:315",
+        "ok": true,
+        "reason": "accepted",
+        "session_version": 19,
+        "request_to_receipt_ms": 685.18
+      },
+      "backend": {
+        "request_id": "574:4:315",
+        "frame_id": 574,
+        "track_id": 4,
+        "session_version": 19,
+        "ocr_status": "done",
+        "queue_wait_ms": 2.376740000272548,
+        "ocr_ms": 530.5968349998693,
+        "lines": [
+          {
+            "text": "",
+            "score": 0
+          },
+          {
+            "text": "AKB",
+            "score": 0.9814398884773254
+          },
+          {
+            "text": "CK",
+            "score": 0.7832353115081787
+          }
+        ],
+        "lines_dropped": 0,
+        "text_truncated": false,
+        "jev": {
+          "source_request_ids": [
+            "567:4:304",
+            "571:4:312",
+            "574:4:315",
+            "577:4:320",
+            "580:4:327"
+          ],
+          "lines": [
+            {
+              "text": "1M",
+              "score": 0.28895217180252075
+            },
+            {
+              "text": "AKB",
+              "score": 0.9900264143943787
+            },
+            {
+              "text": "AKBI",
+              "score": 0.8583201169967651
+            },
+            {
+              "text": "CK",
+              "score": 0.7832353115081787
+            },
+            {
+              "text": "CKA",
+              "score": 0.9698147177696228
+            }
+          ],
+          "result": {
+            "status": "needs_more_evidence",
+            "choice": null,
+            "confidence": null,
+            "probabilities": null
+          },
+          "duration_ms": 0.059684999996534316,
+          "source_ids_dropped": 0,
+          "error": true
+        }
+      },
+      "crop_jpeg_path": "574_4_315-crop_jpeg.jpg"
+    },
+    {
+      "request_id": "574:7:316",
+      "frame_id": 574,
+      "track_id": 7,
+      "session_version": 19,
+      "bbox": [
+        65.80162048339844,
+        173.44410705566406,
+        137.0313720703125,
+        334.1047058105469
+      ],
+      "coord_space": "detect_640x480",
+      "upload_width": 640,
+      "upload_height": 480,
+      "margin": 0.08,
+      "video_timestamp": 6.350823,
+      "mapped_rect": {
+        "x": 361,
+        "y": 723,
+        "w": 495,
+        "h": 838
+      },
+      "status": "accepted",
+      "reason": "accepted",
+      "source_dimensions": [
+        3840,
+        2160
+      ],
+      "bytes": 115950,
+      "image_dropped": "original exceeds per-image limit",
+      "ack": {
+        "type": "crop_ack",
+        "request_id": "574:7:316",
+        "ok": true,
+        "reason": "accepted",
+        "session_version": 19,
+        "request_to_receipt_ms": 689.23
+      },
+      "backend": {
+        "request_id": "574:7:316",
+        "frame_id": 574,
+        "track_id": 7,
+        "session_version": 19,
+        "ocr_status": "done",
+        "queue_wait_ms": 530.77975899987,
+        "ocr_ms": 156.23388299991348,
+        "lines": [],
+        "lines_dropped": 0,
+        "text_truncated": false
+      },
+      "crop_jpeg_path": "574_7_316-crop_jpeg.jpg"
+    },
+    {
+      "request_id": "575:5:317",
+      "frame_id": 575,
+      "track_id": 5,
+      "session_version": 19,
+      "bbox": [
+        308.5613708496094,
+        286.12615966796875,
+        390.4095153808594,
+        475.56494140625
+      ],
+      "coord_space": "detect_640x480",
+      "upload_width": 640,
+      "upload_height": 480,
+      "margin": 0.08,
+      "video_timestamp": 7.215562,
+      "mapped_rect": {
+        "x": 1812,
+        "y": 1219,
+        "w": 570,
+        "h": 941
+      },
+      "status": "accepted",
+      "reason": "accepted",
+      "source_dimensions": [
+        3840,
+        2160
+      ],
+      "bytes": 158742,
+      "image_dropped": "original exceeds per-image limit",
+      "ack": {
+        "type": "crop_ack",
+        "request_id": "575:5:317",
+        "ok": true,
+        "reason": "accepted",
+        "session_version": 19,
+        "request_to_receipt_ms": 708.73
+      },
+      "backend": {
+        "request_id": "575:5:317",
+        "frame_id": 575,
+        "track_id": 5,
+        "session_version": 19,
+        "ocr_status": "done",
+        "queue_wait_ms": 2.5833699996837822,
+        "ocr_ms": 246.3890240001092,
+        "lines": [
+          {
+            "text": "СЕНЕЖCКА",
+            "score": 0.5763028860092163
+          }
+        ],
+        "lines_dropped": 0,
+        "text_truncated": false,
+        "jev": {
+          "source_request_ids": [
+            "568:5:306",
+            "572:5:313",
+            "575:5:317"
+          ],
+          "lines": [
+            {
+              "text": "CEНЕЖCKА",
+              "score": 0.566695511341095
+            },
+            {
+              "text": "СЕНЕЖCКА",
+              "score": 0.6053337454795837
+            }
+          ],
+          "result": {
+            "status": "needs_more_evidence",
+            "choice": null,
+            "confidence": null,
+            "probabilities": null
+          },
+          "duration_ms": 0.059717999647546094,
+          "source_ids_dropped": 0,
+          "error": true
+        }
+      },
+      "crop_jpeg_path": "575_5_317-crop_jpeg.jpg"
+    },
+    {
+      "request_id": "575:8:318",
+      "frame_id": 575,
+      "track_id": 8,
+      "session_version": 19,
+      "bbox": [
+        -14.15103816986084,
+        180.11300659179688,
+        78.76121520996094,
+        365.7586975097656
+      ],
+      "coord_space": "detect_640x480",
+      "upload_width": 640,
+      "upload_height": 480,
+      "margin": 0.08,
+      "video_timestamp": 7.215562,
+      "mapped_rect": {
+        "x": 0,
+        "y": 744,
+        "w": 517,
+        "h": 969
+      },
+      "status": "accepted",
+      "reason": "accepted",
+      "source_dimensions": [
+        3840,
+        2160
+      ],
+      "bytes": 130670,
+      "image_dropped": "original exceeds per-image limit",
+      "ack": {
+        "type": "crop_ack",
+        "request_id": "575:8:318",
+        "ok": true,
+        "reason": "accepted",
+        "session_version": 19,
+        "request_to_receipt_ms": 713.23
+      },
+      "backend": {
+        "request_id": "575:8:318",
+        "frame_id": 575,
+        "track_id": 8,
+        "session_version": 19,
+        "ocr_status": "done",
+        "queue_wait_ms": 246.70901800027423,
+        "ocr_ms": 236.86299799965127,
+        "lines": [
+          {
+            "text": "uc",
+            "score": 0.7772717475891113
+          }
+        ],
+        "lines_dropped": 0,
+        "text_truncated": false,
+        "jev": {
+          "source_request_ids": [
+            "575:8:318",
+            "578:8:323"
+          ],
+          "lines": [
+            {
+              "text": "12",
+              "score": 0.6136817932128906
+            },
+            {
+              "text": "uc",
+              "score": 0.7772717475891113
+            }
+          ],
+          "result": {
+            "status": "needs_more_evidence",
+            "choice": null,
+            "confidence": null,
+            "probabilities": null
+          },
+          "duration_ms": 0.05716400028177304,
+          "source_ids_dropped": 0,
+          "error": true
+        }
+      },
+      "crop_jpeg_path": "575_8_318-crop_jpeg.jpg"
+    },
+    {
+      "request_id": "576:1:319",
+      "frame_id": 576,
+      "track_id": 1,
+      "session_version": 19,
+      "bbox": [
+        206.17764282226562,
+        71.27650451660156,
+        283.4776916503906,
+        309.454345703125
+      ],
+      "coord_space": "detect_640x480",
+      "upload_width": 640,
+      "upload_height": 480,
+      "margin": 0.08,
+      "video_timestamp": 8.216764,
+      "mapped_rect": {
+        "x": 1200,
+        "y": 235,
+        "w": 538,
+        "h": 1243
+      },
+      "status": "accepted",
+      "reason": "accepted",
+      "source_dimensions": [
+        3840,
+        2160
+      ],
+      "bytes": 168230,
+      "image_dropped": "original exceeds per-image limit",
+      "ack": {
+        "type": "crop_ack",
+        "request_id": "576:1:319",
+        "ok": true,
+        "reason": "accepted",
+        "session_version": 19,
+        "request_to_receipt_ms": 572.26
+      },
+      "backend": {
+        "request_id": "576:1:319",
+        "frame_id": 576,
+        "track_id": 1,
+        "session_version": 19,
+        "ocr_status": "done",
+        "queue_wait_ms": 1.8843369998648996,
+        "ocr_ms": 460.43266400010907,
+        "lines": [
+          {
+            "text": "",
+            "score": 0
+          },
+          {
+            "text": "6LU8E112",
+            "score": 0.35986796021461487
+          },
+          {
+            "text": "МОЛОКО",
+            "score": 0.8958995938301086
+          },
+          {
+            "text": "2,5%",
+            "score": 0.8751682043075562
+          }
+        ],
+        "lines_dropped": 0,
+        "text_truncated": false,
+        "jev": {
+          "source_request_ids": [
+            "567:1:301",
+            "570:1:308",
+            "573:1:314",
+            "576:1:319",
+            "579:1:325"
+          ],
+          "lines": [
+            {
+              "text": "2,5%",
+              "score": 0.9661796689033508
+            },
+            {
+              "text": "6LU8E112",
+              "score": 0.35986796021461487
+            },
+            {
+              "text": "AU10",
+              "score": 0.32374903559684753
+            },
+            {
+              "text": "MO",
+              "score": 0.8970581293106079
+            },
+            {
+              "text": "POCTO",
+              "score": 0.9198495745658875
+            },
+            {
+              "text": "S1",
+              "score": 0.2995334267616272
+            },
+            {
+              "text": "U1",
+              "score": 0.39244168996810913
+            },
+            {
+              "text": "МОЛОКО",
+              "score": 0.900402843952179
+            }
+          ],
+          "result": {
+            "status": "needs_more_evidence",
+            "choice": null,
+            "confidence": null,
+            "probabilities": null
+          },
+          "duration_ms": 0.060880000091856346,
+          "source_ids_dropped": 0,
+          "error": true
+        }
+      },
+      "crop_jpeg_path": "576_1_319-crop_jpeg.jpg"
+    },
+    {
+      "request_id": "577:4:320",
+      "frame_id": 577,
+      "track_id": 4,
+      "session_version": 19,
+      "bbox": [
+        356.65228271484375,
+        178.93502807617188,
+        428.9054870605469,
+        373.7736511230469
+      ],
+      "coord_space": "detect_640x480",
+      "upload_width": 640,
+      "upload_height": 480,
+      "margin": 0.08,
+      "video_timestamp": 9.253052,
+      "mapped_rect": {
+        "x": 2105,
+        "y": 735,
+        "w": 503,
+        "h": 1017
+      },
+      "status": "accepted",
+      "reason": "accepted",
+      "source_dimensions": [
+        3840,
+        2160
+      ],
+      "bytes": 147678,
+      "image_dropped": "original exceeds per-image limit",
+      "ack": {
+        "type": "crop_ack",
+        "request_id": "577:4:320",
+        "ok": true,
+        "reason": "accepted",
+        "session_version": 19,
+        "request_to_receipt_ms": 559.61
+      },
+      "backend": {
+        "request_id": "577:4:320",
+        "frame_id": 577,
+        "track_id": 4,
+        "session_version": 19,
+        "ocr_status": "done",
+        "queue_wait_ms": 2.242618999844126,
+        "ocr_ms": 555.5884579998747,
+        "lines": [
+          {
+            "text": "AKBI",
+            "score": 0.8583201169967651
+          },
+          {
+            "text": "1M",
+            "score": 0.28895217180252075
+          }
+        ],
+        "lines_dropped": 0,
+        "text_truncated": false,
+        "jev": {
+          "source_request_ids": [
+            "567:4:304",
+            "571:4:312",
+            "574:4:315",
+            "577:4:320",
+            "580:4:327"
+          ],
+          "lines": [
+            {
+              "text": "1M",
+              "score": 0.28895217180252075
+            },
+            {
+              "text": "AKB",
+              "score": 0.9900264143943787
+            },
+            {
+              "text": "AKBI",
+              "score": 0.8583201169967651
+            },
+            {
+              "text": "CK",
+              "score": 0.7832353115081787
+            },
+            {
+              "text": "CKA",
+              "score": 0.9698147177696228
+            }
+          ],
+          "result": {
+            "status": "needs_more_evidence",
+            "choice": null,
+            "confidence": null,
+            "probabilities": null
+          },
+          "duration_ms": 0.059684999996534316,
+          "source_ids_dropped": 0,
+          "error": true
+        }
+      },
+      "crop_jpeg_path": "577_4_320-crop_jpeg.jpg"
+    },
+    {
+      "request_id": "577:7:321",
+      "frame_id": 577,
+      "track_id": 7,
+      "session_version": 19,
+      "bbox": [
+        117.89978790283203,
+        136.3975372314453,
+        190.2530975341797,
+        299.94573974609375
+      ],
+      "coord_space": "detect_640x480",
+      "upload_width": 640,
+      "upload_height": 480,
+      "margin": 0.08,
+      "video_timestamp": 9.253052,
+      "mapped_rect": {
+        "x": 673,
+        "y": 555,
+        "w": 503,
+        "h": 854
+      },
+      "status": "accepted",
+      "reason": "accepted",
+      "source_dimensions": [
+        3840,
+        2160
+      ],
+      "bytes": 120942,
+      "image_dropped": "original exceeds per-image limit",
+      "ack": {
+        "type": "crop_ack",
+        "request_id": "577:7:321",
+        "ok": true,
+        "reason": "accepted",
+        "session_version": 19,
+        "request_to_receipt_ms": 563.79
+      },
+      "backend": {
+        "request_id": "577:7:321",
+        "frame_id": 577,
+        "track_id": 7,
+        "session_version": 19,
+        "ocr_status": "done",
+        "queue_wait_ms": 557.2502739996708,
+        "ocr_ms": 574.6119059999728,
+        "lines": [
+          {
+            "text": "033",
+            "score": 0.997365415096283
+          },
+          {
+            "text": "UC",
+            "score": 0.8880888223648071
+          },
+          {
+            "text": "2,5%",
+            "score": 0.7606218457221985
+          }
+        ],
+        "lines_dropped": 0,
+        "text_truncated": false,
+        "jev": {
+          "source_request_ids": [
+            "577:7:321",
+            "580:7:328"
+          ],
+          "lines": [
+            {
+              "text": "033",
+              "score": 0.997365415096283
+            },
+            {
+              "text": "2,5%",
+              "score": 0.7606218457221985
+            },
+            {
+              "text": "UC",
+              "score": 0.8880888223648071
+            },
+            {
+              "text": "UCr",
+              "score": 0.7628557085990906
+            }
+          ],
+          "result": {
+            "status": "needs_more_evidence",
+            "choice": null,
+            "confidence": null,
+            "probabilities": null
+          },
+          "duration_ms": 0.04793800007973914,
+          "source_ids_dropped": 0,
+          "error": true
+        },
+        "jev_outcomes_replaced": 1
+      },
+      "crop_jpeg_path": "577_7_321-crop_jpeg.jpg"
+    },
+    {
+      "request_id": "578:5:322",
+      "frame_id": 578,
+      "track_id": 5,
+      "session_version": 19,
+      "bbox": [
+        277.7474365234375,
+        224.20989990234375,
+        379.2104187011719,
+        457.82501220703125
+      ],
+      "coord_space": "detect_640x480",
+      "upload_width": 640,
+      "upload_height": 480,
+      "margin": 0.08,
+      "video_timestamp": 10.143397,
+      "mapped_rect": {
+        "x": 1618,
+        "y": 925,
+        "w": 706,
+        "h": 1219
+      },
+      "status": "rejected",
+      "reason": "blurry",
+      "source_dimensions": [
+        3840,
+        2160
+      ],
+      "bytes": 220542,
+      "image_dropped": "original exceeds per-image limit",
+      "ack": {
+        "type": "crop_ack",
+        "request_id": "578:5:322",
+        "ok": false,
+        "reason": "blurry",
+        "session_version": 19,
+        "request_to_receipt_ms": 906.89
+      },
+      "crop_jpeg_path": "578_5_322-crop_jpeg.jpg"
+    },
+    {
+      "request_id": "578:8:323",
+      "frame_id": 578,
+      "track_id": 8,
+      "session_version": 19,
+      "bbox": [
+        43.378517150878906,
+        110.25502014160156,
+        156.3524627685547,
+        336.0669860839844
+      ],
+      "coord_space": "detect_640x480",
+      "upload_width": 640,
+      "upload_height": 480,
+      "margin": 0.08,
+      "video_timestamp": 10.143397,
+      "mapped_rect": {
+        "x": 206,
+        "y": 415,
+        "w": 786,
+        "h": 1179
+      },
+      "status": "accepted",
+      "reason": "accepted",
+      "source_dimensions": [
+        3840,
+        2160
+      ],
+      "bytes": 211198,
+      "image_dropped": "original exceeds per-image limit",
+      "ack": {
+        "type": "crop_ack",
+        "request_id": "578:8:323",
+        "ok": true,
+        "reason": "accepted",
+        "session_version": 19,
+        "request_to_receipt_ms": 915.61
+      },
+      "backend": {
+        "request_id": "578:8:323",
+        "frame_id": 578,
+        "track_id": 8,
+        "session_version": 19,
+        "ocr_status": "done",
+        "queue_wait_ms": 4.312103000302159,
+        "ocr_ms": 631.932477999726,
+        "lines": [
+          {
+            "text": "12",
+            "score": 0.6136817932128906
+          }
+        ],
+        "lines_dropped": 0,
+        "text_truncated": false,
+        "jev": {
+          "source_request_ids": [
+            "575:8:318",
+            "578:8:323"
+          ],
+          "lines": [
+            {
+              "text": "12",
+              "score": 0.6136817932128906
+            },
+            {
+              "text": "uc",
+              "score": 0.7772717475891113
+            }
+          ],
+          "result": {
+            "status": "needs_more_evidence",
+            "choice": null,
+            "confidence": null,
+            "probabilities": null
+          },
+          "duration_ms": 0.05716400028177304,
+          "source_ids_dropped": 0,
+          "error": true
+        }
+      },
+      "crop_jpeg_path": "578_8_323-crop_jpeg.jpg"
+    },
+    {
+      "request_id": "578:3:324",
+      "frame_id": 578,
+      "track_id": 3,
+      "session_version": 19,
+      "bbox": [
+        155.05812072753906,
+        286.62384033203125,
+        213.6500701904297,
+        422.9117736816406
+      ],
+      "coord_space": "detect_640x480",
+      "upload_width": 640,
+      "upload_height": 480,
+      "margin": 0.08,
+      "video_timestamp": 10.143397,
+      "mapped_rect": {
+        "x": 902,
+        "y": 1241,
+        "w": 408,
+        "h": 711
+      },
+      "status": "rejected",
+      "reason": "blurry",
+      "source_dimensions": [
+        3840,
+        2160
+      ],
+      "bytes": 59086,
+      "image_dropped": "original exceeds per-image limit",
+      "ack": {
+        "type": "crop_ack",
+        "request_id": "578:3:324",
+        "ok": false,
+        "reason": "blurry",
+        "session_version": 19,
+        "request_to_receipt_ms": 920.47
+      },
+      "crop_jpeg_path": "578_3_324-crop_jpeg.jpg"
+    },
+    {
+      "request_id": "579:1:325",
+      "frame_id": 579,
+      "track_id": 1,
+      "session_version": 19,
+      "bbox": [
+        186.779052734375,
+        75.25736999511719,
+        261.790283203125,
+        304.9949645996094
+      ],
+      "coord_space": "detect_640x480",
+      "upload_width": 640,
+      "upload_height": 480,
+      "margin": 0.08,
+      "video_timestamp": 11.017837,
+      "mapped_rect": {
+        "x": 1085,
+        "y": 256,
+        "w": 522,
+        "h": 1199
+      },
+      "status": "accepted",
+      "reason": "accepted",
+      "source_dimensions": [
+        3840,
+        2160
+      ],
+      "bytes": 131718,
+      "image_dropped": "original exceeds per-image limit",
+      "ack": {
+        "type": "crop_ack",
+        "request_id": "579:1:325",
+        "ok": true,
+        "reason": "accepted",
+        "session_version": 19,
+        "request_to_receipt_ms": 507.35
+      },
+      "backend": {
+        "request_id": "579:1:325",
+        "frame_id": 579,
+        "track_id": 1,
+        "session_version": 19,
+        "ocr_status": "done",
+        "queue_wait_ms": 2.715495999837003,
+        "ocr_ms": 481.8038890002754,
+        "lines": [
+          {
+            "text": "POCTO",
+            "score": 0.9198495745658875
+          },
+          {
+            "text": "MO",
+            "score": 0.8970581293106079
+          }
+        ],
+        "lines_dropped": 0,
+        "text_truncated": false,
+        "jev": {
+          "source_request_ids": [
+            "567:1:301",
+            "570:1:308",
+            "573:1:314",
+            "576:1:319",
+            "579:1:325"
+          ],
+          "lines": [
+            {
+              "text": "2,5%",
+              "score": 0.9661796689033508
+            },
+            {
+              "text": "6LU8E112",
+              "score": 0.35986796021461487
+            },
+            {
+              "text": "AU10",
+              "score": 0.32374903559684753
+            },
+            {
+              "text": "MO",
+              "score": 0.8970581293106079
+            },
+            {
+              "text": "POCTO",
+              "score": 0.9198495745658875
+            },
+            {
+              "text": "S1",
+              "score": 0.2995334267616272
+            },
+            {
+              "text": "U1",
+              "score": 0.39244168996810913
+            },
+            {
+              "text": "МОЛОКО",
+              "score": 0.900402843952179
+            }
+          ],
+          "result": {
+            "status": "needs_more_evidence",
+            "choice": null,
+            "confidence": null,
+            "probabilities": null
+          },
+          "duration_ms": 0.060880000091856346,
+          "source_ids_dropped": 0,
+          "error": true
+        }
+      },
+      "crop_jpeg_path": "579_1_325-crop_jpeg.jpg"
+    },
+    {
+      "request_id": "579:5:326",
+      "frame_id": 579,
+      "track_id": 5,
+      "session_version": 19,
+      "bbox": [
+        268.0268859863281,
+        240.67010498046875,
+        360.2959289550781,
+        456.353271484375
+      ],
+      "coord_space": "detect_640x480",
+      "upload_width": 640,
+      "upload_height": 480,
+      "margin": 0.08,
+      "video_timestamp": 11.017837,
+      "mapped_rect": {
+        "x": 1564,
+        "y": 1005,
+        "w": 642,
+        "h": 1126
+      },
+      "status": "rejected",
+      "reason": "blurry",
+      "source_dimensions": [
+        3840,
+        2160
+      ],
+      "bytes": 198702,
+      "image_dropped": "original exceeds per-image limit",
+      "ack": {
+        "type": "crop_ack",
+        "request_id": "579:5:326",
+        "ok": false,
+        "reason": "blurry",
+        "session_version": 19,
+        "request_to_receipt_ms": 519.04
+      },
+      "crop_jpeg_path": "579_5_326-crop_jpeg.jpg"
+    },
+    {
+      "request_id": "580:4:327",
+      "frame_id": 580,
+      "track_id": 4,
+      "session_version": 19,
+      "bbox": [
+        348.3248291015625,
+        187.19967651367188,
+        421.7705993652344,
+        380.3485107421875
+      ],
+      "coord_space": "detect_640x480",
+      "upload_width": 640,
+      "upload_height": 480,
+      "margin": 0.08,
+      "video_timestamp": 12.25208,
+      "mapped_rect": {
+        "x": 2055,
+        "y": 773,
+        "w": 511,
+        "h": 1008
+      },
+      "status": "accepted",
+      "reason": "accepted",
+      "source_dimensions": [
+        3840,
+        2160
+      ],
+      "bytes": 145134,
+      "image_dropped": "original exceeds per-image limit",
+      "ack": {
+        "type": "crop_ack",
+        "request_id": "580:4:327",
+        "ok": true,
+        "reason": "accepted",
+        "session_version": 19,
+        "request_to_receipt_ms": 23.44
+      },
+      "backend": {
+        "request_id": "580:4:327",
+        "frame_id": 580,
+        "track_id": 4,
+        "session_version": 19,
+        "ocr_status": "done",
+        "queue_wait_ms": 121.19469400022354,
+        "ocr_ms": 253.66635699992912,
+        "lines": [
+          {
+            "text": "AKB",
+            "score": 0.9872307181358337
+          }
+        ],
+        "lines_dropped": 0,
+        "text_truncated": false,
+        "jev": {
+          "source_request_ids": [
+            "567:4:304",
+            "571:4:312",
+            "574:4:315",
+            "577:4:320",
+            "580:4:327"
+          ],
+          "lines": [
+            {
+              "text": "1M",
+              "score": 0.28895217180252075
+            },
+            {
+              "text": "AKB",
+              "score": 0.9900264143943787
+            },
+            {
+              "text": "AKBI",
+              "score": 0.8583201169967651
+            },
+            {
+              "text": "CK",
+              "score": 0.7832353115081787
+            },
+            {
+              "text": "CKA",
+              "score": 0.9698147177696228
+            }
+          ],
+          "result": {
+            "status": "needs_more_evidence",
+            "choice": null,
+            "confidence": null,
+            "probabilities": null
+          },
+          "duration_ms": 0.059684999996534316,
+          "source_ids_dropped": 0,
+          "error": true
+        }
+      },
+      "crop_jpeg_path": "580_4_327-crop_jpeg.jpg"
+    },
+    {
+      "request_id": "580:7:328",
+      "frame_id": 580,
+      "track_id": 7,
+      "session_version": 19,
+      "bbox": [
+        147.4234161376953,
+        151.89437866210938,
+        221.32754516601562,
+        322.9402770996094
+      ],
+      "coord_space": "detect_640x480",
+      "upload_width": 640,
+      "upload_height": 480,
+      "margin": 0.08,
+      "video_timestamp": 12.25208,
+      "mapped_rect": {
+        "x": 849,
+        "y": 622,
+        "w": 514,
+        "h": 893
+      },
+      "status": "accepted",
+      "reason": "accepted",
+      "source_dimensions": [
+        3840,
+        2160
+      ],
+      "bytes": 123030,
+      "image_dropped": "original exceeds per-image limit",
+      "ack": {
+        "type": "crop_ack",
+        "request_id": "580:7:328",
+        "ok": true,
+        "reason": "accepted",
+        "session_version": 19,
+        "request_to_receipt_ms": 29.33
+      },
+      "backend": {
+        "request_id": "580:7:328",
+        "frame_id": 580,
+        "track_id": 7,
+        "session_version": 19,
+        "ocr_status": "done",
+        "queue_wait_ms": 371.95945800021946,
+        "ocr_ms": 588.397680000071,
+        "lines": [
+          {
+            "text": "033",
+            "score": 0.9881917834281921
+          },
+          {
+            "text": "UCr",
+            "score": 0.7628557085990906
+          },
+          {
+            "text": "",
+            "score": 0
+          }
+        ],
+        "lines_dropped": 0,
+        "text_truncated": false,
+        "jev": {
+          "source_request_ids": [
+            "577:7:321",
+            "580:7:328"
+          ],
+          "lines": [
+            {
+              "text": "033",
+              "score": 0.997365415096283
+            },
+            {
+              "text": "2,5%",
+              "score": 0.7606218457221985
+            },
+            {
+              "text": "UC",
+              "score": 0.8880888223648071
+            },
+            {
+              "text": "UCr",
+              "score": 0.7628557085990906
+            }
+          ],
+          "result": {
+            "status": "needs_more_evidence",
+            "choice": null,
+            "confidence": null,
+            "probabilities": null
+          },
+          "duration_ms": 0.04793800007973914,
+          "source_ids_dropped": 0,
+          "error": true
+        }
+      },
+      "crop_jpeg_path": "580_7_328-crop_jpeg.jpg"
+    },
+    {
+      "request_id": "580:3:329",
+      "frame_id": 580,
+      "track_id": 3,
+      "session_version": 19,
+      "bbox": [
+        173.05625915527344,
+        297.69390869140625,
+        247.2262725830078,
+        471.7964172363281
+      ],
+      "coord_space": "detect_640x480",
+      "upload_width": 640,
+      "upload_height": 480,
+      "margin": 0.08,
+      "video_timestamp": 12.25208,
+      "mapped_rect": {
+        "x": 1003,
+        "y": 1277,
+        "w": 516,
+        "h": 883
+      },
+      "status": "accepted",
+      "reason": "accepted",
+      "source_dimensions": [
+        3840,
+        2160
+      ],
+      "bytes": 140102,
+      "image_dropped": "original exceeds per-image limit",
+      "ack": {
+        "type": "crop_ack",
+        "request_id": "580:3:329",
+        "ok": true,
+        "reason": "accepted",
+        "session_version": 19,
+        "request_to_receipt_ms": 33.42
+      },
+      "backend": {
+        "request_id": "580:3:329",
+        "frame_id": 580,
+        "track_id": 3,
+        "session_version": 19,
+        "ocr_status": "done",
+        "queue_wait_ms": 959.7547179996582,
+        "ocr_ms": 492.7041770001779,
+        "lines": [
+          {
+            "text": "2,5%",
+            "score": 0.9640070199966431
+          },
+          {
+            "text": "СЕНЕЖСКАЯ",
+            "score": 0.8196048140525818
+          }
+        ],
+        "lines_dropped": 0,
+        "text_truncated": false,
+        "jev": {
+          "source_request_ids": [
+            "580:3:329"
+          ],
+          "lines": [
+            {
+              "text": "2,5%",
+              "score": 0.9640070199966431
+            },
+            {
+              "text": "СЕНЕЖСКАЯ",
+              "score": 0.8196048140525818
+            }
+          ],
+          "result": {
+            "status": "needs_more_evidence",
+            "choice": null,
+            "confidence": null,
+            "probabilities": null
+          },
+          "duration_ms": 0.05333799981599441,
+          "source_ids_dropped": 0,
+          "error": true
+        }
+      },
+      "crop_jpeg_path": "580_3_329-crop_jpeg.jpg"
+    }
+  ],
+  "browser_dropped": 29,
+  "backend_dropped": 0,
+  "last_state": {
+    "browser_ms": 275850,
+    "video_time": 12.950756,
+    "duration": 12.950756,
+    "ended": true,
+    "status": "Video ended. Pending identification continues.",
+    "dropped": 29,
+    "backendDropped": 0
+  }
+}

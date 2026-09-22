@@ -156,6 +156,16 @@ OCR_CROP_MARGIN = 0.08
 # Calibrated on CPU OCR (Sep 2026): brand text still reads at sharpness ~15
 # with minor noise and survives down to ~7; 60 rejected perfectly good crops.
 OCR_SHARPNESS_MIN = 15.0
+# Normalized-scale rescue (video-comparison eval, reports/quality-gate/):
+# full-resolution variance undervalues large close labels (e.g. 758x1650
+# Saint Spring 388:2:31 scores 12.37 full but 34.9 at canonical height 1000
+# and OCR-recovers СВЯТОЙ ИСТОЧНИК). Tuning + held-out validation support
+# the union gate full>=15 OR norm@1000>=30: +7/+4 target-brand hits, zero
+# extra empty OCRs and zero extra neighbor-brand cases on both splits.
+# P/D brands still never recover (curved-logo recognition limit) and very
+# blurry crops stay rejected. Lifecycle/scheduling/dedup/payload/CPU untouched.
+OCR_SHARPNESS_NORM_HEIGHT = 1000
+OCR_SHARPNESS_NORM_MIN = 30.0
 OCR_CROP_JPEG_QUALITY = 85
 # A track absent this many consecutive processed frames loses its OCR
 # evidence and identity: at ~1 fps on CPU this clears a removed bottle
@@ -167,15 +177,25 @@ IDENT_ABSENT_FRAMES = 3
 # requests in the detection response, and accepts crop JPEGs as enveloped
 # binary messages (see docs/detect-crop-protocol.md). Detection upload
 # resolution and JPEG quality are unchanged in this stage.
-# Pending crop requests per connection/session; one slot per track keeps
-# the latest view while already accumulated OCR evidence is preserved.
+# Pending crop requests per connection/session. A track keeps at most one
+# outstanding request: a newer detection must not invalidate a crop that is
+# still travelling from the browser, so a valid request is left in flight
+# and no duplicate is issued until it is answered or expires. Accumulated
+# OCR evidence is never cleared by request lifecycle changes.
 MAX_PENDING_CROP_REQUESTS = 16
+MAX_OUTSTANDING_CROP_REQUESTS_PER_TRACK = 1
 # Upper bound on crop requests attached to a single detection response so
 # one crowded frame cannot flood the browser/uplink.
 MAX_CROP_REQUESTS_PER_FRAME = 4
 # Unanswered crop requests expire; late browser responses are rejected so
-# old evidence cannot attach to a reused track ID.
+# old evidence cannot attach to a reused track ID. Expiry uses server
+# monotonic time and frees the track's slot so OCR requests are never
+# starved by an unanswered request.
 CROP_REQUEST_TTL_S = 8.0
+# Answered/expired/invalidated request ids are remembered (bounded) so a
+# late duplicate delivery reports why it was rejected instead of a generic
+# unknown_request.
+MAX_CROP_TOMBSTONES = 128
 # Crop JPEG responses share the detection frame size cap; larger payloads
 # are rejected instead of entering the OCR queue.
 MAX_CROP_RESPONSE_BYTES = 2_000_000

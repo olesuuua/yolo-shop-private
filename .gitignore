@@ -21,3 +21,11 @@ __pycache__/
 work/
 .runtime/
 data/local/
+
+# Generated video-comparison artifacts (large, reproducible)
+reports/video-comparison/compatible/
+reports/video-comparison/*.zip
+reports/video-comparison/**/*.mp4
+
+# A/B gate replay raw data (large crops/logs; report + CSV/JSON stay tracked)
+reports/quality-gate/replay-comparison/runs/

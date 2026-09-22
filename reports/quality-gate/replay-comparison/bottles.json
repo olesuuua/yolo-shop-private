@@ -1,0 +1,1372 @@
+[
+ {
+  "run": "v1-a1",
+  "gate": "A",
+  "video": "v1",
+  "bottle": "A",
+  "first_detection_wall": 51481.38,
+  "first_opportunity": {
+   "request_id": "7:2:9",
+   "video_timestamp": 1.53
+  },
+  "first_brand_wall": 51484.54,
+  "first_brand_delay_s": 3.16,
+  "first_brand_request": "11:2:12",
+  "first_brand_track": 2,
+  "first_brand_text": [
+   "AKBA"
+  ],
+  "first_brand_video_ts": 3.701573,
+  "brand_validity": "unreviewed",
+  "brand_note": "",
+  "n_ocr_exec": 1,
+  "n_brand_ocr": 1
+ },
+ {
+  "run": "v1-a1",
+  "gate": "A",
+  "video": "v1",
+  "bottle": "S",
+  "first_detection_wall": 51488.63,
+  "first_opportunity": {
+   "request_id": "20:4:16",
+   "video_timestamp": 8.75
+  },
+  "first_brand_wall": 51498.57,
+  "first_brand_delay_s": 9.94,
+  "first_brand_request": "34:6:36",
+  "first_brand_track": 6,
+  "first_brand_text": [
+   "A",
+   "СЕНЕЖСКАЯ",
+   "питьсоля",
+   "AHNA"
+  ],
+  "first_brand_video_ts": 17.06762,
+  "brand_validity": "unreviewed",
+  "brand_note": "",
+  "n_ocr_exec": 3,
+  "n_brand_ocr": 1
+ },
+ {
+  "run": "v1-a1",
+  "gate": "A",
+  "video": "v1",
+  "bottle": "W",
+  "first_detection_wall": 51497.58,
+  "first_opportunity": {
+   "request_id": "35:4:37",
+   "video_timestamp": 17.63
+  },
+  "first_brand_wall": 51523.78,
+  "first_brand_delay_s": 26.2,
+  "first_brand_request": "68:8:115",
+  "first_brand_track": 8,
+  "first_brand_text": [
+   "СВЯТО",
+   "%",
+   "13",
+   "oмик"
+  ],
+  "first_brand_video_ts": 39.950655,
+  "brand_validity": "contaminated",
+  "brand_note": "68:8:115 Domik-owned grouped crop; W ghost through bottle; neighbor text dominant",
+  "n_ocr_exec": 3,
+  "n_brand_ocr": 0
+ },
+ {
+  "run": "v1-a1",
+  "gate": "A",
+  "video": "v1",
+  "bottle": "P",
+  "first_detection_wall": 51506.66,
+  "first_opportunity": {
+   "request_id": "48:4:64",
+   "video_timestamp": 26.71
+  },
+  "first_brand_wall": null,
+  "first_brand_delay_s": null,
+  "first_brand_request": null,
+  "first_brand_track": null,
+  "first_brand_text": [],
+  "first_brand_video_ts": null,
+  "brand_validity": "unresolved",
+  "brand_note": "",
+  "n_ocr_exec": 1,
+  "n_brand_ocr": 0
+ },
+ {
+  "run": "v1-a1",
+  "gate": "A",
+  "video": "v1",
+  "bottle": "D",
+  "first_detection_wall": 51515.45,
+  "first_opportunity": {
+   "request_id": "62:4:98",
+   "video_timestamp": 35.58
+  },
+  "first_brand_wall": null,
+  "first_brand_delay_s": null,
+  "first_brand_request": null,
+  "first_brand_track": null,
+  "first_brand_text": [],
+  "first_brand_video_ts": null,
+  "brand_validity": "unresolved",
+  "brand_note": "",
+  "n_ocr_exec": 12,
+  "n_brand_ocr": 0
+ },
+ {
+  "run": "v1-a2",
+  "gate": "A",
+  "video": "v1",
+  "bottle": "A",
+  "first_detection_wall": 51877.55,
+  "first_opportunity": {
+   "request_id": "215:2:293",
+   "video_timestamp": 1.62
+  },
+  "first_brand_wall": 51880.88,
+  "first_brand_delay_s": 3.33,
+  "first_brand_request": "219:2:296",
+  "first_brand_track": 2,
+  "first_brand_text": [
+   "AKBA"
+  ],
+  "first_brand_video_ts": 3.780183,
+  "brand_validity": "unreviewed",
+  "brand_note": "",
+  "n_ocr_exec": 1,
+  "n_brand_ocr": 1
+ },
+ {
+  "run": "v1-a2",
+  "gate": "A",
+  "video": "v1",
+  "bottle": "S",
+  "first_detection_wall": 51884.75,
+  "first_opportunity": {
+   "request_id": "228:3:302",
+   "video_timestamp": 8.8
+  },
+  "first_brand_wall": 51887.85,
+  "first_brand_delay_s": 3.1,
+  "first_brand_request": "231:4:307",
+  "first_brand_track": 4,
+  "first_brand_text": [
+   "СЕНЕЖСКAЯ",
+   "ПИТЬЕВАЯ",
+   "НЕГАЗИРОВАННАЯ"
+  ],
+  "first_brand_video_ts": 10.49887,
+  "brand_validity": "unreviewed",
+  "brand_note": "",
+  "n_ocr_exec": 4,
+  "n_brand_ocr": 2
+ },
+ {
+  "run": "v1-a2",
+  "gate": "A",
+  "video": "v1",
+  "bottle": "W",
+  "first_detection_wall": 51894.24,
+  "first_opportunity": {
+   "request_id": "243:3:319",
+   "video_timestamp": 18.16
+  },
+  "first_brand_wall": 51917.38,
+  "first_brand_delay_s": 23.14,
+  "first_brand_request": "274:7:398",
+  "first_brand_track": 7,
+  "first_brand_text": [
+   "СВЯТ",
+   "УСТОЧН",
+   "OMиK",
+   "Вдеревне"
+  ],
+  "first_brand_video_ts": 38.447263,
+  "brand_validity": "contaminated",
+  "brand_note": "274:7:398 same class as v1-a1 W hit; neighbor text dominant",
+  "n_ocr_exec": 3,
+  "n_brand_ocr": 0
+ },
+ {
+  "run": "v1-a2",
+  "gate": "A",
+  "video": "v1",
+  "bottle": "P",
+  "first_detection_wall": 51902.39,
+  "first_opportunity": {
+   "request_id": "256:3:348",
+   "video_timestamp": 26.38
+  },
+  "first_brand_wall": null,
+  "first_brand_delay_s": null,
+  "first_brand_request": null,
+  "first_brand_track": null,
+  "first_brand_text": [],
+  "first_brand_video_ts": null,
+  "brand_validity": "unresolved",
+  "brand_note": "",
+  "n_ocr_exec": 2,
+  "n_brand_ocr": 0
+ },
+ {
+  "run": "v1-a2",
+  "gate": "A",
+  "video": "v1",
+  "bottle": "D",
+  "first_detection_wall": 51911.71,
+  "first_opportunity": {
+   "request_id": "270:7:386",
+   "video_timestamp": 35.7
+  },
+  "first_brand_wall": null,
+  "first_brand_delay_s": null,
+  "first_brand_request": null,
+  "first_brand_track": null,
+  "first_brand_text": [],
+  "first_brand_video_ts": null,
+  "brand_validity": "unresolved",
+  "brand_note": "",
+  "n_ocr_exec": 12,
+  "n_brand_ocr": 0
+ },
+ {
+  "run": "v1-b1",
+  "gate": "B",
+  "video": "v1",
+  "bottle": "A",
+  "first_detection_wall": 51734.05,
+  "first_opportunity": {
+   "request_id": "81:2:133",
+   "video_timestamp": 1.61
+  },
+  "first_brand_wall": 51735.51,
+  "first_brand_delay_s": 1.46,
+  "first_brand_request": "82:2:134",
+  "first_brand_track": 2,
+  "first_brand_text": [
+   "AKBA"
+  ],
+  "first_brand_video_ts": 2.146788,
+  "brand_validity": "unreviewed",
+  "brand_note": "",
+  "n_ocr_exec": 2,
+  "n_brand_ocr": 2
+ },
+ {
+  "run": "v1-b1",
+  "gate": "B",
+  "video": "v1",
+  "bottle": "S",
+  "first_detection_wall": 51741.22,
+  "first_opportunity": {
+   "request_id": "93:3:139",
+   "video_timestamp": 8.78
+  },
+  "first_brand_wall": 51743.47,
+  "first_brand_delay_s": 2.25,
+  "first_brand_request": "95:2:142",
+  "first_brand_track": 2,
+  "first_brand_text": [
+   "СЕНЕЖСКAЯ"
+  ],
+  "first_brand_video_ts": 9.884406,
+  "brand_validity": "unreviewed",
+  "brand_note": "",
+  "n_ocr_exec": 6,
+  "n_brand_ocr": 3
+ },
+ {
+  "run": "v1-b1",
+  "gate": "B",
+  "video": "v1",
+  "bottle": "W",
+  "first_detection_wall": 51750.35,
+  "first_opportunity": {
+   "request_id": "108:5:152",
+   "video_timestamp": 18.45
+  },
+  "first_brand_wall": 51755.4,
+  "first_brand_delay_s": 5.05,
+  "first_brand_request": "111:2:156",
+  "first_brand_track": 2,
+  "first_brand_text": [
+   "Jniss",
+   "",
+   "CВЯТОИ",
+   "ИСТОЧНИК"
+  ],
+  "first_brand_video_ts": 21.423323,
+  "brand_validity": "valid",
+  "brand_note": "111:2:156 solo-window W close label; polys on brand; full 11.07/norm 30.82",
+  "n_ocr_exec": 6,
+  "n_brand_ocr": 1
+ },
+ {
+  "run": "v1-b1",
+  "gate": "B",
+  "video": "v1",
+  "bottle": "P",
+  "first_detection_wall": 51759.25,
+  "first_opportunity": {
+   "request_id": "117:3:163",
+   "video_timestamp": 26.6
+  },
+  "first_brand_wall": null,
+  "first_brand_delay_s": null,
+  "first_brand_request": null,
+  "first_brand_track": null,
+  "first_brand_text": [],
+  "first_brand_video_ts": null,
+  "brand_validity": "unresolved",
+  "brand_note": "",
+  "n_ocr_exec": 8,
+  "n_brand_ocr": 0
+ },
+ {
+  "run": "v1-b1",
+  "gate": "B",
+  "video": "v1",
+  "bottle": "D",
+  "first_detection_wall": 51768.17,
+  "first_opportunity": {
+   "request_id": "128:7:181",
+   "video_timestamp": 35.41
+  },
+  "first_brand_wall": null,
+  "first_brand_delay_s": null,
+  "first_brand_request": null,
+  "first_brand_track": null,
+  "first_brand_text": [],
+  "first_brand_video_ts": null,
+  "brand_validity": "unresolved",
+  "brand_note": "",
+  "n_ocr_exec": 12,
+  "n_brand_ocr": 0
+ },
+ {
+  "run": "v1-b2",
+  "gate": "B",
+  "video": "v1",
+  "bottle": "A",
+  "first_detection_wall": 51805.62,
+  "first_opportunity": {
+   "request_id": "147:1:217",
+   "video_timestamp": 1.61
+  },
+  "first_brand_wall": 51807.33,
+  "first_brand_delay_s": 1.71,
+  "first_brand_request": "148:1:218",
+  "first_brand_track": 1,
+  "first_brand_text": [
+   "AKBA",
+   "EC"
+  ],
+  "first_brand_video_ts": 2.131422,
+  "brand_validity": "unreviewed",
+  "brand_note": "",
+  "n_ocr_exec": 2,
+  "n_brand_ocr": 2
+ },
+ {
+  "run": "v1-b2",
+  "gate": "B",
+  "video": "v1",
+  "bottle": "S",
+  "first_detection_wall": 51813.16,
+  "first_opportunity": {
+   "request_id": "161:2:223",
+   "video_timestamp": 9.66
+  },
+  "first_brand_wall": 51814.99,
+  "first_brand_delay_s": 1.83,
+  "first_brand_request": "161:1:224",
+  "first_brand_track": 1,
+  "first_brand_text": [
+   "СЕНЕЖСКAЯ",
+   "НЕГАЗHРОВАННАЯ"
+  ],
+  "first_brand_video_ts": 9.662302,
+  "brand_validity": "unreviewed",
+  "brand_note": "",
+  "n_ocr_exec": 6,
+  "n_brand_ocr": 2
+ },
+ {
+  "run": "v1-b2",
+  "gate": "B",
+  "video": "v1",
+  "bottle": "W",
+  "first_detection_wall": 51822.17,
+  "first_opportunity": {
+   "request_id": "174:3:234",
+   "video_timestamp": 18.04
+  },
+  "first_brand_wall": 51825.44,
+  "first_brand_delay_s": 3.27,
+  "first_brand_request": "172:2:232",
+  "first_brand_track": 1,
+  "first_brand_text": [
+   "3hs",
+   "",
+   "СВЯТОЙ",
+   "ИСТОЧНИК"
+  ],
+  "first_brand_video_ts": 16.786206,
+  "brand_validity": "invalid",
+  "brand_note": "172:2:232 shows Aqua+Senezhskaya, no W; W text is OCR misread; W unresolved here",
+  "n_ocr_exec": 7,
+  "n_brand_ocr": 1
+ },
+ {
+  "run": "v1-b2",
+  "gate": "B",
+  "video": "v1",
+  "bottle": "P",
+  "first_detection_wall": 51830.68,
+  "first_opportunity": {
+   "request_id": "185:1:247",
+   "video_timestamp": 26.43
+  },
+  "first_brand_wall": null,
+  "first_brand_delay_s": null,
+  "first_brand_request": null,
+  "first_brand_track": null,
+  "first_brand_text": [],
+  "first_brand_video_ts": null,
+  "brand_validity": "unresolved",
+  "brand_note": "",
+  "n_ocr_exec": 7,
+  "n_brand_ocr": 0
+ },
+ {
+  "run": "v1-b2",
+  "gate": "B",
+  "video": "v1",
+  "bottle": "D",
+  "first_detection_wall": 51839.48,
+  "first_opportunity": {
+   "request_id": "197:6:259",
+   "video_timestamp": 35.28
+  },
+  "first_brand_wall": null,
+  "first_brand_delay_s": null,
+  "first_brand_request": null,
+  "first_brand_track": null,
+  "first_brand_text": [],
+  "first_brand_video_ts": null,
+  "brand_validity": "unresolved",
+  "brand_note": "",
+  "n_ocr_exec": 12,
+  "n_brand_ocr": 0
+ },
+ {
+  "run": "v2-a1",
+  "gate": "A",
+  "video": "v2",
+  "bottle": "A",
+  "first_detection_wall": 51947.51,
+  "first_opportunity": {
+   "request_id": null,
+   "video_timestamp": null,
+   "note": "all bottles continuously present"
+  },
+  "first_brand_wall": 51949.43,
+  "first_brand_delay_s": 1.92,
+  "first_brand_request": "285:3:413",
+  "first_brand_track": 3,
+  "first_brand_text": [
+   "AKBA"
+  ],
+  "first_brand_video_ts": 0.002592,
+  "brand_validity": "unreviewed",
+  "brand_note": "",
+  "n_ocr_exec": null,
+  "n_brand_ocr": 0
+ },
+ {
+  "run": "v2-a1",
+  "gate": "A",
+  "video": "v2",
+  "bottle": "S",
+  "first_detection_wall": 51947.51,
+  "first_opportunity": {
+   "request_id": null,
+   "video_timestamp": null,
+   "note": "all bottles continuously present"
+  },
+  "first_brand_wall": 51950.46,
+  "first_brand_delay_s": 2.95,
+  "first_brand_request": "286:5:415",
+  "first_brand_track": 5,
+  "first_brand_text": [
+   "",
+   "СЕНЕЖСKАЯ"
+  ],
+  "first_brand_video_ts": 0.573386,
+  "brand_validity": "unreviewed",
+  "brand_note": "",
+  "n_ocr_exec": null,
+  "n_brand_ocr": 0
+ },
+ {
+  "run": "v2-a1",
+  "gate": "A",
+  "video": "v2",
+  "bottle": "W",
+  "first_detection_wall": 51947.51,
+  "first_opportunity": {
+   "request_id": null,
+   "video_timestamp": null,
+   "note": "all bottles continuously present"
+  },
+  "first_brand_wall": null,
+  "first_brand_delay_s": null,
+  "first_brand_request": null,
+  "first_brand_track": null,
+  "first_brand_text": [],
+  "first_brand_video_ts": null,
+  "brand_validity": "unresolved",
+  "brand_note": "",
+  "n_ocr_exec": null,
+  "n_brand_ocr": 0
+ },
+ {
+  "run": "v2-a1",
+  "gate": "A",
+  "video": "v2",
+  "bottle": "P",
+  "first_detection_wall": 51947.51,
+  "first_opportunity": {
+   "request_id": null,
+   "video_timestamp": null,
+   "note": "all bottles continuously present"
+  },
+  "first_brand_wall": null,
+  "first_brand_delay_s": null,
+  "first_brand_request": null,
+  "first_brand_track": null,
+  "first_brand_text": [],
+  "first_brand_video_ts": null,
+  "brand_validity": "unresolved",
+  "brand_note": "",
+  "n_ocr_exec": null,
+  "n_brand_ocr": 0
+ },
+ {
+  "run": "v2-a1",
+  "gate": "A",
+  "video": "v2",
+  "bottle": "D",
+  "first_detection_wall": 51947.51,
+  "first_opportunity": {
+   "request_id": null,
+   "video_timestamp": null,
+   "note": "all bottles continuously present"
+  },
+  "first_brand_wall": null,
+  "first_brand_delay_s": null,
+  "first_brand_request": null,
+  "first_brand_track": null,
+  "first_brand_text": [],
+  "first_brand_video_ts": null,
+  "brand_validity": "unresolved",
+  "brand_note": "",
+  "n_ocr_exec": null,
+  "n_brand_ocr": 0
+ },
+ {
+  "run": "v2-a2",
+  "gate": "A",
+  "video": "v2",
+  "bottle": "A",
+  "first_detection_wall": 52049.89,
+  "first_opportunity": {
+   "request_id": null,
+   "video_timestamp": null,
+   "note": "all bottles continuously present"
+  },
+  "first_brand_wall": 52051.59,
+  "first_brand_delay_s": 1.7,
+  "first_brand_request": "326:3:487",
+  "first_brand_track": 3,
+  "first_brand_text": [
+   "AKBA"
+  ],
+  "first_brand_video_ts": 0.004061,
+  "brand_validity": "unreviewed",
+  "brand_note": "",
+  "n_ocr_exec": null,
+  "n_brand_ocr": 0
+ },
+ {
+  "run": "v2-a2",
+  "gate": "A",
+  "video": "v2",
+  "bottle": "S",
+  "first_detection_wall": 52049.89,
+  "first_opportunity": {
+   "request_id": null,
+   "video_timestamp": null,
+   "note": "all bottles continuously present"
+  },
+  "first_brand_wall": 52052.47,
+  "first_brand_delay_s": 2.58,
+  "first_brand_request": "327:5:489",
+  "first_brand_track": 5,
+  "first_brand_text": [
+   "",
+   "СЕНЕЖСKАЯ"
+  ],
+  "first_brand_video_ts": 0.567284,
+  "brand_validity": "unreviewed",
+  "brand_note": "",
+  "n_ocr_exec": null,
+  "n_brand_ocr": 0
+ },
+ {
+  "run": "v2-a2",
+  "gate": "A",
+  "video": "v2",
+  "bottle": "W",
+  "first_detection_wall": 52049.89,
+  "first_opportunity": {
+   "request_id": null,
+   "video_timestamp": null,
+   "note": "all bottles continuously present"
+  },
+  "first_brand_wall": null,
+  "first_brand_delay_s": null,
+  "first_brand_request": null,
+  "first_brand_track": null,
+  "first_brand_text": [],
+  "first_brand_video_ts": null,
+  "brand_validity": "unresolved",
+  "brand_note": "",
+  "n_ocr_exec": null,
+  "n_brand_ocr": 0
+ },
+ {
+  "run": "v2-a2",
+  "gate": "A",
+  "video": "v2",
+  "bottle": "P",
+  "first_detection_wall": 52049.89,
+  "first_opportunity": {
+   "request_id": null,
+   "video_timestamp": null,
+   "note": "all bottles continuously present"
+  },
+  "first_brand_wall": null,
+  "first_brand_delay_s": null,
+  "first_brand_request": null,
+  "first_brand_track": null,
+  "first_brand_text": [],
+  "first_brand_video_ts": null,
+  "brand_validity": "unresolved",
+  "brand_note": "",
+  "n_ocr_exec": null,
+  "n_brand_ocr": 0
+ },
+ {
+  "run": "v2-a2",
+  "gate": "A",
+  "video": "v2",
+  "bottle": "D",
+  "first_detection_wall": 52049.89,
+  "first_opportunity": {
+   "request_id": null,
+   "video_timestamp": null,
+   "note": "all bottles continuously present"
+  },
+  "first_brand_wall": null,
+  "first_brand_delay_s": null,
+  "first_brand_request": null,
+  "first_brand_track": null,
+  "first_brand_text": [],
+  "first_brand_video_ts": null,
+  "brand_validity": "unresolved",
+  "brand_note": "",
+  "n_ocr_exec": null,
+  "n_brand_ocr": 0
+ },
+ {
+  "run": "v2-b1",
+  "gate": "B",
+  "video": "v2",
+  "bottle": "A",
+  "first_detection_wall": 51981.77,
+  "first_opportunity": {
+   "request_id": null,
+   "video_timestamp": null,
+   "note": "all bottles continuously present"
+  },
+  "first_brand_wall": 51985.15,
+  "first_brand_delay_s": 3.38,
+  "first_brand_request": "298:4:438",
+  "first_brand_track": 4,
+  "first_brand_text": [
+   "AKBA",
+   "МИНЕ"
+  ],
+  "first_brand_video_ts": 0,
+  "brand_validity": "unreviewed",
+  "brand_note": "",
+  "n_ocr_exec": null,
+  "n_brand_ocr": 0
+ },
+ {
+  "run": "v2-b1",
+  "gate": "B",
+  "video": "v2",
+  "bottle": "S",
+  "first_detection_wall": 51981.77,
+  "first_opportunity": {
+   "request_id": null,
+   "video_timestamp": null,
+   "note": "all bottles continuously present"
+  },
+  "first_brand_wall": 51985.37,
+  "first_brand_delay_s": 3.6,
+  "first_brand_request": "301:5:446",
+  "first_brand_track": 5,
+  "first_brand_text": [
+   "СЕНЕЖСКА"
+  ],
+  "first_brand_video_ts": 1.966675,
+  "brand_validity": "unreviewed",
+  "brand_note": "",
+  "n_ocr_exec": null,
+  "n_brand_ocr": 0
+ },
+ {
+  "run": "v2-b1",
+  "gate": "B",
+  "video": "v2",
+  "bottle": "W",
+  "first_detection_wall": 51981.77,
+  "first_opportunity": {
+   "request_id": null,
+   "video_timestamp": null,
+   "note": "all bottles continuously present"
+  },
+  "first_brand_wall": null,
+  "first_brand_delay_s": null,
+  "first_brand_request": null,
+  "first_brand_track": null,
+  "first_brand_text": [],
+  "first_brand_video_ts": null,
+  "brand_validity": "unresolved",
+  "brand_note": "",
+  "n_ocr_exec": null,
+  "n_brand_ocr": 0
+ },
+ {
+  "run": "v2-b1",
+  "gate": "B",
+  "video": "v2",
+  "bottle": "P",
+  "first_detection_wall": 51981.77,
+  "first_opportunity": {
+   "request_id": null,
+   "video_timestamp": null,
+   "note": "all bottles continuously present"
+  },
+  "first_brand_wall": null,
+  "first_brand_delay_s": null,
+  "first_brand_request": null,
+  "first_brand_track": null,
+  "first_brand_text": [],
+  "first_brand_video_ts": null,
+  "brand_validity": "unresolved",
+  "brand_note": "",
+  "n_ocr_exec": null,
+  "n_brand_ocr": 0
+ },
+ {
+  "run": "v2-b1",
+  "gate": "B",
+  "video": "v2",
+  "bottle": "D",
+  "first_detection_wall": 51981.77,
+  "first_opportunity": {
+   "request_id": null,
+   "video_timestamp": null,
+   "note": "all bottles continuously present"
+  },
+  "first_brand_wall": null,
+  "first_brand_delay_s": null,
+  "first_brand_request": null,
+  "first_brand_track": null,
+  "first_brand_text": [],
+  "first_brand_video_ts": null,
+  "brand_validity": "unresolved",
+  "brand_note": "",
+  "n_ocr_exec": null,
+  "n_brand_ocr": 0
+ },
+ {
+  "run": "v2-b2",
+  "gate": "B",
+  "video": "v2",
+  "bottle": "A",
+  "first_detection_wall": 52015.17,
+  "first_opportunity": {
+   "request_id": null,
+   "video_timestamp": null,
+   "note": "all bottles continuously present"
+  },
+  "first_brand_wall": 52018.07,
+  "first_brand_delay_s": 2.9,
+  "first_brand_request": "313:4:465",
+  "first_brand_track": 4,
+  "first_brand_text": [
+   "AKBA",
+   "МИНЕ"
+  ],
+  "first_brand_video_ts": 0,
+  "brand_validity": "unreviewed",
+  "brand_note": "",
+  "n_ocr_exec": null,
+  "n_brand_ocr": 0
+ },
+ {
+  "run": "v2-b2",
+  "gate": "B",
+  "video": "v2",
+  "bottle": "S",
+  "first_detection_wall": 52015.17,
+  "first_opportunity": {
+   "request_id": null,
+   "video_timestamp": null,
+   "note": "all bottles continuously present"
+  },
+  "first_brand_wall": 52018.74,
+  "first_brand_delay_s": 3.57,
+  "first_brand_request": "313:1:462",
+  "first_brand_track": 5,
+  "first_brand_text": [
+   "",
+   "СЕНЕЖСКАЯ"
+  ],
+  "first_brand_video_ts": 0,
+  "brand_validity": "unreviewed",
+  "brand_note": "",
+  "n_ocr_exec": null,
+  "n_brand_ocr": 0
+ },
+ {
+  "run": "v2-b2",
+  "gate": "B",
+  "video": "v2",
+  "bottle": "W",
+  "first_detection_wall": 52015.17,
+  "first_opportunity": {
+   "request_id": null,
+   "video_timestamp": null,
+   "note": "all bottles continuously present"
+  },
+  "first_brand_wall": null,
+  "first_brand_delay_s": null,
+  "first_brand_request": null,
+  "first_brand_track": null,
+  "first_brand_text": [],
+  "first_brand_video_ts": null,
+  "brand_validity": "unresolved",
+  "brand_note": "",
+  "n_ocr_exec": null,
+  "n_brand_ocr": 0
+ },
+ {
+  "run": "v2-b2",
+  "gate": "B",
+  "video": "v2",
+  "bottle": "P",
+  "first_detection_wall": 52015.17,
+  "first_opportunity": {
+   "request_id": null,
+   "video_timestamp": null,
+   "note": "all bottles continuously present"
+  },
+  "first_brand_wall": null,
+  "first_brand_delay_s": null,
+  "first_brand_request": null,
+  "first_brand_track": null,
+  "first_brand_text": [],
+  "first_brand_video_ts": null,
+  "brand_validity": "unresolved",
+  "brand_note": "",
+  "n_ocr_exec": null,
+  "n_brand_ocr": 0
+ },
+ {
+  "run": "v2-b2",
+  "gate": "B",
+  "video": "v2",
+  "bottle": "D",
+  "first_detection_wall": 52015.17,
+  "first_opportunity": {
+   "request_id": null,
+   "video_timestamp": null,
+   "note": "all bottles continuously present"
+  },
+  "first_brand_wall": null,
+  "first_brand_delay_s": null,
+  "first_brand_request": null,
+  "first_brand_track": null,
+  "first_brand_text": [],
+  "first_brand_video_ts": null,
+  "brand_validity": "unresolved",
+  "brand_note": "",
+  "n_ocr_exec": null,
+  "n_brand_ocr": 0
+ },
+ {
+  "run": "v3-a1",
+  "gate": "A",
+  "video": "v3",
+  "bottle": "A",
+  "first_detection_wall": 52084.45,
+  "first_opportunity": {
+   "request_id": null,
+   "video_timestamp": null,
+   "note": "all bottles continuously present"
+  },
+  "first_brand_wall": null,
+  "first_brand_delay_s": null,
+  "first_brand_request": null,
+  "first_brand_track": null,
+  "first_brand_text": [],
+  "first_brand_video_ts": null,
+  "brand_validity": "unresolved",
+  "brand_note": "",
+  "n_ocr_exec": null,
+  "n_brand_ocr": 0
+ },
+ {
+  "run": "v3-a1",
+  "gate": "A",
+  "video": "v3",
+  "bottle": "S",
+  "first_detection_wall": 52084.45,
+  "first_opportunity": {
+   "request_id": null,
+   "video_timestamp": null,
+   "note": "all bottles continuously present"
+  },
+  "first_brand_wall": 52092.3,
+  "first_brand_delay_s": 7.85,
+  "first_brand_request": "349:5:527",
+  "first_brand_track": 5,
+  "first_brand_text": [
+   "СЕНЕЖСК"
+  ],
+  "first_brand_video_ts": 6.198786,
+  "brand_validity": "partial",
+  "brand_note": "Senezhskaya label genuine; OCR keeps 7-char root only",
+  "n_ocr_exec": null,
+  "n_brand_ocr": 0
+ },
+ {
+  "run": "v3-a1",
+  "gate": "A",
+  "video": "v3",
+  "bottle": "W",
+  "first_detection_wall": 52084.45,
+  "first_opportunity": {
+   "request_id": null,
+   "video_timestamp": null,
+   "note": "all bottles continuously present"
+  },
+  "first_brand_wall": null,
+  "first_brand_delay_s": null,
+  "first_brand_request": null,
+  "first_brand_track": null,
+  "first_brand_text": [],
+  "first_brand_video_ts": null,
+  "brand_validity": "unresolved",
+  "brand_note": "",
+  "n_ocr_exec": null,
+  "n_brand_ocr": 0
+ },
+ {
+  "run": "v3-a1",
+  "gate": "A",
+  "video": "v3",
+  "bottle": "P",
+  "first_detection_wall": 52084.45,
+  "first_opportunity": {
+   "request_id": null,
+   "video_timestamp": null,
+   "note": "all bottles continuously present"
+  },
+  "first_brand_wall": null,
+  "first_brand_delay_s": null,
+  "first_brand_request": null,
+  "first_brand_track": null,
+  "first_brand_text": [],
+  "first_brand_video_ts": null,
+  "brand_validity": "unresolved",
+  "brand_note": "",
+  "n_ocr_exec": null,
+  "n_brand_ocr": 0
+ },
+ {
+  "run": "v3-a1",
+  "gate": "A",
+  "video": "v3",
+  "bottle": "D",
+  "first_detection_wall": 52084.45,
+  "first_opportunity": {
+   "request_id": null,
+   "video_timestamp": null,
+   "note": "all bottles continuously present"
+  },
+  "first_brand_wall": null,
+  "first_brand_delay_s": null,
+  "first_brand_request": null,
+  "first_brand_track": null,
+  "first_brand_text": [],
+  "first_brand_video_ts": null,
+  "brand_validity": "unresolved",
+  "brand_note": "",
+  "n_ocr_exec": null,
+  "n_brand_ocr": 0
+ },
+ {
+  "run": "v3-a2",
+  "gate": "A",
+  "video": "v3",
+  "bottle": "A",
+  "first_detection_wall": 52194.36,
+  "first_opportunity": {
+   "request_id": null,
+   "video_timestamp": null,
+   "note": "all bottles continuously present"
+  },
+  "first_brand_wall": null,
+  "first_brand_delay_s": null,
+  "first_brand_request": null,
+  "first_brand_track": null,
+  "first_brand_text": [],
+  "first_brand_video_ts": null,
+  "brand_validity": "unresolved",
+  "brand_note": "",
+  "n_ocr_exec": null,
+  "n_brand_ocr": 0
+ },
+ {
+  "run": "v3-a2",
+  "gate": "A",
+  "video": "v3",
+  "bottle": "S",
+  "first_detection_wall": 52194.36,
+  "first_opportunity": {
+   "request_id": null,
+   "video_timestamp": null,
+   "note": "all bottles continuously present"
+  },
+  "first_brand_wall": null,
+  "first_brand_delay_s": null,
+  "first_brand_request": null,
+  "first_brand_track": null,
+  "first_brand_text": [],
+  "first_brand_video_ts": null,
+  "brand_validity": "unresolved",
+  "brand_note": "",
+  "n_ocr_exec": null,
+  "n_brand_ocr": 0
+ },
+ {
+  "run": "v3-a2",
+  "gate": "A",
+  "video": "v3",
+  "bottle": "W",
+  "first_detection_wall": 52194.36,
+  "first_opportunity": {
+   "request_id": null,
+   "video_timestamp": null,
+   "note": "all bottles continuously present"
+  },
+  "first_brand_wall": null,
+  "first_brand_delay_s": null,
+  "first_brand_request": null,
+  "first_brand_track": null,
+  "first_brand_text": [],
+  "first_brand_video_ts": null,
+  "brand_validity": "unresolved",
+  "brand_note": "",
+  "n_ocr_exec": null,
+  "n_brand_ocr": 0
+ },
+ {
+  "run": "v3-a2",
+  "gate": "A",
+  "video": "v3",
+  "bottle": "P",
+  "first_detection_wall": 52194.36,
+  "first_opportunity": {
+   "request_id": null,
+   "video_timestamp": null,
+   "note": "all bottles continuously present"
+  },
+  "first_brand_wall": null,
+  "first_brand_delay_s": null,
+  "first_brand_request": null,
+  "first_brand_track": null,
+  "first_brand_text": [],
+  "first_brand_video_ts": null,
+  "brand_validity": "unresolved",
+  "brand_note": "",
+  "n_ocr_exec": null,
+  "n_brand_ocr": 0
+ },
+ {
+  "run": "v3-a2",
+  "gate": "A",
+  "video": "v3",
+  "bottle": "D",
+  "first_detection_wall": 52194.36,
+  "first_opportunity": {
+   "request_id": null,
+   "video_timestamp": null,
+   "note": "all bottles continuously present"
+  },
+  "first_brand_wall": null,
+  "first_brand_delay_s": null,
+  "first_brand_request": null,
+  "first_brand_track": null,
+  "first_brand_text": [],
+  "first_brand_video_ts": null,
+  "brand_validity": "unresolved",
+  "brand_note": "",
+  "n_ocr_exec": null,
+  "n_brand_ocr": 0
+ },
+ {
+  "run": "v3-b1",
+  "gate": "B",
+  "video": "v3",
+  "bottle": "A",
+  "first_detection_wall": 52120.41,
+  "first_opportunity": {
+   "request_id": null,
+   "video_timestamp": null,
+   "note": "all bottles continuously present"
+  },
+  "first_brand_wall": null,
+  "first_brand_delay_s": null,
+  "first_brand_request": null,
+  "first_brand_track": null,
+  "first_brand_text": [],
+  "first_brand_video_ts": null,
+  "brand_validity": "unresolved",
+  "brand_note": "",
+  "n_ocr_exec": null,
+  "n_brand_ocr": 0
+ },
+ {
+  "run": "v3-b1",
+  "gate": "B",
+  "video": "v3",
+  "bottle": "S",
+  "first_detection_wall": 52120.41,
+  "first_opportunity": {
+   "request_id": null,
+   "video_timestamp": null,
+   "note": "all bottles continuously present"
+  },
+  "first_brand_wall": 52128.24,
+  "first_brand_delay_s": 7.83,
+  "first_brand_request": "365:5:550",
+  "first_brand_track": 5,
+  "first_brand_text": [
+   "СЕНЕЖCК"
+  ],
+  "first_brand_video_ts": 6.437906,
+  "brand_validity": "partial",
+  "brand_note": "same as v3-a1 S",
+  "n_ocr_exec": null,
+  "n_brand_ocr": 0
+ },
+ {
+  "run": "v3-b1",
+  "gate": "B",
+  "video": "v3",
+  "bottle": "W",
+  "first_detection_wall": 52120.41,
+  "first_opportunity": {
+   "request_id": null,
+   "video_timestamp": null,
+   "note": "all bottles continuously present"
+  },
+  "first_brand_wall": null,
+  "first_brand_delay_s": null,
+  "first_brand_request": null,
+  "first_brand_track": null,
+  "first_brand_text": [],
+  "first_brand_video_ts": null,
+  "brand_validity": "unresolved",
+  "brand_note": "",
+  "n_ocr_exec": null,
+  "n_brand_ocr": 0
+ },
+ {
+  "run": "v3-b1",
+  "gate": "B",
+  "video": "v3",
+  "bottle": "P",
+  "first_detection_wall": 52120.41,
+  "first_opportunity": {
+   "request_id": null,
+   "video_timestamp": null,
+   "note": "all bottles continuously present"
+  },
+  "first_brand_wall": null,
+  "first_brand_delay_s": null,
+  "first_brand_request": null,
+  "first_brand_track": null,
+  "first_brand_text": [],
+  "first_brand_video_ts": null,
+  "brand_validity": "unresolved",
+  "brand_note": "",
+  "n_ocr_exec": null,
+  "n_brand_ocr": 0
+ },
+ {
+  "run": "v3-b1",
+  "gate": "B",
+  "video": "v3",
+  "bottle": "D",
+  "first_detection_wall": 52120.41,
+  "first_opportunity": {
+   "request_id": null,
+   "video_timestamp": null,
+   "note": "all bottles continuously present"
+  },
+  "first_brand_wall": null,
+  "first_brand_delay_s": null,
+  "first_brand_request": null,
+  "first_brand_track": null,
+  "first_brand_text": [],
+  "first_brand_video_ts": null,
+  "brand_validity": "unresolved",
+  "brand_note": "",
+  "n_ocr_exec": null,
+  "n_brand_ocr": 0
+ },
+ {
+  "run": "v3-b2",
+  "gate": "B",
+  "video": "v3",
+  "bottle": "A",
+  "first_detection_wall": 52157.93,
+  "first_opportunity": {
+   "request_id": null,
+   "video_timestamp": null,
+   "note": "all bottles continuously present"
+  },
+  "first_brand_wall": null,
+  "first_brand_delay_s": null,
+  "first_brand_request": null,
+  "first_brand_track": null,
+  "first_brand_text": [],
+  "first_brand_video_ts": null,
+  "brand_validity": "unresolved",
+  "brand_note": "",
+  "n_ocr_exec": null,
+  "n_brand_ocr": 0
+ },
+ {
+  "run": "v3-b2",
+  "gate": "B",
+  "video": "v3",
+  "bottle": "S",
+  "first_detection_wall": 52157.93,
+  "first_opportunity": {
+   "request_id": null,
+   "video_timestamp": null,
+   "note": "all bottles continuously present"
+  },
+  "first_brand_wall": 52165.61,
+  "first_brand_delay_s": 7.68,
+  "first_brand_request": "381:5:576",
+  "first_brand_track": 5,
+  "first_brand_text": [
+   "СЕНЕЖСК"
+  ],
+  "first_brand_video_ts": 6.366525,
+  "brand_validity": "partial",
+  "brand_note": "same as v3-a1 S",
+  "n_ocr_exec": null,
+  "n_brand_ocr": 0
+ },
+ {
+  "run": "v3-b2",
+  "gate": "B",
+  "video": "v3",
+  "bottle": "W",
+  "first_detection_wall": 52157.93,
+  "first_opportunity": {
+   "request_id": null,
+   "video_timestamp": null,
+   "note": "all bottles continuously present"
+  },
+  "first_brand_wall": null,
+  "first_brand_delay_s": null,
+  "first_brand_request": null,
+  "first_brand_track": null,
+  "first_brand_text": [],
+  "first_brand_video_ts": null,
+  "brand_validity": "unresolved",
+  "brand_note": "",
+  "n_ocr_exec": null,
+  "n_brand_ocr": 0
+ },
+ {
+  "run": "v3-b2",
+  "gate": "B",
+  "video": "v3",
+  "bottle": "P",
+  "first_detection_wall": 52157.93,
+  "first_opportunity": {
+   "request_id": null,
+   "video_timestamp": null,
+   "note": "all bottles continuously present"
+  },
+  "first_brand_wall": null,
+  "first_brand_delay_s": null,
+  "first_brand_request": null,
+  "first_brand_track": null,
+  "first_brand_text": [],
+  "first_brand_video_ts": null,
+  "brand_validity": "unresolved",
+  "brand_note": "",
+  "n_ocr_exec": null,
+  "n_brand_ocr": 0
+ },
+ {
+  "run": "v3-b2",
+  "gate": "B",
+  "video": "v3",
+  "bottle": "D",
+  "first_detection_wall": 52157.93,
+  "first_opportunity": {
+   "request_id": null,
+   "video_timestamp": null,
+   "note": "all bottles continuously present"
+  },
+  "first_brand_wall": null,
+  "first_brand_delay_s": null,
+  "first_brand_request": null,
+  "first_brand_track": null,
+  "first_brand_text": [],
+  "first_brand_video_ts": null,
+  "brand_validity": "unresolved",
+  "brand_note": "",
+  "n_ocr_exec": null,
+  "n_brand_ocr": 0
+ }
+]

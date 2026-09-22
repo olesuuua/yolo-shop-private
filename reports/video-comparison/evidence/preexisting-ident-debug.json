@@ -1,0 +1,63 @@
+{
+  "capture": {
+    "upload_wh": [
+      640,
+      480
+    ],
+    "fps": 4.72,
+    "detect_ms": 182.8
+  },
+  "queue_depth": 0,
+  "tracks": {
+    "45": {
+      "hint": "Bottle",
+      "status": "needs_more_evidence",
+      "complete": false,
+      "choice": null,
+      "confidence": null,
+      "submitted": 1,
+      "ocr_runs": 1,
+      "dedup_skips": 0,
+      "stale_replaced": 0,
+      "sharpness": 107.0,
+      "crop_wh": [
+        149,
+        318
+      ],
+      "absent_frames": 3,
+      "jev_error": "",
+      "t_first_seen": 0.0,
+      "t_first_submit": 0.05,
+      "t_first_ocr_done": 0.07,
+      "t_first_ident": null,
+      "last_ocr_ms": 21.3,
+      "last_jev_ms": 0.0,
+      "lines": []
+    },
+    "47": {
+      "hint": "Bottle",
+      "status": "needs_more_evidence",
+      "complete": false,
+      "choice": null,
+      "confidence": null,
+      "submitted": 1,
+      "ocr_runs": 1,
+      "dedup_skips": 0,
+      "stale_replaced": 0,
+      "sharpness": 252.8,
+      "crop_wh": [
+        122,
+        248
+      ],
+      "absent_frames": 1,
+      "jev_error": "",
+      "t_first_seen": 0.26,
+      "t_first_submit": 0.32,
+      "t_first_ocr_done": 0.35,
+      "t_first_ident": null,
+      "last_ocr_ms": 24.7,
+      "last_jev_ms": 0.0,
+      "lines": []
+    }
+  }
+}

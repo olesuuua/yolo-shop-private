@@ -1,0 +1,21 @@
+{
+  "catalog_ok": true,
+  "catalog_error": "",
+  "products": [
+    "aqua-minerale-0-5l",
+    "senezhskaya-0-5l",
+    "saint-spring-0-75l",
+    "prostokvashino-2-5-930ml",
+    "domik-v-derevne-2-5-930ml",
+    "stantsiya-molochnaya-kefir-1-0-430g",
+    "dobryi-cola-no-sugar-0-5l",
+    "red-bull-sugar-free-0-25l"
+  ],
+  "ocr_available": true,
+  "ocr_error": "",
+  "ocr_device": "cpu",
+  "jev_key_present": true,
+  "jev_model": "jev-latest",
+  "jev_calls": 40,
+  "jev_workers": 4
+}

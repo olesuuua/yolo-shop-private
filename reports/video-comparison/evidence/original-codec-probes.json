@@ -1,0 +1,32 @@
+[
+  {
+    "video_width": 0,
+    "video_height": 0,
+    "ready_state": 4,
+    "error": null,
+    "current_time": 0.468417,
+    "duration": 48.0852,
+    "total_video_frames": 0,
+    "file": "20260921_205640.mp4"
+  },
+  {
+    "video_width": 0,
+    "video_height": 0,
+    "ready_state": 4,
+    "error": null,
+    "current_time": 0.475477,
+    "duration": 11.1681,
+    "total_video_frames": 0,
+    "file": "20260921_205735.mp4"
+  },
+  {
+    "video_width": 0,
+    "video_height": 0,
+    "ready_state": 4,
+    "error": null,
+    "current_time": 0.488466,
+    "duration": 12.9507,
+    "total_video_frames": 0,
+    "file": "20260921_205754.mp4"
+  }
+]

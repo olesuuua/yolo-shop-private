@@ -1,0 +1,574 @@
+{
+  "v1-ocr-cold": {
+    "session_version": 9,
+    "frames": 81,
+    "duration_s": 48.081695,
+    "sample_interval_s": {
+      "n": 80,
+      "median": 0.57,
+      "min": 0.13,
+      "p90": 0.69,
+      "max": 0.96
+    },
+    "detect_ms": {
+      "n": 81,
+      "median": 167.4,
+      "min": 154.9,
+      "p90": 247,
+      "max": 319.8
+    },
+    "crop_status": {
+      "unknown_request": 6,
+      "blurry": 99,
+      "accepted": 12,
+      "throttled": 1
+    },
+    "ocr_status": {
+      "not_queued": 106,
+      "done": 10,
+      "duplicate": 2
+    },
+    "browser_dropped": 176,
+    "backend_dropped": 0,
+    "wrong_accepted_observations": [],
+    "first_candidates": {
+      "A": {
+        "browser_wall_since_play_s": 7.847,
+        "browser_ms": 7975.799999999814,
+        "track_id": 2,
+        "choice": "aqua-minerale-0-5l",
+        "confidence": 0.77,
+        "source_video_time_latest": 6.939285
+      },
+      "S": {
+        "browser_wall_since_play_s": 12.736,
+        "browser_ms": 12865,
+        "track_id": 2,
+        "choice": "senezhskaya-0-5l",
+        "confidence": 1,
+        "source_video_time_latest": 11.763964
+      },
+      "D": {
+        "browser_wall_since_play_s": 44.205,
+        "browser_ms": 44333.5,
+        "track_id": 6,
+        "choice": "domik-v-derevne-2-5-930ml",
+        "confidence": 0.56,
+        "source_video_time_latest": 43.246416
+      }
+    },
+    "completed": {
+      "A": {
+        "browser_wall_since_play_s": 7.847,
+        "browser_ms": 7975.799999999814,
+        "track_id": 2,
+        "choice": "aqua-minerale-0-5l",
+        "confidence": 0.77,
+        "source_video_time_latest": 6.939285
+      },
+      "S": {
+        "browser_wall_since_play_s": 12.736,
+        "browser_ms": 12865,
+        "track_id": 2,
+        "choice": "senezhskaya-0-5l",
+        "confidence": 1,
+        "source_video_time_latest": 11.763964
+      },
+      "D": {
+        "browser_wall_since_play_s": 56.889,
+        "browser_ms": 57018.39999999991,
+        "track_id": 6,
+        "choice": "domik-v-derevne-2-5-930ml",
+        "confidence": 0.77,
+        "source_video_time_latest": null
+      }
+    },
+    "crop_transport_ms": {
+      "n": 112,
+      "median": 397.84,
+      "min": 38.42,
+      "p90": 453.83,
+      "max": 768.26
+    },
+    "queue_wait_ms": {
+      "n": 10,
+      "median": 5.63,
+      "min": 3.79,
+      "p90": 344.89,
+      "max": 840.04
+    },
+    "ocr_ms": {
+      "n": 10,
+      "median": 784.54,
+      "min": 601.09,
+      "p90": 1299.74,
+      "max": 1688.62
+    },
+    "jev_calls": 7,
+    "jev_errors": 0,
+    "jev_ms": {
+      "n": 7,
+      "median": 837.6,
+      "min": 791.11,
+      "p90": 927.95,
+      "max": 927.95
+    }
+  },
+  "v1-warm": {
+    "session_version": 15,
+    "frames": 80,
+    "duration_s": 48.081695,
+    "sample_interval_s": {
+      "n": 79,
+      "median": 0.57,
+      "min": 0.14,
+      "p90": 0.76,
+      "max": 0.9
+    },
+    "detect_ms": {
+      "n": 80,
+      "median": 168.25,
+      "min": 155.5,
+      "p90": 241.5,
+      "max": 316.1
+    },
+    "crop_status": {
+      "blurry": 88,
+      "unknown_request": 6,
+      "accepted": 12,
+      "throttled": 1
+    },
+    "ocr_status": {
+      "not_queued": 95,
+      "done": 11,
+      "duplicate": 1
+    },
+    "browser_dropped": 154,
+    "backend_dropped": 0,
+    "wrong_accepted_observations": [],
+    "first_candidates": {
+      "A": {
+        "browser_wall_since_play_s": 7.375,
+        "browser_ms": 146020.8999999999,
+        "track_id": 2,
+        "choice": "aqua-minerale-0-5l",
+        "confidence": 0.79,
+        "source_video_time_latest": null
+      },
+      "S": {
+        "browser_wall_since_play_s": 12.679,
+        "browser_ms": 151325.19999999972,
+        "track_id": 2,
+        "choice": "senezhskaya-0-5l",
+        "confidence": 0.99,
+        "source_video_time_latest": null
+      },
+      "D": {
+        "browser_wall_since_play_s": 65.373,
+        "browser_ms": 204018.59999999963,
+        "track_id": 6,
+        "choice": "domik-v-derevne-2-5-930ml",
+        "confidence": 0.96,
+        "source_video_time_latest": null
+      }
+    },
+    "completed": {
+      "A": {
+        "browser_wall_since_play_s": 7.375,
+        "browser_ms": 146020.8999999999,
+        "track_id": 2,
+        "choice": "aqua-minerale-0-5l",
+        "confidence": 0.79,
+        "source_video_time_latest": null
+      },
+      "S": {
+        "browser_wall_since_play_s": 12.679,
+        "browser_ms": 151325.19999999972,
+        "track_id": 2,
+        "choice": "senezhskaya-0-5l",
+        "confidence": 0.99,
+        "source_video_time_latest": null
+      },
+      "D": {
+        "browser_wall_since_play_s": 65.373,
+        "browser_ms": 204018.59999999963,
+        "track_id": 6,
+        "choice": "domik-v-derevne-2-5-930ml",
+        "confidence": 0.96,
+        "source_video_time_latest": null
+      }
+    },
+    "crop_transport_ms": {
+      "n": 101,
+      "median": 390.66,
+      "min": 23.78,
+      "p90": 448.51,
+      "max": 645.54
+    },
+    "queue_wait_ms": {
+      "n": 11,
+      "median": 4.77,
+      "min": 2.81,
+      "p90": 394.22,
+      "max": 501.81
+    },
+    "ocr_ms": {
+      "n": 11,
+      "median": 929.09,
+      "min": 506.34,
+      "p90": 1521.61,
+      "max": 1568.08
+    },
+    "jev_calls": 8,
+    "jev_errors": 1,
+    "jev_ms": {
+      "n": 8,
+      "median": 849.57,
+      "min": 819.15,
+      "p90": 10026.91,
+      "max": 10026.91
+    }
+  },
+  "v2-warm-a": {
+    "session_version": 11,
+    "frames": 15,
+    "duration_s": 11.168,
+    "sample_interval_s": {
+      "n": 14,
+      "median": 0.7,
+      "min": 0.15,
+      "p90": 1.15,
+      "max": 1.16
+    },
+    "detect_ms": {
+      "n": 15,
+      "median": 170,
+      "min": 163.3,
+      "p90": 312.6,
+      "max": 328.2
+    },
+    "crop_status": {
+      "accepted": 15,
+      "blurry": 3
+    },
+    "ocr_status": {
+      "done": 10,
+      "not_queued": 3,
+      "complete": 2,
+      "duplicate": 3
+    },
+    "browser_dropped": 18,
+    "backend_dropped": 0,
+    "wrong_accepted_observations": [],
+    "first_candidates": {
+      "A": {
+        "browser_wall_since_play_s": 5.041,
+        "browser_ms": 75440.5,
+        "track_id": 4,
+        "choice": "aqua-minerale-0-5l",
+        "confidence": 0.83,
+        "source_video_time_latest": null
+      },
+      "S": {
+        "browser_wall_since_play_s": 6.09,
+        "browser_ms": 76489.09999999963,
+        "track_id": 5,
+        "choice": "senezhskaya-0-5l",
+        "confidence": 0.98,
+        "source_video_time_latest": 4.214535
+      }
+    },
+    "completed": {
+      "A": {
+        "browser_wall_since_play_s": 5.041,
+        "browser_ms": 75440.5,
+        "track_id": 4,
+        "choice": "aqua-minerale-0-5l",
+        "confidence": 0.83,
+        "source_video_time_latest": null
+      },
+      "S": {
+        "browser_wall_since_play_s": 6.09,
+        "browser_ms": 76489.09999999963,
+        "track_id": 5,
+        "choice": "senezhskaya-0-5l",
+        "confidence": 0.98,
+        "source_video_time_latest": 4.214535
+      }
+    },
+    "crop_transport_ms": {
+      "n": 18,
+      "median": 438.44,
+      "min": 382.65,
+      "p90": 840.05,
+      "max": 844.65
+    },
+    "queue_wait_ms": {
+      "n": 10,
+      "median": 221.06,
+      "min": 1.54,
+      "p90": 999.27,
+      "max": 1720.73
+    },
+    "ocr_ms": {
+      "n": 10,
+      "median": 589.16,
+      "min": 155.07,
+      "p90": 806.3,
+      "max": 917.17
+    },
+    "jev_calls": 6,
+    "jev_errors": 0,
+    "jev_ms": {
+      "n": 6,
+      "median": 858.19,
+      "min": 822.63,
+      "p90": 10853.26,
+      "max": 10853.26
+    }
+  },
+  "v2-warm-b": {
+    "session_version": 17,
+    "frames": 16,
+    "duration_s": 11.168,
+    "sample_interval_s": {
+      "n": 15,
+      "median": 0.72,
+      "min": 0.17,
+      "p90": 0.99,
+      "max": 1.02
+    },
+    "detect_ms": {
+      "n": 16,
+      "median": 288.7,
+      "min": 157,
+      "p90": 310.6,
+      "max": 324
+    },
+    "crop_status": {
+      "blurry": 6,
+      "accepted": 19,
+      "unknown_request": 1
+    },
+    "ocr_status": {
+      "not_queued": 7,
+      "done": 14,
+      "duplicate": 5
+    },
+    "browser_dropped": 26,
+    "backend_dropped": 0,
+    "wrong_accepted_observations": [],
+    "first_candidates": {
+      "S": {
+        "browser_wall_since_play_s": 27.07,
+        "browser_ms": 236018.3999999999,
+        "track_id": 5,
+        "choice": "senezhskaya-0-5l",
+        "confidence": 0.99,
+        "source_video_time_latest": null
+      }
+    },
+    "completed": {
+      "S": {
+        "browser_wall_since_play_s": 27.07,
+        "browser_ms": 236018.3999999999,
+        "track_id": 5,
+        "choice": "senezhskaya-0-5l",
+        "confidence": 0.99,
+        "source_video_time_latest": null
+      }
+    },
+    "crop_transport_ms": {
+      "n": 25,
+      "median": 422.24,
+      "min": 386.22,
+      "p90": 708.55,
+      "max": 717.98
+    },
+    "queue_wait_ms": {
+      "n": 14,
+      "median": 3.15,
+      "min": 0.98,
+      "p90": 379.96,
+      "max": 445.12
+    },
+    "ocr_ms": {
+      "n": 14,
+      "median": 406.67,
+      "min": 139.66,
+      "p90": 672.93,
+      "max": 693.28
+    },
+    "jev_calls": 5,
+    "jev_errors": 1,
+    "jev_ms": {
+      "n": 5,
+      "median": 947.62,
+      "min": 800.15,
+      "p90": 10824.34,
+      "max": 10824.34
+    }
+  },
+  "v3-warm-a": {
+    "session_version": 13,
+    "frames": 19,
+    "duration_s": 12.950756,
+    "sample_interval_s": {
+      "n": 18,
+      "median": 0.68,
+      "min": 0.14,
+      "p90": 0.84,
+      "max": 1.06
+    },
+    "detect_ms": {
+      "n": 19,
+      "median": 240.4,
+      "min": 161.4,
+      "p90": 310.1,
+      "max": 310.8
+    },
+    "crop_status": {
+      "accepted": 18,
+      "blurry": 10,
+      "throttled": 2,
+      "unknown_request": 1
+    },
+    "ocr_status": {
+      "done": 18,
+      "not_queued": 13
+    },
+    "browser_dropped": 31,
+    "backend_dropped": 0,
+    "wrong_accepted_observations": [],
+    "first_candidates": {
+      "A": {
+        "browser_wall_since_play_s": 5.004,
+        "browser_ms": 108495.79999999981,
+        "track_id": 4,
+        "choice": "aqua-minerale-0-5l",
+        "confidence": 0.5,
+        "source_video_time_latest": 3.787207
+      },
+      "S": {
+        "browser_wall_since_play_s": 5.004,
+        "browser_ms": 108495.79999999981,
+        "track_id": 5,
+        "choice": "senezhskaya-0-5l",
+        "confidence": 0.98,
+        "source_video_time_latest": 3.787207
+      }
+    },
+    "completed": {
+      "S": {
+        "browser_wall_since_play_s": 5.004,
+        "browser_ms": 108495.79999999981,
+        "track_id": 5,
+        "choice": "senezhskaya-0-5l",
+        "confidence": 0.98,
+        "source_video_time_latest": 3.787207
+      }
+    },
+    "crop_transport_ms": {
+      "n": 30,
+      "median": 406.33,
+      "min": 380.12,
+      "p90": 526.75,
+      "max": 829.08
+    },
+    "queue_wait_ms": {
+      "n": 18,
+      "median": 335.08,
+      "min": 1.39,
+      "p90": 888.78,
+      "max": 1441.46
+    },
+    "ocr_ms": {
+      "n": 18,
+      "median": 334.49,
+      "min": 182.47,
+      "p90": 715.61,
+      "max": 728.81
+    },
+    "jev_calls": 9,
+    "jev_errors": 0,
+    "jev_ms": {
+      "n": 9,
+      "median": 874.04,
+      "min": 819.83,
+      "p90": 949.42,
+      "max": 949.42
+    }
+  },
+  "v3-warm-b": {
+    "session_version": 19,
+    "frames": 16,
+    "duration_s": 12.950756,
+    "sample_interval_s": {
+      "n": 15,
+      "median": 0.87,
+      "min": 0.13,
+      "p90": 1.08,
+      "max": 1.23
+    },
+    "detect_ms": {
+      "n": 16,
+      "median": 309.9,
+      "min": 165.3,
+      "p90": 323.2,
+      "max": 333.8
+    },
+    "crop_status": {
+      "accepted": 22,
+      "blurry": 7
+    },
+    "ocr_status": {
+      "done": 22,
+      "not_queued": 7
+    },
+    "browser_dropped": 29,
+    "backend_dropped": 0,
+    "wrong_accepted_observations": [],
+    "first_candidates": {
+      "A": {
+        "browser_wall_since_play_s": 5.027,
+        "browser_ms": 247748.5,
+        "track_id": 4,
+        "choice": "aqua-minerale-0-5l",
+        "confidence": 0.44,
+        "source_video_time_latest": 3.643612
+      }
+    },
+    "completed": {},
+    "crop_transport_ms": {
+      "n": 29,
+      "median": 563.79,
+      "min": 23.44,
+      "p90": 906.89,
+      "max": 920.47
+    },
+    "queue_wait_ms": {
+      "n": 22,
+      "median": 57.66,
+      "min": 0.67,
+      "p90": 557.25,
+      "max": 959.75
+    },
+    "ocr_ms": {
+      "n": 22,
+      "median": 435.31,
+      "min": 156.23,
+      "p90": 588.4,
+      "max": 766.67
+    },
+    "jev_calls": 5,
+    "jev_errors": 1,
+    "jev_ms": {
+      "n": 5,
+      "median": 844.04,
+      "min": 842.58,
+      "p90": 10030.1,
+      "max": 10030.1
+    }
+  }
+}
+WRONG ACCEPTED []

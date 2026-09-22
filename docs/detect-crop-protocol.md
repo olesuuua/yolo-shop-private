@@ -43,10 +43,13 @@ Text frames from the client are rejected with a fatal
 - **Crop ack**: `{"type": "crop_ack", "request_id": str, "ok": bool,
   "reason": str}`. Reasons: `accepted`, `blurry`, `throttled`,
   `complete`, `too_small`, `oversized`, `empty`, `undecodable`,
-  `mismatched`, `unknown_request` (stale/duplicate/after reset or
-  disconnect), `expired` (folded into `unknown_request` after lazy sweep),
-  `session_mismatch` (after Reset), `connection_mismatch`,
-  `track_expired` (pruned or ID reused), `ocr_unavailable`, `internal`.
+  `mismatched`, `unknown_request` (stale beyond the tombstone window),
+  `duplicate` (single-use request already consumed), `expired`
+  (past `CROP_REQUEST_TTL_S`), `stale` (valid request, but an older
+  frame's crop dropped because a newer one is already pending OCR),
+  `session_mismatch` (after Reset), `connection_mismatch` (after
+  disconnect/reconnect), `track_expired` (pruned or ID reused),
+  `ocr_unavailable`, `internal`.
 - **Fatal error**: `{"error": str}` (malformed frame, second camera, …).
 
 ## Browser rules
@@ -81,8 +84,17 @@ Text frames from the client are rejected with a fatal
   issues ≤ `MAX_CROP_REQUESTS_PER_FRAME` (4) requests from eligible
   tracks: in-tracker, not `is_complete()`, `request_due()` throttle peek
   (same intervals as `submit()` without consuming quota), expected padded
-  size ≥ minimum. Global cap `MAX_PENDING_CROP_REQUESTS` (16); per-track
-  latest replaces an unanswered request, preserving accumulated OCR lines.
+  size ≥ minimum. Global cap `MAX_PENDING_CROP_REQUESTS` (16). Per track
+  there is at most one outstanding request
+  (`MAX_OUTSTANDING_CROP_REQUESTS_PER_TRACK` = 1): a newer detection for
+  the same track **never invalidates** a valid outstanding request — the
+  browser may still be encoding that crop, and replacing it caused
+  `unknown_request` rejections. No duplicate is issued while the
+  outstanding request is valid. Only an invalidated request is retired:
+  if the track's evidence object changed (pruned, reset, or the numeric ID
+  was reused by a new bottle), the old request is retired with reason
+  `track_expired` and a fresh request is issued. Accumulated OCR evidence
+  is never cleared by request lifecycle changes.
 - No server-side crop extraction in stage 1: the old
   `hires_crop → note → submit` path inside detection is removed, so old
   and new paths cannot double-submit. Image-dependent checks (minimum
@@ -91,13 +103,25 @@ Text frames from the client are rejected with a fatal
   completion/throttling before queueing background OCR. Duplicate-image
   `dhash` dedup, Jev debounce and per-track slots are reused untouched.
 - `process_crop_response()` never touches the tracker, frame timers,
-  session counters or annotated image. It consumes the pending entry
-  first (duplicates find nothing), then validates connection/session/
+  session counters or annotated image. It consumes the pending entry first
+  (duplicates find nothing), then validates connection/session/
   frame/track, decodes, checks `track_expired` via identifier object
   identity (prune/reset/reused ID ⇒ reject), sharpness and submit gates.
-- Requests are tied to `(connection_id, session_version, evidence object)`.
-  `reset()` and disconnect/connect clear all pending; expiry
-  (`CROP_REQUEST_TTL_S` = 8 s) is swept on every detection and crop.
+  Out-of-order crops are dropped at `submit()` with reason `stale` when a
+  newer frame's crop is already pending OCR for the track: a deliberate
+  stale-crop drop, distinct from `unknown_request`.
+- Requests are tied to `(connection_id, session_version, frame_id,
+  track_id, evidence object)`. Every consumed request id is single-use:
+  redeliveries are rejected as `duplicate`. `reset()` and
+  disconnect/connect clear all pending. Expiry
+  (`CROP_REQUEST_TTL_S` = 8 s of server monotonic time) is swept on every
+  detection and crop; expiry frees the track's slot so OCR requests are
+  never starved by an unanswered request. Retired/consumed request ids are
+  remembered in a bounded tombstone map (`MAX_CROP_TOMBSTONES` = 128) so a
+  late redelivery reports the specific reason (`expired`, `duplicate`,
+  `session_mismatch`, `connection_mismatch`, `track_expired`) instead of a
+  generic `unknown_request`; beyond the tombstone window the response is
+  rejected as `unknown_request`.
 - `app.py` routes binary by magic (`parse_client_message`), passes a
   per-connection UUID, and sends `crop_ack` for crops vs full detection
   JSON for frames. Single-camera, shared session, CPU-only inference and
@@ -126,3 +150,21 @@ Text frames from the client are rejected with a fatal
   (received detection JPEG size). The browser adds opt-in (`?diag=1`)
   overlay stats: detection bytes, send-to-response RTT (network-inclusive),
   backend `detect_ms`, received results/s, crop count and bytes.
+
+## Video replay extension
+
+The browser can now use a local video element as the capture source, retaining
+native video dimensions (including widths above 1280). Detection JPEG dimensions,
+crop mapping/margin, JPEG qualities, and binary crop envelopes are unchanged.
+See [video replay](video-replay.md) for usage and evidence limits.
+
+The same WebSocket accepts JSON commands `{"type":"reset"}` and
+`{"type":"status","diagnostics":true}`. Reset is ordered after previously
+submitted frames/crops and returns `reset_ack` with the new session version;
+the browser invalidates encoding callbacks immediately and waits for that ack
+before submitting again. Status replies never acknowledge detection or trigger
+capture. They expose current identification while paused/ended. Detection replies
+also contain `tracks` (track IDs and detection-space boxes). Crop acknowledgments
+include session version and server-clock `request_to_receipt_ms`. Diagnostic crop
+headers opt in with `diagnostics:true`; diagnostic snapshots contain whitelisted
+request identifiers, bounded OCR text, and accumulated Jev source attribution.

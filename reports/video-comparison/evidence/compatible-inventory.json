@@ -1,0 +1,29 @@
+[
+  {
+    "file": "reports/video-comparison/compatible/20260921_205640.mp4",
+    "width": 3840.0,
+    "height": 2160.0,
+    "fps": 59.06613743557928,
+    "frames": 2840.0,
+    "duration": 48.08169491525423,
+    "bytes": 1658357776
+  },
+  {
+    "file": "reports/video-comparison/compatible/20260921_205735.mp4",
+    "width": 3840.0,
+    "height": 2160.0,
+    "fps": 60.0823782234957,
+    "frames": 671.0,
+    "duration": 11.168,
+    "bytes": 415726436
+  },
+  {
+    "file": "reports/video-comparison/compatible/20260921_205754.mp4",
+    "width": 3840.0,
+    "height": 2160.0,
+    "fps": 59.533202694109555,
+    "frames": 771.0,
+    "duration": 12.95075630252101,
+    "bytes": 492537569
+  }
+]

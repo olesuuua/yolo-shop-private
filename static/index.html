@@ -246,6 +246,12 @@
       </div>
 
       <div class="controls">
+        <label>Input <select id="sourceSelect"><option value="camera">Camera</option><option value="video">Video file</option></select></label>
+        <span id="videoControls" hidden>
+          <input id="videoFile" type="file" accept="video/*">
+          <button id="pauseVideo">Pause</button><button id="restartVideo">Restart</button>
+          <span id="videoTime">0 / ? s</span>
+        </span>
         <button id="startButton">Start camera</button>
         <button id="stopButton" disabled>Stop</button>
         <button id="resetButton">Reset session</button>
@@ -297,10 +303,18 @@
       One camera can be connected at a time.</p>
     <p class="hint" id="diag" style="display: none" aria-live="off"></p>
 
-    <video id="camera" autoplay playsinline muted></video>
+    <section id="evidencePanel" hidden>
+      <h2>Replay evidence</h2><p id="evidenceLoss"></p>
+      <select id="evidenceSelect" aria-label="OCR request"></select>
+      <button id="exportEvidence">Export evidence JSON</button>
+      <div style="position:relative;width:min(640px,100%)"><img id="evidenceOriginal" style="display:block;width:100%" alt="Matching original frame"><div id="evidenceBox" hidden style="position:absolute;border:2px solid yellow;pointer-events:none"></div></div>
+      <img id="evidenceCrop" style="max-width:320px;max-height:400px" alt="Exact uploaded JPEG crop">
+      <pre id="evidenceText" style="max-height:300px;overflow:auto;white-space:pre-wrap"></pre>
+    </section>
+    <video id="camera" playsinline muted></video>
     <canvas id="canvas"></canvas>
   </main>
 
-  <script src="/static/app.js?v=stage2" defer></script>
+  <script src="/static/app.js?v=replay1" defer></script>
 </body>
 </html>

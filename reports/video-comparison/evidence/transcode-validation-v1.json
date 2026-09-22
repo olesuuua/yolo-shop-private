@@ -1,0 +1,38 @@
+{
+  "width": 3840.0,
+  "height": 2160.0,
+  "frames": 2840.0,
+  "fps": 59.06613743557928,
+  "sample_comparisons": [
+    {
+      "time": 2,
+      "psnr_db": 40.879024505615234,
+      "mean_absolute_channel_error": 1.6888090372085571
+    },
+    {
+      "time": 10,
+      "psnr_db": 42.08318328857422,
+      "mean_absolute_channel_error": 1.4170866012573242
+    },
+    {
+      "time": 19,
+      "psnr_db": 33.47361373901367,
+      "mean_absolute_channel_error": 2.8371450901031494
+    },
+    {
+      "time": 28,
+      "psnr_db": 35.404884338378906,
+      "mean_absolute_channel_error": 2.4086337089538574
+    },
+    {
+      "time": 39,
+      "psnr_db": 27.810016632080078,
+      "mean_absolute_channel_error": 4.393256664276123
+    },
+    {
+      "time": 47,
+      "psnr_db": 28.47383689880371,
+      "mean_absolute_channel_error": 4.423015594482422
+    }
+  ]
+}

@@ -1,0 +1,243 @@
+{
+  "capture": {
+    "upload_wh": [
+      640,
+      480
+    ],
+    "fps": 1.51,
+    "detect_ms": 250.4
+  },
+  "queue_depth": 0,
+  "tracks": {
+    "1": {
+      "hint": "Bottle",
+      "status": "needs_more_evidence",
+      "complete": false,
+      "choice": null,
+      "confidence": null,
+      "submitted": 5,
+      "ocr_runs": 5,
+      "dedup_skips": 0,
+      "stale_replaced": 0,
+      "sharpness": 34.1,
+      "crop_wh": [
+        519,
+        1115
+      ],
+      "absent_frames": 0,
+      "jev_error": "",
+      "t_first_seen": 0.0,
+      "t_first_submit": 0.39,
+      "t_first_ocr_done": 1.12,
+      "t_first_ident": null,
+      "last_ocr_ms": 396.9,
+      "last_jev_ms": 949.5,
+      "lines": [
+        {
+          "text": "0812",
+          "score": 0.489,
+          "hits": 1
+        },
+        {
+          "text": "2,5%",
+          "score": 0.977,
+          "hits": 5
+        },
+        {
+          "text": "8812",
+          "score": 0.348,
+          "hits": 1
+        },
+        {
+          "text": "U1",
+          "score": 0.392,
+          "hits": 1
+        },
+        {
+          "text": "МОЛОКО",
+          "score": 0.921,
+          "hits": 5
+        }
+      ]
+    },
+    "2": {
+      "hint": "Bottle",
+      "status": "needs_more_evidence",
+      "complete": false,
+      "choice": null,
+      "confidence": null,
+      "submitted": 2,
+      "ocr_runs": 2,
+      "dedup_skips": 0,
+      "stale_replaced": 0,
+      "sharpness": 20.0,
+      "crop_wh": [
+        818,
+        1217
+      ],
+      "absent_frames": 0,
+      "jev_error": "",
+      "t_first_seen": 0.0,
+      "t_first_submit": 7.05,
+      "t_first_ocr_done": 7.41,
+      "t_first_ident": null,
+      "last_ocr_ms": 533.9,
+      "last_jev_ms": 874.1,
+      "lines": [
+        {
+          "text": "033",
+          "score": 0.979,
+          "hits": 1
+        },
+        {
+          "text": "AE",
+          "score": 0.607,
+          "hits": 1
+        },
+        {
+          "text": "T BИCЛEPТ",
+          "score": 0.362,
+          "hits": 1
+        },
+        {
+          "text": "UCT",
+          "score": 0.855,
+          "hits": 1
+        }
+      ]
+    },
+    "4": {
+      "hint": "Bottle",
+      "status": "needs_more_evidence",
+      "complete": false,
+      "choice": null,
+      "confidence": null,
+      "submitted": 5,
+      "ocr_runs": 5,
+      "dedup_skips": 0,
+      "stale_replaced": 0,
+      "sharpness": 21.4,
+      "crop_wh": [
+        523,
+        1031
+      ],
+      "absent_frames": 0,
+      "jev_error": "",
+      "t_first_seen": 0.0,
+      "t_first_submit": 0.4,
+      "t_first_ocr_done": 2.05,
+      "t_first_ident": 2.94,
+      "last_ocr_ms": 340.6,
+      "last_jev_ms": 945.3,
+      "lines": [
+        {
+          "text": "AKB",
+          "score": 0.99,
+          "hits": 5
+        },
+        {
+          "text": "CK",
+          "score": 0.948,
+          "hits": 1
+        },
+        {
+          "text": "CKA",
+          "score": 0.97,
+          "hits": 2
+        }
+      ]
+    },
+    "5": {
+      "hint": "Bottle",
+      "status": "candidate",
+      "complete": true,
+      "choice": "senezhskaya-0-5l",
+      "confidence": 0.98,
+      "submitted": 1,
+      "ocr_runs": 1,
+      "dedup_skips": 0,
+      "stale_replaced": 0,
+      "sharpness": 35.0,
+      "crop_wh": [
+        529,
+        913
+      ],
+      "absent_frames": 1,
+      "jev_error": "",
+      "t_first_seen": 0.0,
+      "t_first_submit": 1.17,
+      "t_first_ocr_done": 2.28,
+      "t_first_ident": 3.16,
+      "last_ocr_ms": 227.5,
+      "last_jev_ms": 871.9,
+      "lines": [
+        {
+          "text": "CEНЕЖCKА",
+          "score": 0.567,
+          "hits": 1
+        }
+      ]
+    },
+    "7": {
+      "hint": "Bottle",
+      "status": "needs_more_evidence",
+      "complete": false,
+      "choice": null,
+      "confidence": null,
+      "submitted": 3,
+      "ocr_runs": 3,
+      "dedup_skips": 0,
+      "stale_replaced": 0,
+      "sharpness": 18.5,
+      "crop_wh": [
+        487,
+        811
+      ],
+      "absent_frames": 0,
+      "jev_error": "",
+      "t_first_seen": 5.13,
+      "t_first_submit": 5.54,
+      "t_first_ocr_done": 6.45,
+      "t_first_ident": null,
+      "last_ocr_ms": 196.1,
+      "last_jev_ms": 942.8,
+      "lines": [
+        {
+          "text": "2,50",
+          "score": 0.772,
+          "hits": 1
+        },
+        {
+          "text": "3He",
+          "score": 0.523,
+          "hits": 1
+        }
+      ]
+    },
+    "3": {
+      "hint": "Bottle",
+      "status": "needs_more_evidence",
+      "complete": false,
+      "choice": null,
+      "confidence": null,
+      "submitted": 0,
+      "ocr_runs": 0,
+      "dedup_skips": 0,
+      "stale_replaced": 0,
+      "sharpness": 9.2,
+      "crop_wh": [
+        409,
+        700
+      ],
+      "absent_frames": 3,
+      "jev_error": "",
+      "t_first_seen": 9.42,
+      "t_first_submit": null,
+      "t_first_ocr_done": null,
+      "t_first_ident": null,
+      "last_ocr_ms": 0.0,
+      "last_jev_ms": 0.0,
+      "lines": []
+    }
+  }
+}

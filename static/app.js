@@ -1,3 +1,14 @@
+const sourceSelect = document.getElementById("sourceSelect");
+let videoUrl = null;
+let paused = false;
+let playToken = 0;
+let inferenceDevice = "cpu";
+let epoch = 0;
+let resetResolve = null;
+let statusPending = false;
+let retryPending = false;
+let sourceChange = Promise.resolve();
+const isVideo = () => sourceSelect.value === "video";
 const camera = document.getElementById("camera");
 const canvas = document.getElementById("canvas");
 const viewer = document.getElementById("viewer");
@@ -27,7 +38,7 @@ let connectionGeneration = 0;
 // Stage 2: detection uploads are exactly the backend processing size
 // (640x480, JPEG quality 0.75, plain stretch like the server's cv2.resize,
 // so geometry and the bag zone stay aligned). The original camera frame is
-// retained at capture resolution (<=1280px wide) for OCR. Both versions are
+// retained at capture resolution (at native video dimensions) for OCR. Both versions are
 // drawn from a single grab of the live video: video -> full canvas, then
 // full canvas -> 640x480 detection canvas. Crops are cut from the retained
 // full-resolution frame, never from the smaller detection JPEG. See
@@ -44,6 +55,17 @@ const CROP_MIN_HEIGHT = 80;
 const CROP_JPEG_QUALITY = 0.85;
 const MAX_RETAINED_FRAMES = 4;
 const RETAINED_FRAME_TTL_MS = 15000;
+// Replay validation: Play starts detection only after one genuinely decoded
+// video frame. requestVideoFrameCallback (when supported) fires only for a
+// presented video frame; without it the fallback polls for
+// readyState >= HAVE_CURRENT_DATA with nonzero video dimensions. Metadata,
+// timeline progress or audio alone never count as proof.
+const REPLAY_DECODE_TIMEOUT_MS = 10000;
+const REPLAY_DECODE_FALLBACK_POLL_MS = 100;
+const REPLAY_DECODE_MESSAGE =
+  "This browser could not decode the video; try a compatible H.264 MP4.";
+let replayValidation = null; // {settled, timers, rVFCId}
+let replayDecoded = false;   // set once a decoded frame is verified per source
 // Upload state for the last sent detection frame, awaiting its response.
 let pendingUpload = null;
 // Server frame_id -> {canvas, width, height, detectWidth, detectHeight, at}.
@@ -123,11 +145,93 @@ function clearRetainedFrames() {
   retainedFrames.clear();
 }
 
+function clearReplayValidation() {
+  const state = replayValidation;
+  if (!state) return;
+  replayValidation = null;
+  // Cancel as obsolete: the caller (Stop, source change, pause) always
+  // invalidates the validation context first, so this only cleans up.
+  if (state.finish) state.finish("obsolete");
+}
+
+function failReplay(message) {
+  clearReplayValidation();
+  paused = true;
+  running = false;
+  camera.pause?.();
+  setStatus(message);
+}
+
+// Wait for one genuinely decoded frame before replay submits detections.
+// onReady runs only when a real decoded frame with nonzero dimensions has
+// been presented (or is renderable via the documented fallback); onSettled
+// always runs once, including obsolete/failed settles.
+function startReplayValidation(onReady, onSettled) {
+  const generation = connectionGeneration;
+  const validationEpoch = epoch;
+  const startedToken = playToken;
+  clearReplayValidation();
+  const state = { settled: false, timers: new Set(), rVFCId: null };
+  replayValidation = state;
+  const finish = (outcome, message) => {
+    if (state.settled) return;
+    const current = generation === connectionGeneration &&
+      validationEpoch === epoch && startedToken === playToken;
+    state.settled = true;
+    if (replayValidation === state) replayValidation = null;
+    for (const id of state.timers) clearTimeout(id);
+    state.timers.clear();
+    if (state.rVFCId != null && camera.cancelVideoFrameCallback) {
+      camera.cancelVideoFrameCallback(state.rVFCId);
+      state.rVFCId = null;
+    }
+    if (outcome !== "obsolete" && current) {
+      if (outcome === "decoded") { replayDecoded = true; onReady(); }
+      else failReplay(message);
+    }
+    onSettled();
+  };
+  state.finish = finish;
+  const onFrame = (_now, metadata) => {
+    if (state.settled || generation !== connectionGeneration ||
+        validationEpoch !== epoch || startedToken !== playToken) return;
+    const width = metadata && metadata.width ? metadata.width : camera.videoWidth;
+    const height = metadata && metadata.height ? metadata.height : camera.videoHeight;
+    if (width > 0 && height > 0) { finish("decoded"); return; }
+    // A zero-size presentation cannot be trusted; wait for the next frame
+    // or the bounded timeout.
+    state.rVFCId = camera.requestVideoFrameCallback(onFrame);
+  };
+  if (typeof camera.requestVideoFrameCallback === "function") {
+    state.rVFCId = camera.requestVideoFrameCallback(onFrame);
+  } else {
+    // Documented fallback without requestVideoFrameCallback: only a frame
+    // renderable at the current position counts (readyState
+    // HAVE_CURRENT_DATA) and video dimensions must be nonzero.
+    const poll = () => {
+      if (state.settled || generation !== connectionGeneration ||
+          validationEpoch !== epoch || startedToken !== playToken) return;
+      if (camera.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA &&
+          camera.videoWidth > 0 && camera.videoHeight > 0) {
+        finish("decoded"); return;
+      }
+      state.timers.add(setTimeout(poll, REPLAY_DECODE_FALLBACK_POLL_MS));
+    };
+    poll();
+  }
+  state.timers.add(setTimeout(() => {
+    if (state.settled || generation !== connectionGeneration) return;
+    finish("timeout", `Replay stopped: no decoded video frame within ` +
+      `${Math.round(REPLAY_DECODE_TIMEOUT_MS / 1000)} s — ${REPLAY_DECODE_MESSAGE}`);
+  }, REPLAY_DECODE_TIMEOUT_MS));
+}
+
 function handleCropRequests(cropRequests, frameId) {
   if (!Array.isArray(cropRequests) || !cropRequests.length) return;
   const connection = socket;
   if (!connection || connection.readyState !== WebSocket.OPEN) return;
   const generation = connectionGeneration;
+  const cropEpoch = epoch;
   const entry = retainedFrames.get(frameId);
   if (!entry) return;
   for (const request of cropRequests) {
@@ -137,8 +241,14 @@ function handleCropRequests(cropRequests, frameId) {
     // the retained frame is the full-resolution original from the same
     // capture, so validate against the stored detection size and map the
     // 640x480 box to the retained original.
-    if (request.upload_width !== entry.detectWidth || request.upload_height !== entry.detectHeight) continue;
+    if (request.upload_width !== entry.detectWidth || request.upload_height !== entry.detectHeight ||
+        (request.coord_space && request.coord_space !== "detect_640x480")) {
+      const rejected = recordCrop(request, entry, null);
+      if (rejected) rejected.reason = "coordinate_mismatch";
+      continue;
+    }
     const rect = mapCropRect(request.bbox, entry.width, entry.height);
+    const evidence = recordCrop(request, entry, rect);
     if (!rect) continue;
     const source = entry.canvas;
     const cropCanvas = document.createElement("canvas");
@@ -148,6 +258,7 @@ function handleCropRequests(cropRequests, frameId) {
       cropCanvas.getContext("2d", { alpha: false, desynchronized: true })
         .drawImage(source, rect.x, rect.y, rect.w, rect.h, 0, 0, rect.w, rect.h);
     } catch (error) {
+      if (evidence) { evidence.status = "rejected"; evidence.reason = "crop_draw_failed"; }
       continue;
     }
     const header = {
@@ -158,12 +269,18 @@ function handleCropRequests(cropRequests, frameId) {
     };
     cropCanvas.toBlob((blob) => {
       if (socket !== connection || generation !== connectionGeneration) return;
-      if (!blob) return;
-      if (!running || connection.readyState !== WebSocket.OPEN) return;
+      if (!blob) {
+        if (evidence) { evidence.status = "rejected"; evidence.reason = "jpeg_encoding_failed"; }
+        return;
+      }
+      if (cropEpoch !== epoch || resetting || connection.readyState !== WebSocket.OPEN) return;
       try {
         if (diagEnabled) { diag.crops += 1; diag.cropBytes += blob.size || 0; }
+        if (diagEnabled) header.diagnostics = true;
+        saveCrop(evidence, blob, cropEpoch);
         connection.send(buildCropEnvelope(header, blob));
       } catch (error) {
+        if (evidence) { evidence.status = "rejected"; evidence.reason = "send_failed"; }
         // Crop delivery is best-effort; detection continues regardless.
       }
       // Crop sends never touch frameInFlight and never trigger detection.
@@ -254,6 +371,7 @@ function renderSession(response) {
   // A frame sent before reset may arrive after the reset HTTP response.
   if (response.session_version < sessionVersion) return false;
   sessionVersion = response.session_version;
+  if (response.inference_device) inferenceDevice = response.inference_device;
   if (response.model_label) modelInfo.textContent = response.model_label;
   renderCounts(response.packed_counts || {}, packedTotal, packedCounts, "Nothing packed yet");
   const event = response.last_event;
@@ -285,6 +403,7 @@ async function start() {
   startButton.disabled = true;
   stopButton.disabled = false;
   try {
+    if (!isVideo()) {
     if (!navigator.mediaDevices?.getUserMedia) {
       throw new Error("Camera access requires localhost or HTTPS.");
     }
@@ -318,6 +437,15 @@ async function start() {
       ),
     ]);
     if (generation !== connectionGeneration) return;
+    } else {
+      if (!videoUrl) throw new Error("Select a playable local video first.");
+      camera.muted = true;
+      paused = true;
+    }
+    if (generation !== connectionGeneration) return;
+    if (socket?.readyState === WebSocket.OPEN) {
+      running = true; sendNextFrame(); return;
+    }
     setStatus("Connecting to packing server...");
     const protocol = location.protocol === "https:" ? "wss" : "ws";
     const connection = new WebSocket(`${protocol}://${location.host}/ws/detect`);
@@ -327,8 +455,9 @@ async function start() {
     connection.onopen = () => {
       if (socket !== connection) return;
       running = true;
+      if (isVideo()) startButton.disabled = false;
       setStatus("Connected. Move products into the yellow bag zone.");
-      sendNextFrame();
+      if (isVideo()) resetSession().then(ok => { if (ok) playVideo(); }); else sendNextFrame();
     };
     connection.onmessage = (event) => {
       if (socket !== connection) return;
@@ -341,12 +470,29 @@ async function start() {
       }
       // Crop acknowledgments must not clear the detection-in-flight flag
       // and must never trigger a duplicate detection send.
-      if (response && response.type === "crop_ack") return;
+      if (response.type === "reset_ack") {
+        if (resetResolve) { const resolve = resetResolve; resetResolve = null; resolve(response); }
+        return;
+      }
+      if (response.type === "crop_ack") {
+        if (!resetting && response.session_version === sessionVersion) evidenceAck(response);
+        return;
+      }
+      if (response.type === "status") {
+        statusPending = false;
+        if (!resetting && response.session_version === sessionVersion) {
+          renderSession(response); renderIdentification(response.identification);
+          mergeEvidence(response.diagnostics);
+        }
+        return;
+      }
       if (response && response.error) {
         stop(`Server: ${response.error}`);
         return;
       }
       frameInFlight = false;
+      if (resetting) { pendingUpload = null; return; }
+      if (response.session_version < sessionVersion) return;
       try {
         // Missing type means a legacy detection response (tests/back-compat).
         if (renderSession(response)) {
@@ -361,6 +507,7 @@ async function start() {
           renderDiag();
         }
         if (typeof response.frame_id === "number" && pendingUpload) {
+          recordFrame(response, pendingUpload);
           retainedFrames.set(response.frame_id, pendingUpload);
           pendingUpload = null;
           pruneRetainedFrames();
@@ -394,23 +541,34 @@ async function start() {
 }
 
 function sendNextFrame() {
-  if (!running || resetting || frameInFlight || !socket || socket.readyState !== WebSocket.OPEN) return;
-  if (camera.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) {
+  if (!running || (isVideo() && (paused || camera.ended)) || resetting || frameInFlight || !socket || socket.readyState !== WebSocket.OPEN) return;
+  if (isVideo()) {
+    // No detection upload before a genuinely decoded frame is verified,
+    // and no fabricated 640x480 fallback when the video has no image.
+    if (!replayDecoded || !(camera.videoWidth > 0) || !(camera.videoHeight > 0)) return;
+  }
+  if (camera.seeking || camera.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) {
+    if (retryPending) return;
+    retryPending = true;
     const generation = connectionGeneration;
     requestAnimationFrame(() => {
+      retryPending = false;
       if (generation === connectionGeneration) sendNextFrame();
     });
     return;
   }
   // Stage 2: one grab from the live video at capture resolution
-  // (<=1280px wide, unchanged). The 640x480 detection upload is derived
+  // (at native video dimensions). The 640x480 detection upload is derived
   // from that same grab with a plain stretch to exactly DETECT_WIDTH x
   // DETECT_HEIGHT, matching the server's cv2.resize with no letterbox or
   // crop, so detection boxes, ROI alignment and the 640x480 coordinate
   // space are preserved. The full-resolution grab is retained for OCR.
-  const sourceWidth = camera.videoWidth || 640;
-  const sourceHeight = camera.videoHeight || 480;
-  const scale = Math.min(1, 1280 / sourceWidth);
+  const videoTimestamp = isVideo() ? camera.currentTime : null;
+  // Camera keeps its legacy dimension fallback; video mode is validated
+  // above, so the true video dimensions are always used there.
+  const sourceWidth = isVideo() ? camera.videoWidth : (camera.videoWidth || 640);
+  const sourceHeight = isVideo() ? camera.videoHeight : (camera.videoHeight || 480);
+  const scale = 1;
   const fullWidth = Math.round(sourceWidth * scale);
   const fullHeight = Math.round(sourceHeight * scale);
   const full = document.createElement("canvas");
@@ -423,18 +581,20 @@ function sendNextFrame() {
   pendingUpload = {
     canvas: full, width: fullWidth, height: fullHeight,
     detectWidth: DETECT_WIDTH, detectHeight: DETECT_HEIGHT, at: Date.now(),
+    video_timestamp: videoTimestamp,
   };
   frameInFlight = true;
   const connection = socket;
+  const captureEpoch = epoch;
   const sentAt = diagClock();
   canvas.toBlob((blob) => {
-    if (socket !== connection) return;
+    if (socket !== connection || captureEpoch !== epoch) return;
     if (!blob) {
       pendingUpload = null;
       stop("Could not capture camera frame.");
       return;
     }
-    if (resetting || !running || connection.readyState !== WebSocket.OPEN) {
+    if (resetting || !running || (isVideo() && (paused || camera.ended)) || connection.readyState !== WebSocket.OPEN) {
       pendingUpload = null;
       frameInFlight = false;
       return;
@@ -446,6 +606,16 @@ function sendNextFrame() {
 
 function stop(message = "Stopped. Packed items are preserved.") {
   connectionGeneration += 1;
+  statusPending = false;
+  if (resetResolve) { resetResolve(null); resetResolve = null; }
+  epoch += 1;
+  clearReplayValidation();
+  replayDecoded = false;
+  camera.pause?.();
+  if (videoUrl) URL.revokeObjectURL(videoUrl);
+  videoUrl = null;
+  camera.removeAttribute("src");
+  camera.load?.();
   running = false;
   frameInFlight = false;
   clearRetainedFrames();
@@ -467,16 +637,29 @@ function stop(message = "Stopped. Packed items are preserved.") {
 }
 
 async function resetSession() {
-  if (resetting) return;
+  if (resetting) return false;
   resetting = true;
+  epoch += 1;
+  clearEvidence();
+  Object.assign(diag, {detBytes: 0, rttMs: null, backendMs: null, crops: 0, cropBytes: 0});
+  diagTimes.length = 0;
   resetButton.disabled = true;
   // Drop retained uploads: pending crop requests are tied to the old
   // session and the server rejects them after the version bump.
   clearRetainedFrames();
   try {
-    const response = await fetch("/api/reset", { method: "POST" });
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    renderSession(await response.json());
+    let state;
+    if (socket?.readyState === WebSocket.OPEN) {
+      state = await new Promise(resolve => { resetResolve = resolve; socket.send(JSON.stringify({type: "reset"})); });
+    } else {
+      const response = await fetch("/api/reset", { method: "POST" });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      state = await response.json();
+    }
+    if (!state) throw new Error("Connection closed during reset");
+    frameInFlight = false;
+    renderSession(state);
+    renderCounts({}, totalCount, classCounts, "No tracked products visible");
     renderIdentification({});
     loadReadiness();
     // Remove the old annotated frame, which still contains the previous counts.
@@ -485,8 +668,11 @@ async function resetSession() {
     resultImage.removeAttribute("src");
     viewer.classList.remove("has-image");
     setStatus("Session reset. Move products outside the bag zone before packing.");
+    return true;
   } catch (error) {
+    running = false;
     setStatus(`Could not reset session: ${error.message}`);
+    return false;
   } finally {
     resetting = false;
     resetButton.disabled = false;
@@ -506,10 +692,210 @@ async function loadSession() {
   }
 }
 
-startButton.addEventListener("click", start);
+startButton.addEventListener("click", async () => { await sourceChange; return isVideo() ? playVideo() : start(); });
 stopButton.addEventListener("click", () => stop());
 resetButton.addEventListener("click", resetSession);
 window.addEventListener("beforeunload", () => stop());
 loadSession();
 loadReadiness();
 setInterval(loadReadiness, 5000);
+
+async function changeSource(file = null) {
+  paused = true;
+  camera.pause?.();
+  connectionGeneration += 1;
+  clearReplayValidation();
+  replayDecoded = false;
+  const wasRunning = running;
+  running = false;
+  if (stream) stream.getTracks().forEach(track => track.stop());
+  stream = null;
+  camera.srcObject = null;
+  if (videoUrl) URL.revokeObjectURL(videoUrl);
+  videoUrl = null;
+  camera.removeAttribute("src");
+  camera.load?.();
+  if (!await resetSession()) return;
+  if (file && isVideo()) {
+    videoUrl = URL.createObjectURL(file);
+    camera.src = videoUrl;
+    camera.load?.();
+  }
+  running = wasRunning && !!socket;
+  startButton.disabled = false;
+  startButton.textContent = isVideo() ? "Play" : "Start camera";
+  document.getElementById("videoControls").hidden = !isVideo();
+  setStatus(isVideo() ? "Select a video, then Play." : "Camera selected.");
+}
+async function playVideo() {
+  await sourceChange;
+  if (!videoUrl) { setStatus("Select a local video first."); return; }
+  if (resetting) return;
+  if (!socket) { await start(); return; }
+  if (inferenceDevice !== "cpu") {
+    setStatus("Replay requires CPU. Restart the server with LIGHTSTORE_DEVICE=cpu."); return;
+  }
+  const playEpoch = epoch;
+  const token = ++playToken;
+  try {
+    await camera.play();
+  }
+  catch { setStatus("Unsupported or unreadable video. Try MP4/H.264 or WebM."); return; }
+  if (playEpoch !== epoch || token !== playToken || !isVideo()) return;
+  // Submit detections only after one genuinely decoded frame is verified;
+  // metadata, timeline progress or audio playback never count as proof.
+  await new Promise((resolve) => startReplayValidation(() => {
+    paused = false; running = true; startButton.disabled = false;
+    setStatus("Playing video at normal speed. Pending frames are skipped.");
+    sendNextFrame();
+  }, () => resolve()));
+}
+function pauseVideo() {
+  playToken++;
+  clearReplayValidation();
+  paused = true;
+  camera.pause?.();
+  setStatus("Paused. Pending identification continues.");
+}
+async function restartVideo() {
+  if (!videoUrl || resetting) return;
+  pauseVideo();
+  if (!await resetSession()) return;
+  camera.currentTime = 0;
+  await playVideo();
+}
+sourceSelect.addEventListener("change", () => { sourceChange = sourceChange.then(() => changeSource()); });
+document.getElementById("videoFile").addEventListener("change", event => {
+  const file = event.target.files[0];
+  sourceChange = sourceChange.then(() => changeSource(file));
+});
+document.getElementById("pauseVideo").addEventListener("click", pauseVideo);
+document.getElementById("restartVideo").addEventListener("click", restartVideo);
+camera.addEventListener("ended", () => { paused = true; setStatus("Video ended. Pending identification continues."); });
+camera.addEventListener("error", () => {
+  if (!isVideo()) return;
+  // Never claim the codec is definitely at fault; point to a fix.
+  failReplay(`Media error ${camera.error ? camera.error.code : ""} — ${REPLAY_DECODE_MESSAGE}`);
+});
+camera.addEventListener("timeupdate", () => {
+  document.getElementById("videoTime").textContent = `${(camera.currentTime || 0).toFixed(2)} / ${Number.isFinite(camera.duration) ? camera.duration.toFixed(2) : "?"} s`;
+});
+setInterval(() => {
+  if (socket?.readyState === WebSocket.OPEN && !resetting && !statusPending) {
+    statusPending = true;
+    socket.send(JSON.stringify({type: "status", diagnostics: diagEnabled}));
+  }
+}, 1000);
+
+// JSON embeds lossless PNG originals and the exact uploaded JPEG bytes.
+const evidenceFrames = [];
+const evidenceRequests = [];
+let evidenceDropped = 0;
+let evidenceBytes = 0;
+let backendDropped = 0;
+const EVIDENCE_BYTES = 24 * 1024 * 1024;
+function clearEvidence() {
+  evidenceFrames.length = 0; evidenceRequests.length = 0;
+  evidenceDropped = 0; evidenceBytes = 0; backendDropped = 0;
+  if (diagEnabled) renderEvidence();
+}
+function boundEvidence() {
+  while (evidenceFrames.length > 300) { evidenceFrames.shift(); evidenceDropped++; }
+  while (evidenceRequests.length > 60 || evidenceBytes > EVIDENCE_BYTES) {
+    const old = evidenceRequests.shift();
+    evidenceBytes -= old.bytes || 0; evidenceDropped++;
+  }
+}
+function recordFrame(response, entry) {
+  if (!diagEnabled || response.session_version !== sessionVersion) return;
+  evidenceFrames.push({frame_id: response.frame_id, session_version: response.session_version,
+    video_timestamp: entry.video_timestamp, source_dimensions: [entry.width, entry.height],
+    detection_dimensions: [entry.detectWidth, entry.detectHeight], tracks: response.tracks || []});
+  boundEvidence();
+}
+function recordCrop(request, entry, rect) {
+  if (!diagEnabled) return null;
+  const record = {...request, coord_space: request.coord_space || "detect_640x480", video_timestamp: entry.video_timestamp, mapped_rect: rect,
+    status: rect ? "encoding" : "rejected", reason: rect ? null : "invalid_or_small_rectangle",
+    source_dimensions: [entry.width, entry.height], bytes: 0};
+  // Refuse a large original before encoding; canvas RGBA size is a conservative bound.
+  if (entry.width * entry.height * 4 > EVIDENCE_BYTES / 2) {
+    record.image_dropped = "original exceeds per-image limit"; evidenceDropped++;
+  } else {
+    try {
+      record.original_png = entry.canvas.toDataURL("image/png");
+      record.bytes = record.original_png.length * 2;
+    } catch {
+      record.image_dropped = "original encoding failed"; evidenceDropped++;
+    }
+  }
+  evidenceRequests.push(record); evidenceBytes += record.bytes;
+  boundEvidence(); renderEvidence(); return record;
+}
+async function saveCrop(record, blob, captureEpoch) {
+  if (!record) return;
+  const data = new Uint8Array(await blob.arrayBuffer());
+  if (captureEpoch !== epoch || !evidenceRequests.includes(record)) return;
+  let binary = "";
+  for (const byte of data) binary += String.fromCharCode(byte);
+  record.crop_jpeg = "data:image/jpeg;base64," + btoa(binary);
+  if (record.status === "encoding") record.status = "uploaded";
+  const bytes = record.crop_jpeg.length * 2;
+  record.bytes += bytes; evidenceBytes += bytes;
+  boundEvidence(); renderEvidence();
+}
+function evidenceAck(ack) {
+  const record = evidenceRequests.find(r => r.request_id === ack.request_id);
+  if (record) Object.assign(record, {ack, status: ack.ok ? "accepted" : "rejected", reason: ack.reason});
+  renderEvidence();
+}
+function mergeEvidence(data) {
+  if (!diagEnabled || !data) return;
+  backendDropped = data.dropped;
+  for (const update of data.requests) {
+    const record = evidenceRequests.find(r => r.request_id === update.request_id);
+    if (record) record.backend = update;
+  }
+  renderEvidence();
+}
+function renderEvidence() {
+  if (!diagEnabled) return;
+  const panel = document.getElementById("evidencePanel"); panel.hidden = false;
+  const select = document.getElementById("evidenceSelect");
+  const selected = select.value;
+  select.replaceChildren();
+  for (const record of evidenceRequests) {
+    const option = document.createElement("option"); option.value = record.request_id;
+    option.textContent = `${record.request_id} · ${record.video_timestamp ?? "camera"}s · ${record.status}`;
+    select.appendChild(option);
+  }
+  if (evidenceRequests.some(r => r.request_id === selected)) select.value = selected;
+  document.getElementById("evidenceLoss").textContent = `Evicted/dropped: browser ${evidenceDropped}, server ${backendDropped}. Limits: 300 frames, 60 crops, 24 MiB image strings; server 200 requests.`;
+  showEvidence();
+}
+function showEvidence() {
+  const id = document.getElementById("evidenceSelect").value;
+  const record = evidenceRequests.find(r => r.request_id === id);
+  const original = document.getElementById("evidenceOriginal");
+  const crop = document.getElementById("evidenceCrop");
+  original.removeAttribute("src"); crop.removeAttribute("src");
+  const box = document.getElementById("evidenceBox"); box.hidden = true;
+  if (!record) return;
+  if (record.original_png) original.src = record.original_png;
+  if (record.crop_jpeg) crop.src = record.crop_jpeg;
+  const [x1,y1,x2,y2] = record.bbox;
+  Object.assign(box.style, {left: `${x1/640*100}%`, top: `${y1/480*100}%`, width: `${(x2-x1)/640*100}%`, height: `${(y2-y1)/480*100}%`});
+  box.hidden = false;
+  const {original_png, crop_jpeg, ...metadata} = record;
+  document.getElementById("evidenceText").textContent = JSON.stringify(metadata, null, 2);
+}
+function exportEvidence() {
+  const payload = {schema: "lightstore-replay-1", session_version: sessionVersion,
+    sampling: "normal-speed live sampling; no frame backlog", dropped: evidenceDropped,
+    backend_dropped: backendDropped, frames: evidenceFrames, requests: evidenceRequests};
+  const url = URL.createObjectURL(new Blob([JSON.stringify(payload)], {type: "application/json"}));
+  const link = document.createElement("a"); link.href = url; link.download = "replay-evidence.json";
+  link.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+document.getElementById("evidenceSelect").addEventListener("change", showEvidence);
+document.getElementById("exportEvidence").addEventListener("click", exportEvidence);

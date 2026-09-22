@@ -22,6 +22,7 @@ async function controller(url = "") {
   const sockets = [];
   const requests = [];
   const revoked = [];
+  const timeouts = [];
   const mediaRequest = deferred();
   const track = { stopped: false, stop() { this.stopped = true; } };
   const media = { getTracks: () => [track] };
@@ -30,12 +31,13 @@ async function controller(url = "") {
     const el = {
       disabled: false, textContent: "", children: [], readyState: 2, style: {},
       classList: { add() {}, remove() {} },
-      addEventListener(name, handler) { this[name] = handler; },
+      addEventListener(name, handler) { this[["ended", "error"].includes(name) ? "on" + name : name] = handler; },
       replaceChildren() { this.children = []; },
       appendChild(child) { this.children.push(child); },
       append(...children) { this.children.push(...children); },
       removeAttribute(name) { delete this[name]; },
-      play: async () => {},
+      play: async () => {}, pause() {}, load() {},
+      toDataURL: () => "data:image/png;base64,eA==",
       getContext: () => ctx,
       toBlob(callback, type, quality) {
         const fn = (blob) => callback(blob);
@@ -44,6 +46,15 @@ async function controller(url = "") {
       },
       __ctx: ctx,
     };
+    let rvfcId = 0; let rvfcCb = null;
+    let cancelled = 0;
+    el.requestVideoFrameCallback = (cb) => { rvfcCb = cb; return ++rvfcId; };
+    el.cancelVideoFrameCallback = () => { rvfcCb = null; cancelled += 1; };
+    el.__deliverFrame = (metadata = {}) => {
+      const cb = rvfcCb; rvfcCb = null;
+      if (cb) cb(0, metadata);
+    };
+    el.__rvfcCancelled = () => cancelled;
     return el;
   }
   class Socket {
@@ -77,16 +88,29 @@ async function controller(url = "") {
       requests.push(request);
       return request.promise;
     },
-    Blob, Uint8Array, atob, TextEncoder, TextDecoder, DataView, Date, URLSearchParams,
+    Blob, Uint8Array, atob, btoa, TextEncoder, TextDecoder, DataView, Date, URLSearchParams,
     setInterval() { return 1; },
-    setTimeout() { return 1; },
+    setTimeout(fn, ms) { const timer = { fn, ms }; timeouts.push(timer); return timer; },
+    clearTimeout(timer) {
+      const index = timeouts.indexOf(timer);
+      if (index >= 0) timeouts.splice(index, 1);
+    },
     URL: { createObjectURL: () => "blob:test", revokeObjectURL: (url) => revoked.push(url) },
     requestAnimationFrame() { throw new Error("Unexpected frame retry"); }
   });
   vm.runInContext(readFileSync(path.join(__dirname, "../static/app.js"), "utf8"), context);
   await context.loadSession();
   return {
-    context, elements, captures, created, sockets, requests, mediaRequest, media, track, revoked,
+    context, elements, captures, created, sockets, requests, mediaRequest, media, track, revoked, timeouts,
+    fireTimeouts(ms = null) {
+      for (const timer of timeouts.filter(t => ms == null || t.ms === ms)) {
+        const index = timeouts.indexOf(timer);
+        if (index >= 0) timeouts.splice(index, 1);
+        timer.fn();
+      }
+    },
+    camera() { return elements.get("camera"); },
+    async tick() { await new Promise((done) => setImmediate(done)); },
     async connect() {
       const started = context.start();
       mediaRequest.resolve(media);
@@ -101,6 +125,26 @@ async function controller(url = "") {
     }
   };
 }
+
+// Switch to video source with a file and complete the ordered reset.
+// The stale camera capture is invalidated by the epoch bump and drained.
+async function switchToVideo(app, socket, file = new Blob(["video"])) {
+  app.elements.get("sourceSelect").value = "video";
+  const changed = app.context.changeSource(file);
+  socket.receive(detectionResponse());
+  socket.receive({ ...session(1), type: "reset_ack" });
+  await changed;
+  if (app.captures.length) app.capture();
+}
+
+// Start Play and let it register the decoded-frame validation.
+function startPlay(app) {
+  return app.context.playVideo();
+}
+
+// The validation registers in a microtask after play(); a macrotask tick
+// guarantees the frame callback is registered before delivering a frame.
+async function tick(app) { await new Promise((done) => setImmediate(done)); }
 
 test("camera sends one frame at a time and renders packed and visible counts", async () => {
   const app = await controller();
@@ -147,7 +191,7 @@ test("late frame from before reset cannot restore packed counts", async () => {
   const socket = await app.connect();
   app.capture();
   const reset = app.context.resetSession();
-  app.requests[0].resolve({ ok: true, json: async () => session(1) });
+  socket.receive({...session(1), type: "reset_ack"});
   await reset;
   app.respond(socket, 0, 4);
   assert.equal(app.elements.get("packedTotal").textContent, 0);
@@ -163,12 +207,12 @@ test("reset during capture resumes sending after the request finishes", async ()
   const socket = await app.connect();
   const reset = app.context.resetSession();
   app.capture();
-  assert.equal(socket.sent.length, 0);
-  app.requests[0].resolve({ ok: true, json: async () => session(1) });
+  assert.equal(socket.sent.filter(x => typeof x !== "string").length, 0);
+  socket.receive({...session(1), type: "reset_ack"});
   await reset;
   assert.equal(app.captures.length, 1);
   app.capture();
-  assert.equal(socket.sent.length, 1);
+  assert.equal(socket.sent.filter(x => typeof x !== "string").length, 1);
 });
 
 test("server error closes the connection, releases camera and keeps the error visible", async () => {
@@ -393,4 +437,277 @@ test("diag overlay stays hidden without the flag", async () => {
   app.capture();
   socket.receive(detectionResponse({ frame_id: 7, detect_ms: 9.5 }));
   assert.equal(app.elements.has("diag"), false);
+});
+
+test("video pause and end stop submissions but finish same-frame crops", async () => {
+  const app = await controller();
+  const socket = await app.connect();
+  app.elements.get("sourceSelect").value = "video";
+  app.capture();
+  app.context.pauseVideo();
+  socket.receive(detectionResponse({crop_requests: [{request_id: "1:7:1", frame_id: 1,
+    track_id: 7, session_version: 0, bbox: [100,100,300,300], upload_width:640, upload_height:480}]}));
+  assert.equal(app.captures.length, 1);
+  app.capture();
+  assert.equal((await parseEnvelope(socket.sent.at(-1))).header.request_id, "1:7:1");
+  app.elements.get("camera").onended();
+  app.context.sendNextFrame();
+  assert.equal(app.captures.length, 0);
+  assert.equal(socket.readyState, 1);
+});
+
+test("source change releases camera, resets in order and uses one socket", async () => {
+  const app = await controller(); const socket = await app.connect(); app.capture();
+  app.elements.get("sourceSelect").value = "video";
+  const changed = app.context.changeSource(new Blob(["video"]));
+  assert.equal(app.track.stopped, true);
+  socket.receive(detectionResponse()); // old detection during reset
+  socket.receive({...session(1), type:"reset_ack"}); await changed;
+  assert.equal(app.elements.get("camera").src, "blob:test");
+  const camera = app.camera();
+  camera.videoWidth = 1280; camera.videoHeight = 720;
+  const playing = startPlay(app);
+  await app.tick(); // validation registers
+  app.camera().__deliverFrame({ width: 1280, height: 720 }); // decoded frame
+  await playing;
+  app.context.sendNextFrame(); app.context.sendNextFrame();
+  assert.equal(app.captures.length, 1);
+  assert.equal(app.sockets.length, 1);
+  const restart = app.context.restartVideo();
+  app.capture(); // encode from old session is invalidated
+  socket.receive({...session(2),type:"reset_ack"});
+  await app.tick(); // reset finishes and restart re-validates
+  app.camera().__deliverFrame({ width: 1280, height: 720 });
+  await restart;
+  assert.equal(app.elements.get("camera").currentTime, 0);
+  app.context.stop(); assert.ok(app.revoked.includes("blob:test"));
+});
+
+test("portrait native frame mapping and bounded diagnostics retain attribution", async () => {
+  const app = await controller("?diag=1");
+  const rect = app.context.mapCropRect([100,100,300,300], 1080,1920);
+  assert.equal(rect.w,391); assert.equal(rect.h,928);
+  const entry = {canvas:app.elements.get("canvas"),width:1080,height:1920,video_timestamp:2.5};
+  for(let i=0;i<65;i++) app.context.recordCrop({request_id:String(i),frame_id:i,track_id:7,
+    session_version:0,bbox:[100,100,300,300]},entry,rect);
+  app.context.mergeEvidence({dropped:3,requests:[{request_id:"64",jev:{source_request_ids:["63","64"]}}]});
+  assert.equal(vm.runInContext("evidenceRequests.length",app.context),60);
+  assert.equal(vm.runInContext("evidenceDropped",app.context),5);
+  assert.equal(vm.runInContext("evidenceRequests.at(-1).backend.jev.source_request_ids.length",app.context),2);
+  app.context.clearEvidence();
+  assert.equal(vm.runInContext("evidenceRequests.length",app.context),0);
+});
+
+test("late async crop encoding cannot cross restart epoch", async () => {
+  const app = await controller(); const socket = await app.connect(); app.capture();
+  socket.receive(detectionResponse({crop_requests:[{request_id:"old",frame_id:1,track_id:7,
+    session_version:0,bbox:[100,100,300,300],upload_width:640,upload_height:480}]}));
+  const reset = app.context.resetSession();
+  socket.receive({...session(1),type:"reset_ack"}); await reset;
+  app.capture(); // old crop
+  const binary = socket.sent.filter(x => typeof x !== "string");
+  assert.equal(binary.length,1);
+});
+
+test("exact exported crop bytes and asynchronous outcome keep request identity", async () => {
+  const app = await controller("?diag=1");
+  const request = app.context.recordCrop({request_id:"crop",frame_id:2,track_id:7,session_version:0,
+    bbox:[100,100,300,300]}, {canvas:app.elements.get("canvas"),width:640,height:480,video_timestamp:1.25},
+    {x:84,y:84,w:232,h:232});
+  await app.context.saveCrop(request,new Blob(["exact jpeg bytes"]),0);
+  assert.equal(Buffer.from(request.crop_jpeg.split(",")[1],"base64").toString(),"exact jpeg bytes");
+  app.context.evidenceAck({request_id:"crop",ok:false,reason:"blurry"});
+  assert.equal(request.reason,"blurry");
+  assert.equal(request.video_timestamp,1.25);
+});
+
+test("unsupported video reports an error and status replies never unlock detection", async () => {
+  const app = await controller(); const socket = await app.connect(); app.capture();
+  socket.receive({type:"status",...session(0),identification:{}});
+  app.context.sendNextFrame(); assert.equal(app.captures.length,0);
+  app.elements.get("sourceSelect").value = "video";
+  app.elements.get("camera").onerror();
+  assert.match(app.elements.get("status").textContent,/could not decode the video/);
+  app.context.sendNextFrame(); assert.equal(app.captures.length,0);
+});
+
+
+// --- Replay decoded-frame validation (Part A) ---
+
+function sentDetectionFrames(socket) {
+  return socket.sent.filter((blob) => typeof blob !== "string");
+}
+
+test("timeline and audio progress without a decoded frame send zero detection uploads", async () => {
+  const app = await controller();
+  const socket = await app.connect();
+  await switchToVideo(app, socket);
+  // HEVC-style failure: timeline advances (audio plays) but no video frames
+  // decode and videoWidth/videoHeight stay zero; no media error is raised.
+  const camera = app.camera();
+  camera.currentTime = 3.5;
+  const playing = startPlay(app);
+  await app.tick(); // validation registers
+  assert.equal(app.captures.length, 0);
+  app.fireTimeouts(10000); // bounded startup timeout
+  await playing;
+  assert.match(app.elements.get("status").textContent, /could not decode the video/);
+  assert.equal(app.captures.length, 0);
+  assert.equal(sentDetectionFrames(socket).length, 0);
+});
+
+test("metadata-only fallback without requestVideoFrameCallback sends zero uploads", async () => {
+  const app = await controller();
+  const socket = await app.connect();
+  await switchToVideo(app, socket);
+  const camera = app.camera();
+  delete camera.requestVideoFrameCallback; // documented fallback path
+  camera.readyState = 1; // HAVE_METADATA only: metadata is not proof
+  const playing = startPlay(app);
+  await app.tick(); // validation registers
+  app.fireTimeouts(100); // a few poll ticks that keep waiting
+  app.fireTimeouts(10000);
+  await playing;
+  assert.match(app.elements.get("status").textContent, /could not decode the video/);
+  assert.equal(app.captures.length, 0);
+  assert.equal(sentDetectionFrames(socket).length, 0);
+});
+
+test("a genuinely decoded frame starts replay with normal uploads", async () => {
+  const app = await controller();
+  const socket = await app.connect();
+  await switchToVideo(app, socket);
+  const camera = app.camera();
+  camera.videoWidth = 1920; camera.videoHeight = 1080;
+  const playing = startPlay(app);
+  await app.tick(); // validation registers
+  assert.equal(app.captures.length, 0); // nothing before the decoded frame
+  camera.__deliverFrame({ width: 1920, height: 1080 });
+  await playing;
+  assert.match(app.elements.get("status").textContent, /Playing video/);
+  assert.equal(app.captures.length, 1); // detection capture queued
+  app.capture();
+  assert.equal(sentDetectionFrames(socket).length, 1);
+  // Pause and resume through the existing pipeline.
+  app.context.pauseVideo();
+  camera.__deliverFrame({ width: 1920, height: 1080 }); // no callback pending
+  const resuming = startPlay(app);
+  await app.tick(); // validation registers
+  camera.__deliverFrame({ width: 1920, height: 1080 });
+  await resuming;
+  assert.match(app.elements.get("status").textContent, /Playing video/);
+});
+
+test("fallback poll accepts a renderable frame and starts replay", async () => {
+  const app = await controller();
+  const socket = await app.connect();
+  await switchToVideo(app, socket);
+  const camera = app.camera();
+  delete camera.requestVideoFrameCallback;
+  camera.videoWidth = 1280; camera.videoHeight = 720;
+  camera.readyState = 2; // HAVE_CURRENT_DATA: current position is renderable
+  const playing = startPlay(app);
+  await app.tick(); // validation registers
+  app.fireTimeouts(100); // first poll tick settles
+  await playing;
+  assert.match(app.elements.get("status").textContent, /Playing video/);
+  assert.equal(app.captures.length, 1);
+});
+
+test("decode timeout clears validation timers and shows an actionable message", async () => {
+  const app = await controller();
+  const socket = await app.connect();
+  await switchToVideo(app, socket);
+  const camera = app.camera();
+  const playing = startPlay(app);
+  await app.tick(); // validation registers
+  const timersBefore = app.timeouts.length;
+  app.fireTimeouts(10000);
+  await playing;
+  assert.match(app.elements.get("status").textContent, /could not decode the video/);
+  assert.equal(app.captures.length, 0);
+  assert.ok(camera.__rvfcCancelled() >= 1, "video frame callback cancelled");
+  assert.equal(app.timeouts.length, 0);
+  assert.equal(timersBefore >= 1, true);
+});
+
+test("decode error stops validation with the actionable message and cleanup", async () => {
+  const app = await controller();
+  const socket = await app.connect();
+  await switchToVideo(app, socket);
+  const camera = app.camera();
+  const playing = startPlay(app);
+  await app.tick(); // validation registers
+  camera.onerror(); // media error during validation
+  await playing;
+  assert.match(app.elements.get("status").textContent, /could not decode the video/);
+  assert.equal(app.captures.length, 0);
+  assert.ok(camera.__rvfcCancelled() >= 1, "validation callbacks cancelled");
+  // A late decoded frame after failure cannot restart submissions.
+  camera.videoWidth = 1920; camera.videoHeight = 1080;
+  camera.__deliverFrame({ width: 1920, height: 1080 });
+  assert.equal(app.captures.length, 0);
+});
+
+test("stop during validation leaves no late capture or obsolete start", async () => {
+  const app = await controller();
+  const socket = await app.connect();
+  await switchToVideo(app, socket);
+  const camera = app.camera();
+  camera.videoWidth = 1920; camera.videoHeight = 1080;
+  const playing = startPlay(app);
+  await app.tick(); // validation registers
+  app.context.stop();
+  camera.__deliverFrame({ width: 1920, height: 1080 });
+  await playing;
+  assert.equal(app.captures.length, 0);
+  assert.equal(app.sockets.length, 1); // no obsolete socket was started
+  assert.ok(!/Playing video/.test(app.elements.get("status").textContent));
+});
+
+test("file replacement during validation drops the late capture", async () => {
+  const app = await controller();
+  const socket = await app.connect();
+  await switchToVideo(app, socket);
+  const camera = app.camera();
+  const playing = startPlay(app);
+  await app.tick(); // validation registers
+  const replaced = app.context.changeSource(new Blob(["other"]));
+  socket.receive(detectionResponse());
+  socket.receive({ ...session(2), type: "reset_ack" });
+  await replaced;
+  assert.equal(camera.src, "blob:test");
+  camera.__deliverFrame({ width: 1920, height: 1080 }); // late callback
+  await replaced;
+  await playing;
+  assert.equal(app.captures.length, 0);
+  assert.equal(sentDetectionFrames(socket).length, 0);
+  assert.match(app.elements.get("status").textContent, /Select a video, then Play/);
+});
+
+test("detection continues while a crop is pending", async () => {
+  const app = await controller();
+  const socket = await app.connect();
+  await switchToVideo(app, socket);
+  const camera = app.camera();
+  camera.videoWidth = 1280; camera.videoHeight = 720;
+  const playing = startPlay(app);
+  await app.tick(); // validation registers
+  camera.__deliverFrame({ width: 1280, height: 720 });
+  await playing;
+  app.capture(); // frame 1 upload
+  socket.receive(detectionResponse({
+    frame_id: 1, session_version: 1,
+    crop_requests: [{ request_id: "1:7:1", frame_id: 1, track_id: 7,
+      session_version: 1, bbox: [100, 100, 300, 300],
+      coord_space: "detect_640x480", upload_width: 640, upload_height: 480 }],
+  }));
+  // Crop encoding is queued while the next detection capture is already
+  // in flight: OCR/crop work never gates detection.
+  assert.equal(app.captures.length, 2);
+  const [cropEncode, nextDetection] = app.captures;
+  nextDetection(new Blob(["jpeg"])); // detection frame 2 goes out first
+  assert.equal(sentDetectionFrames(socket).length, 2);
+  cropEncode(new Blob(["jpeg"])); // the crop finishes encoding after it
+  assert.equal((await parseEnvelope(socket.sent.at(-1))).header.request_id, "1:7:1");
 });
