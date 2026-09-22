@@ -13,11 +13,12 @@ from config import (
     AGNOSTIC_NMS, CONF_THRESHOLD, CROP_REQUEST_TTL_S, FOOD_CLASSES,
     FRAME_HEIGHT, FRAME_WIDTH,
     MAX_CROP_REQUESTS_PER_FRAME, MAX_CROP_RESPONSE_BYTES, MAX_FRAME_BYTES,
-    MAX_PACKED_OVERLAY_ROWS, MAX_PENDING_CROP_REQUESTS, NMS_IOU_THRESHOLD,
+    MAX_CROP_TOMBSTONES, MAX_PACKED_OVERLAY_ROWS, MAX_PENDING_CROP_REQUESTS,
+    MAX_OUTSTANDING_CROP_REQUESTS_PER_TRACK, NMS_IOU_THRESHOLD,
     MODEL_LABEL, MODEL_PROFILE, PACKED_BANNER_FRAMES, TRACKER_CONFIG,
     INFERENCE_DEVICE, INFERENCE_SIZE, OCR_CROP_JPEG_QUALITY,
     OCR_CROP_MARGIN, OCR_MIN_CROP_HEIGHT, OCR_MIN_CROP_WIDTH,
-    OCR_SHARPNESS_MIN,
+    OCR_SHARPNESS_MIN, OCR_SHARPNESS_NORM_HEIGHT, OCR_SHARPNESS_NORM_MIN,
 )
 from tracking import Detection, PackingTracker
 
@@ -73,6 +74,52 @@ def crop_sharpness(crop) -> float:
     """Laplacian variance; blurry or flat crops score low and are skipped."""
     gray = cv2.cvtColor(crop, cv2.COLOR_BGR2GRAY)
     return float(cv2.Laplacian(gray, cv2.CV_64F).var())
+
+
+def crop_sharpness_at_height(crop, height: int) -> float:
+    """Laplacian variance after normalizing to a canonical height.
+
+    Large native crops (up to ~950x1780 here) dilute full-resolution
+    variance with smooth background, so readable close labels can score
+    below the full-resolution gate. INTER_AREA downscale to a common text
+    scale recovers them without re-running OCR. Returns 0.0 (fail-closed)
+    on malformed input instead of raising.
+    """
+    try:
+        if crop is None or getattr(crop, "size", 0) == 0:
+            return 0.0
+        h, w = crop.shape[:2]
+        if h <= 0 or w <= 0 or height <= 0:
+            return 0.0
+        if h == height:
+            gray = cv2.cvtColor(crop, cv2.COLOR_BGR2GRAY)
+        else:
+            resized = cv2.resize(crop, (max(1, round(w * height / h)), height),
+                                 interpolation=cv2.INTER_AREA)
+            gray = cv2.cvtColor(resized, cv2.COLOR_BGR2GRAY)
+        return float(cv2.Laplacian(gray, cv2.CV_64F).var())
+    except (cv2.error, ValueError, TypeError):
+        return 0.0
+
+
+def quality_gate_accepts(sharpness_full: float, sharpness_norm: float) -> bool:
+    """Dual pre-OCR gate: keep every current accept, rescue large readable.
+
+    Tuned on group-deduped video crops, confirmed held-out
+    (reports/quality-gate/eval-table.md): union recovers +7 tuning / +4
+    validation target-brand hits (incl. 388:2:31 Saint Spring) with zero
+    extra empty OCRs and zero extra neighbor-brand cases on both splits.
+    """
+    from config import OCR_SHARPNESS_MIN, OCR_SHARPNESS_NORM_MIN
+    try:
+        full = float(sharpness_full)
+    except (TypeError, ValueError):
+        full = 0.0
+    try:
+        normed = float(sharpness_norm)
+    except (TypeError, ValueError):
+        normed = 0.0
+    return full >= OCR_SHARPNESS_MIN or normed >= OCR_SHARPNESS_NORM_MIN
 
 
 def upload_crop_rect(bbox_640x480, upload_width, upload_height,
@@ -236,12 +283,18 @@ class FrameProcessor:
         self.detect_ms_ema = 0.0
         # Server-issued detection frame IDs (stage 1 protocol).
         self.frame_seq = 0
-        # Outstanding browser crop requests: request_id -> record. One slot
-        # per track keeps the latest view; accumulated OCR evidence in the
-        # identifier is never cleared by replacement.
+        # Outstanding browser crop requests: request_id -> record. At most
+        # one outstanding request per track (see
+        # MAX_OUTSTANDING_CROP_REQUESTS_PER_TRACK): a newer detection never
+        # invalidates a crop that is still travelling; accumulated OCR
+        # evidence in the identifier is never cleared either.
         self.crop_pending = {}
         self.crop_by_track = {}
         self.crop_counter = 0
+        # Bounded tombstones for answered/expired/invalidated request ids,
+        # so late redeliveries report a specific rejection reason instead
+        # of a generic unknown_request.
+        self.crop_tombstones = {}
         self.connection_id = None
         missing_classes = FOOD_CLASSES - set(model.names.values())
         if missing_classes:
@@ -260,16 +313,39 @@ class FrameProcessor:
         with self.lock:
             self.tracker.reset()
             self.session_version += 1
+            for request_id in self.crop_pending:
+                self._tombstone(request_id, "session_mismatch")
             self.crop_pending = {}
             self.crop_by_track = {}
             if self.identifier is not None:
                 self.identifier.reset()
-            # Keep ByteTrack IDs continuous; the packing state starts fresh.
+            self.frame_times.clear()
+            self.detect_ms_ema = 0
+            trackers = getattr(getattr(self.model, "predictor", None), "trackers", [])
+            direct = getattr(self.model, "tracker", None)
+            for tracker in list(trackers) + ([direct] if direct is not None else []):
+                tracker.reset()
             return self._snapshot()
+
+    def _tombstone(self, request_id: str, reason: str) -> None:
+        """Remember why a request id is no longer valid (bounded memory)."""
+        if not request_id:
+            return
+        self.crop_tombstones[request_id] = reason
+        while len(self.crop_tombstones) > MAX_CROP_TOMBSTONES:
+            del self.crop_tombstones[next(iter(self.crop_tombstones))]
+
+    def _retire_request(self, request_id: str, reason: str) -> None:
+        record = self.crop_pending.pop(request_id, None)
+        if record is not None and self.crop_by_track.get(record["track_id"]) == request_id:
+            del self.crop_by_track[record["track_id"]]
+        self._tombstone(request_id, reason)
 
     def set_connection(self, connection_id) -> None:
         with self.lock:
             self.connection_id = connection_id
+            for request_id in self.crop_pending:
+                self._tombstone(request_id, "connection_mismatch")
             self.crop_pending = {}
             self.crop_by_track = {}
 
@@ -277,8 +353,10 @@ class FrameProcessor:
         with self.lock:
             if self.connection_id == connection_id:
                 self.connection_id = None
-            self.crop_pending = {}
-            self.crop_by_track = {}
+                for request_id in self.crop_pending:
+                    self._tombstone(request_id, "connection_mismatch")
+                self.crop_pending = {}
+                self.crop_by_track = {}
 
     def snapshot(self) -> dict:
         with self.lock:
@@ -295,13 +373,17 @@ class FrameProcessor:
     def _expire_crops(self, now: float) -> None:
         for request_id, record in list(self.crop_pending.items()):
             if now - record["issued_at"] > CROP_REQUEST_TTL_S:
-                del self.crop_pending[request_id]
-                if self.crop_by_track.get(record["track_id"]) == request_id:
-                    del self.crop_by_track[record["track_id"]]
+                self._retire_request(request_id, "expired")
 
     def _issue_crop_requests(self, detections, upload_width, upload_height,
                              frame_id, connection_id) -> list:
-        """Eligible tracks for this frame; bounded, latest-per-track."""
+        """Eligible tracks for this frame, bounded per frame and globally.
+
+        A track with a valid outstanding request gets no duplicate: the
+        earlier request stays valid until it is answered or expires, so a
+        crop still travelling from the browser is never invalidated by a
+        newer detection for the same track.
+        """
         identifier = self.identifier
         if identifier is None:
             return []
@@ -322,15 +404,22 @@ class FrameProcessor:
             if (len(self.crop_pending) >= MAX_PENDING_CROP_REQUESTS
                     and detection.track_id not in self.crop_by_track):
                 continue
-            # Prefer the latest pending crop per track: drop the unanswered
-            # request, keep already accumulated OCR evidence untouched.
-            old = self.crop_by_track.pop(detection.track_id, None)
-            if old is not None:
-                self.crop_pending.pop(old, None)
-            self.crop_counter += 1
-            request_id = f"{frame_id}:{detection.track_id}:{self.crop_counter}"
             with identifier.lock:
                 evidence_ref = identifier.tracks.get(detection.track_id)
+            # Keep a valid outstanding request travelling instead of
+            # replacing it: the browser may still be encoding its crop, and
+            # invalidating it produced unknown_request rejections.
+            old_id = self.crop_by_track.get(detection.track_id)
+            old = self.crop_pending.get(old_id) if old_id else None
+            if old is not None:
+                if old["evidence_ref"] is evidence_ref:
+                    continue
+                # The track's evidence object changed (pruned, reset or the
+                # numeric ID was reused), so the old crop could never be
+                # validly answered; retire it and allow a fresh request.
+                self._retire_request(old_id, "track_expired")
+            self.crop_counter += 1
+            request_id = f"{frame_id}:{detection.track_id}:{self.crop_counter}"
             record = {
                 "request_id": request_id, "frame_id": frame_id,
                 "track_id": detection.track_id,
@@ -436,6 +525,7 @@ class FrameProcessor:
                 **self._snapshot(),
                 "identification": identification,
                 "crop_requests": crop_requests,
+                "tracks": [{"track_id": d.track_id, "bbox": list(map(float, d.bbox))} for d in detections],
                 "events": events,  # Only newly registered events, in frame order.
                 # Diagnostics (stage 2): network-exclusive backend timings.
                 # detect_ms is pure server processing for this frame;
@@ -453,8 +543,12 @@ class FrameProcessor:
         """
         def ack(request_id, ok, reason):
             return {"type": "crop_ack", "request_id": request_id or "",
-                    "ok": bool(ok), "reason": reason}
+                    "ok": bool(ok), "reason": reason,
+                    "session_version": self.session_version,
+                    "request_to_receipt_ms": round((now-record["issued_at"])*1000, 2) if record else None}
 
+        record = None
+        now = time.monotonic()
         request_id = header.get("request_id") if isinstance(header, dict) else None
         frame_id = header.get("frame_id") if isinstance(header, dict) else None
         track_id = header.get("track_id") if isinstance(header, dict) else None
@@ -472,26 +566,28 @@ class FrameProcessor:
             self._expire_crops(now)
             record = self.crop_pending.get(request_id)
             if record is None:
-                return ack(request_id, False, "unknown_request")
+                # Bounded tombstones give late duplicates, expired or
+                # invalidated requests a specific reason; anything else is
+                # genuinely unknown (stale beyond the tombstone window).
+                tombstone = self.crop_tombstones.get(request_id)
+                return ack(request_id, False, tombstone or "unknown_request")
             if record["frame_id"] != frame_id or record["track_id"] != track_id:
                 return ack(request_id, False, "mismatched")
             if record["session_version"] != self.session_version:
-                self.crop_pending.pop(request_id, None)
-                if self.crop_by_track.get(track_id) == request_id:
-                    del self.crop_by_track[track_id]
+                self._retire_request(request_id, "session_mismatch")
                 return ack(request_id, False, "session_mismatch")
             if session_version != self.session_version:
-                self.crop_pending.pop(request_id, None)
-                if self.crop_by_track.get(track_id) == request_id:
-                    del self.crop_by_track[track_id]
+                self._retire_request(request_id, "session_mismatch")
                 return ack(request_id, False, "session_mismatch")
             if (record["connection_id"] is not None and connection_id is not None
                     and record["connection_id"] != connection_id):
                 return ack(request_id, False, "connection_mismatch")
-            # Consume immediately: duplicate deliveries find no pending entry.
+            # Consume immediately: duplicate deliveries find no pending
+            # entry and are answered from the tombstone instead.
             self.crop_pending.pop(request_id, None)
             if self.crop_by_track.get(track_id) == request_id:
                 del self.crop_by_track[track_id]
+            self._tombstone(request_id, "duplicate")
             hint = record["hint"]
             evidence_ref = record["evidence_ref"]
         identifier = self.identifier
@@ -516,15 +612,33 @@ class FrameProcessor:
             if current.complete:
                 return ack(request_id, False, "complete")
         sharpness = crop_sharpness(crop)
+        sharpness_norm = crop_sharpness_at_height(crop, OCR_SHARPNESS_NORM_HEIGHT)
         try:
-            identifier.note(track_id, hint, sharpness, (crop_width, crop_height))
+            identifier.note(track_id, hint, sharpness, (crop_width, crop_height),
+                            **({"expected": evidence_ref} if hasattr(identifier, "replay_debug") else {}))
         except Exception:
             logger.exception("Identification note failed for crop %s.", request_id)
             return ack(request_id, False, "internal")
-        if sharpness < OCR_SHARPNESS_MIN:
+        if not quality_gate_accepts(sharpness, sharpness_norm):
             return ack(request_id, False, "blurry")
-        submitted = identifier.submit(track_id, hint, bytes(jpeg_bytes),
-                                      (crop_width, crop_height))
+        with self.lock:
+            if session_version != self.session_version:
+                return ack(request_id, False, "session_mismatch")
+            kwargs = {}
+            if hasattr(identifier, "replay_debug"):
+                kwargs = {"expected": evidence_ref, "diagnostic":
+                          {"request_id": request_id, "frame_id": frame_id, "track_id": track_id,
+                           "session_version": session_version, "ocr_status": "queued",
+                           "sharpness_full": round(sharpness, 2),
+                           "sharpness_norm": round(sharpness_norm, 2)}
+                          if header.get("diagnostics") is True else None}
+            submitted = identifier.submit(track_id, hint, bytes(jpeg_bytes),
+                                          (crop_width, crop_height),
+                                          frame_id=frame_id, **kwargs)
+        if submitted == "stale":
+            # A newer crop for this track is already pending OCR; this
+            # deliberate stale drop is distinct from an unknown request.
+            return ack(request_id, False, "stale")
         if not submitted:
             if identifier.is_complete(track_id):
                 return ack(request_id, False, "complete")
