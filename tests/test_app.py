@@ -21,6 +21,7 @@ from config import (
     MIN_INSIDE_FRAMES, MIN_OUTSIDE_FRAMES, MODEL_PLATFORM_REF, TRACKER_CONFIG,
     INFERENCE_SIZE,
 )
+import vision
 from vision import FrameProcessor
 
 
@@ -184,6 +185,13 @@ class ApiTests(unittest.TestCase):
         self.model_patch = patch.object(application, "load_model", return_value=self.model)
         self.model_patch.start()
         self.addCleanup(self.model_patch.stop)
+        # These tests pin the legacy fixed-ROI product path: no bag localizer,
+        # so packing never pauses for a missing bag. The dynamic zone path is
+        # covered by tests/test_bag_zone.py (unit + full FrameProcessor run).
+        self.zone_patch = patch.object(
+            vision.FrameProcessor, "_build_bag_zone", return_value=None)
+        self.zone_patch.start()
+        self.addCleanup(self.zone_patch.stop)
         self.client = TestClient(application.app)
         self.client.__enter__()
         self.addCleanup(self.client.__exit__, None, None, None)

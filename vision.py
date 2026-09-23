@@ -10,7 +10,7 @@ import cv2
 import numpy as np
 
 from config import (
-    AGNOSTIC_NMS, CONF_THRESHOLD, CROP_REQUEST_TTL_S, FOOD_CLASSES,
+    AGNOSTIC_NMS, BAG_ZONE_MODE, CONF_THRESHOLD, CROP_REQUEST_TTL_S, FOOD_CLASSES,
     FRAME_HEIGHT, FRAME_WIDTH,
     MAX_CROP_REQUESTS_PER_FRAME, MAX_CROP_RESPONSE_BYTES, MAX_FRAME_BYTES,
     MAX_CROP_TOMBSTONES, MAX_PACKED_OVERLAY_ROWS, MAX_PENDING_CROP_REQUESTS,
@@ -228,7 +228,8 @@ def ident_label(info) -> tuple:
     return ("Reading label…", "")
 
 
-def annotate_frame(frame, detections, tracker, identification=None):
+def annotate_frame(frame, detections, tracker, identification=None,
+                   bag_zone=None, bag_mode="fixed"):
     identification = identification or {}
     for detection in detections:
         state = tracker.tracks.get(detection.track_id)
@@ -257,8 +258,34 @@ def annotate_frame(frame, detections, tracker, identification=None):
                            else (250, 215, 140), scale=0.5)
 
     x1, y1, x2, y2 = map(int, tracker.roi)
-    cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 220, 255), 3)
-    draw_label(frame, "BAG / PACKING ZONE", (x1, max(18, y1 - 12)), (0, 220, 255))
+    if bag_mode == "dynamic" and bag_zone is not None:
+        # Dynamic whole-bag zone: fitted contour, never the fixed rectangle.
+        status = bag_zone.status
+        poly = bag_zone.footprint
+        if poly is not None and len(poly) >= 3 and status in ("stable", "moving"):
+            color = (90, 220, 100) if status == "stable" else (70, 200, 255)
+            cv2.polylines(frame, [poly.reshape(-1, 1, 2).astype(int)],
+                          True, color, 3)
+            bx1, by1 = int(poly[:, 0].min()), int(poly[:, 1].min())
+            draw_label(frame, "BAG" if status == "stable" else "BAG (last seen)",
+                       (max(2, bx1), max(18, by1 - 12)), color)
+        if status == "stable":
+            pass
+        elif status == "moving":
+            draw_label(frame, "BAG MOVING - packing paused", (16, 60),
+                       (70, 200, 255), scale=0.8)
+        elif status == "lost":
+            draw_label(frame, "BAG LOST - packing paused", (16, 60),
+                       (90, 120, 255), scale=0.8)
+        elif status == "locating":
+            draw_label(frame, "LOCATING BAG...", (16, 60),
+                       (200, 200, 200), scale=0.8)
+        else:
+            draw_label(frame, "Bag localization unavailable - packing paused",
+                       (16, 60), (90, 120, 255), scale=0.8)
+    else:
+        cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 220, 255), 3)
+        draw_label(frame, "BAG / PACKING ZONE", (x1, max(18, y1 - 12)), (0, 220, 255))
 
     rows = [f"Packed: {sum(tracker.packed_counts.values())}"]
     counts = sorted(tracker.packed_counts.items())
@@ -288,10 +315,22 @@ class FrameProcessor:
     to the background OCR pipeline and never advance detection/tracking.
     """
 
-    def __init__(self, model, identifier=None):
+    def __init__(self, model, identifier=None, bag_zone="auto"):
         self.model = model
         self.identifier = identifier
         self.tracker = PackingTracker()
+        # Dynamic whole-bag zone. The bag localizer is a separate
+        # segmentation model: the bag class never enters the product
+        # detector, product tracks, OCR crops, or packing counts.
+        self.bag_mode = BAG_ZONE_MODE
+        self.bag_zone = None
+        if bag_zone == "auto" and self.bag_mode == "dynamic":
+            self.bag_zone = self._build_bag_zone()
+        elif bag_zone is not None and bag_zone != "auto":
+            self.bag_zone = bag_zone
+        if self.bag_zone is not None:
+            self.tracker.zone_test = self.bag_zone.zone_test
+            self.tracker.set_packing_paused(self.bag_zone.packing_paused)
         self.lock = Lock()
         self.session_version = 0
         self.frame_times = deque(maxlen=30)
@@ -324,9 +363,43 @@ class FrameProcessor:
         if not self.food_class_ids:
             raise ValueError("The model has no classes matching FOOD_CLASSES.")
 
+    def _build_bag_zone(self):
+        """Construct the bag zone tracker; never raises.
+
+        On failure the zone reports ``unavailable`` (packing paused, banner
+        shown) instead of silently falling back to the fixed rectangle.
+        """
+        from pathlib import Path
+
+        from bag_zone import BagLocalizer, BagZoneTracker, load_bag_model
+        from config import (
+            BAG_ACQUIRE_STABLE, BAG_ADOPT_IOU, BAG_CONF_THRESHOLD,
+            BAG_HEARTBEAT_FRAMES, BAG_MIN_FRAC, BAG_MISSES_TO_LOSE,
+            BAG_MOTION_THRESHOLD, BAG_OVERLAP_THRESHOLD, BAG_RELOCK_IOU,
+            BAG_RIM_MARGIN_PX,
+        )
+        try:
+            root = Path(__file__).resolve().parent
+            model = load_bag_model(root)
+            localizer = BagLocalizer(model, BAG_CONF_THRESHOLD, BAG_MIN_FRAC)
+        except Exception:
+            logger.exception("Bag localizer failed to load; packing stays paused.")
+            localizer = None
+        return BagZoneTracker(
+            localizer, on_relocation=self.tracker.note_zone_relocation,
+            overlap_threshold=BAG_OVERLAP_THRESHOLD,
+            heartbeat_frames=BAG_HEARTBEAT_FRAMES,
+            acquire_stable=BAG_ACQUIRE_STABLE, adopt_iou=BAG_ADOPT_IOU,
+            relock_iou=BAG_RELOCK_IOU, motion_threshold=BAG_MOTION_THRESHOLD,
+            misses_to_lose=BAG_MISSES_TO_LOSE, rim_margin=BAG_RIM_MARGIN_PX)
+
     def reset(self) -> dict:
         with self.lock:
             self.tracker.reset()
+            if self.bag_zone is not None:
+                self.bag_zone.reset()
+                self.tracker.zone_test = self.bag_zone.zone_test
+                self.tracker.set_packing_paused(self.bag_zone.packing_paused)
             self.session_version += 1
             for request_id in self.crop_pending:
                 self._tombstone(request_id, "session_mismatch")
@@ -378,12 +451,16 @@ class FrameProcessor:
             return self._snapshot()
 
     def _snapshot(self) -> dict:
-        return {
+        snapshot = {
             **self.tracker.snapshot(), "session_version": self.session_version,
             "model_profile": MODEL_PROFILE, "model_label": MODEL_LABEL,
             "inference_device": INFERENCE_DEVICE, "inference_size": INFERENCE_SIZE,
             "enabled_classes": [self.model.names[index] for index in self.food_class_ids],
+            "bag_zone_mode": self.bag_mode,
         }
+        if self.bag_zone is not None:
+            snapshot["bag_zone"] = self.bag_zone.snapshot()
+        return snapshot
 
     def _expire_crops(self, now: float) -> None:
         for request_id, record in list(self.crop_pending.items()):
@@ -493,6 +570,15 @@ class FrameProcessor:
             fps = (len(self.frame_times) / (self.frame_times[-1] - self.frame_times[0])
                    if len(self.frame_times) >= 2 and self.frame_times[-1] > self.frame_times[0] else 0.0)
             detections = extract_food_detections(result)
+            bag_zone_state = None
+            bag_ms = 0.0
+            if self.bag_zone is not None:
+                bag_start = time.monotonic()
+                bag_zone_state = self.bag_zone.update(frame, self.frame_seq + 1)
+                bag_ms = (time.monotonic() - bag_start) * 1000
+                self.tracker.zone_test = self.bag_zone.zone_test
+                self.tracker.zone_version = self.bag_zone.zone_test.version
+                self.tracker.set_packing_paused(self.bag_zone.packing_paused)
             events = self.tracker.update(detections)
             full_height, full_width = full_frame.shape[:2]
             identification = {}
@@ -525,7 +611,8 @@ class FrameProcessor:
                 self.tracker.tracks[d.track_id].class_name for d in detections
                 if d.track_id in self.tracker.tracks
             )
-            frame = annotate_frame(frame, detections, self.tracker, identification)
+            frame = annotate_frame(frame, detections, self.tracker, identification,
+                                   self.bag_zone, self.bag_mode)
             success, image = cv2.imencode(
                 ".jpg", frame, [int(cv2.IMWRITE_JPEG_QUALITY), 80],
             )
@@ -546,6 +633,8 @@ class FrameProcessor:
                 # detect_ms is pure server processing for this frame;
                 # upload_bytes is the received detection JPEG size.
                 "detect_ms": round(detect_ms, 1),
+                "bag_ms": round(bag_ms, 1),
+                "bag_zone": bag_zone_state,
                 "upload_bytes": len(image_bytes),
             }
 

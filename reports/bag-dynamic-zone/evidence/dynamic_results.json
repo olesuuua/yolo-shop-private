@@ -1,0 +1,141 @@
+{
+  "video_frames": 1866,
+  "stride": 5,
+  "processed_frames": 374,
+  "status_histogram": {
+    "locating": 87,
+    "stable": 216,
+    "lost": 66,
+    "moving": 5
+  },
+  "bag_inferences": 41,
+  "inference_ms_ema": 24.6647010401532,
+  "wall_s": 10.2,
+  "genuine_inside_frames": 284,
+  "stationary_inside_frames": 266,
+  "packed_counts": {
+    "Bottle": 1
+  },
+  "packed_events": [
+    {
+      "track_id": 1,
+      "class_name": "Bottle",
+      "event": "packed",
+      "timestamp": "2026-09-23T10:33:47.838897+00:00",
+      "frame_number": 93
+    }
+  ],
+  "examples": {
+    "0": {
+      "file": "dynamic_f0000_locating.jpg",
+      "status": "locating",
+      "conf": 0.0,
+      "bbox": null
+    },
+    "150": {
+      "file": "dynamic_f0150_locating.jpg",
+      "status": "locating",
+      "conf": 0.0,
+      "bbox": null
+    },
+    "600": {
+      "file": "dynamic_f0600_stable.jpg",
+      "status": "stable",
+      "conf": 0.221,
+      "bbox": [
+        94,
+        169,
+        524,
+        479
+      ]
+    },
+    "750": {
+      "file": "dynamic_f0750_stable.jpg",
+      "status": "stable",
+      "conf": 0.43,
+      "bbox": [
+        76,
+        148,
+        476,
+        454
+      ]
+    },
+    "1050": {
+      "file": "dynamic_f1050_stable.jpg",
+      "status": "stable",
+      "conf": 0.233,
+      "bbox": [
+        121,
+        162,
+        522,
+        479
+      ]
+    },
+    "1200": {
+      "file": "dynamic_f1200_stable.jpg",
+      "status": "stable",
+      "conf": 0.263,
+      "bbox": [
+        94,
+        120,
+        533,
+        448
+      ]
+    },
+    "1350": {
+      "file": "dynamic_f1350_stable.jpg",
+      "status": "stable",
+      "conf": 0.126,
+      "bbox": [
+        133,
+        63,
+        582,
+        407
+      ]
+    },
+    "1500": {
+      "file": "dynamic_f1500_stable.jpg",
+      "status": "stable",
+      "conf": 0.162,
+      "bbox": [
+        101,
+        83,
+        535,
+        459
+      ]
+    },
+    "1600": {
+      "file": "dynamic_f1600_lost.jpg",
+      "status": "lost",
+      "conf": 0.122,
+      "bbox": [
+        129,
+        73,
+        568,
+        479
+      ]
+    },
+    "1700": {
+      "file": "dynamic_f1700_lost.jpg",
+      "status": "lost",
+      "conf": 0.122,
+      "bbox": [
+        129,
+        73,
+        568,
+        479
+      ]
+    },
+    "1800": {
+      "file": "dynamic_f1800_lost.jpg",
+      "status": "lost",
+      "conf": 0.122,
+      "bbox": [
+        129,
+        73,
+        568,
+        479
+      ]
+    }
+  }
+}

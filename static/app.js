@@ -23,6 +23,7 @@ const packedTotal = document.getElementById("packedTotal");
 const packedCounts = document.getElementById("packedCounts");
 const lastEvent = document.getElementById("lastEvent");
 const modelInfo = document.getElementById("modelInfo");
+const bagStatus = document.getElementById("bagStatus");
 const identList = document.getElementById("identList");
 const identReadiness = document.getElementById("identReadiness");
 
@@ -437,6 +438,24 @@ function renderSession(response) {
   lastEvent.textContent = event
     ? `Last packed: ${event.class_name} #${event.track_id} · ${new Date(event.timestamp).toLocaleTimeString()}`
     : "Waiting for a transfer";
+  if (bagStatus) {
+    const bag = response.bag_zone;
+    if (!bag) {
+      bagStatus.textContent = response.bag_zone_mode === "fixed"
+        ? "Bag zone: fixed rectangle"
+        : "";
+    } else if (bag.status === "stable") {
+      bagStatus.textContent = `Bag: tracking ✓ (conf ${bag.conf})`;
+    } else if (bag.status === "moving") {
+      bagStatus.textContent = "Bag: moving — packing paused";
+    } else if (bag.status === "lost") {
+      bagStatus.textContent = "Bag: lost — packing paused";
+    } else if (bag.status === "locating") {
+      bagStatus.textContent = "Bag: locating…";
+    } else {
+      bagStatus.textContent = "Bag: localization unavailable — packing paused";
+    }
+  }
   return true;
 }
 

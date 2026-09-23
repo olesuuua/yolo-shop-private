@@ -142,6 +142,43 @@ FOOD_CLASSES = frozenset(name for group in FOOD_CLASS_GROUPS.values() for name i
 # (left, top, right, bottom), in pixels, with origin at the top left.
 BAG_ROI = (220, 140, 420, 380)
 BAG_OVERLAP_THRESHOLD = 0.30
+# Dynamic whole-bag zone ("dynamic") or the legacy fixed rectangle ("fixed").
+# The dynamic zone never falls back silently: without a locked bag, packing
+# confirmations pause and the page says so explicitly.
+BAG_ZONE_MODE = os.environ.get("LIGHTSTORE_BAG_ZONE", "dynamic")
+if BAG_ZONE_MODE not in {"dynamic", "fixed"}:
+    raise ValueError("LIGHTSTORE_BAG_ZONE must be 'dynamic' or 'fixed'.")
+# Separate YOLOE-26n segmentation checkpoint for bag localization. The
+# product profile (yoloe26n) transfers detection-only weights and has no
+# mask head, so the full seg checkpoint is loaded independently here.
+BAG_MODEL_PATH = "weights/yoloe-26n/yoloe-26n-seg.pt"
+BAG_MODEL_SHA256 = "1741c1f8da3cea47e2c01829c334a50dc0b9bbd05e685b90a3ce84fae32c8c1b"
+BAG_PROMPTS = ("plastic bag",)
+BAG_CONF_THRESHOLD = 0.10
+# Minimum mask area (fraction of the 640x480 frame) to accept: kills small
+# false fragments (measured 0.01-0.08) while real spread bags cover 0.19+.
+BAG_MIN_FRAC = 0.08
+# Startup/acquisition runs every processed frame until this many consecutive
+# mutually consistent masks (pairwise IoU >= BAG_RELOCK_IOU) lock the zone.
+BAG_ACQUIRE_STABLE = 3
+# While stable: heartbeat re-inference cadence in processed frames
+# (~6 s at the measured ~1.75 processed fps) plus a cheap motion trigger.
+BAG_HEARTBEAT_FRAMES = 10
+# Heartbeat mask overlapping the locked zone by >= this is ordinary jitter
+# (adopt directly); below it the bag relocated (freeze + pause + relock).
+BAG_ADOPT_IOU = 0.50
+BAG_RELOCK_IOU = 0.70
+# Mean abs grayscale diff (0-255) inside the expanded zone bbox that forces
+# an immediate re-check. Calibrated on the bag video: stable pairs 3.5-5.2,
+# bag-moving pairs 20-41.
+BAG_MOTION_THRESHOLD = 12.0
+# Consecutive heartbeat/motion misses before a locked zone is declared lost.
+BAG_MISSES_TO_LOSE = 2
+# Rim hysteresis for outside evidence, in 640x480 pixels: a product must
+# clear the footprint by this margin before an outside observation counts.
+# Calibrated on the bag video: mask-rim flicker from a reaching hand carved
+# ~20 px, while genuine removals travel much farther.
+BAG_RIM_MARGIN_PX = 16.0
 MIN_OUTSIDE_FRAMES = 3
 MIN_INSIDE_FRAMES = 3
 TRACK_TTL_FRAMES = 60
