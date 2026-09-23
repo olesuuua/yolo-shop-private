@@ -319,42 +319,20 @@ function renderCounts(counts, totalElement, listElement, emptyText) {
   }
 }
 
-// MVP demo: prominent product cards beside the large video.
-// States: "Reading label", "Candidate" (catalog suggestion, never verified),
-// or "Needs more evidence". OCR evidence is shown verbatim with the
-// volume tokens (0,33 / 0,75) highlighted so the water-bottle distinction
-// is visible at a glance. Jev errors are shown as text; the key never
-// leaves the backend.
-let catalogBySku = {};
-function highlightVolume(text) {
-  const fragment = document.createDocumentFragment();
-  const pattern = /0[.,]\s?33|0[.,]\s?75|0[.,]\s?5\b|330\s?мл|750\s?мл/gi;
-  let last = 0;
-  let match;
-  const source = String(text);
-  while ((match = pattern.exec(source)) !== null) {
-    if (match.index > last) fragment.append(source.slice(last, match.index));
-    const mark = document.createElement("mark");
-    mark.textContent = match[0];
-    fragment.append(mark);
-    last = match.index + match[0].length;
-  }
-  fragment.append(source.slice(last));
-  return fragment;
-}
-
-function isFruitHint(hint) {
-  return /apple|banana|orange|lemon|pear|peach|grape|mango|pineapple|fruit|berries/i.test(hint || "");
-}
-
+// Audience recognition cards beside the large video. Only human words:
+// the product name + size and a plain qualifier ("Likely match · checking
+// label", "Recognized", or "Reading label…"). SKU slugs, numeric
+// confidence, and the word "Candidate" never appear here; percentages live
+// in the Details area (#detailScores).
 function renderIdentification(identification) {
   const entries = Object.entries(identification || {}).sort(([a], [b]) => Number(a) - Number(b));
   identList.replaceChildren();
   const rawLines = [];
+  const scoreLines = [];
   if (!entries.length) {
     const empty = document.createElement("div");
     empty.className = "empty-count";
-    empty.textContent = "No tracked products yet — start the camera and show a bottle.";
+    empty.textContent = "Nothing in view yet — show a bottle to the camera.";
     identList.appendChild(empty);
   }
   for (const [trackId, info] of entries) {
@@ -362,94 +340,64 @@ function renderIdentification(identification) {
     card.className = "product-card";
     const thumb = document.createElement("img");
     thumb.className = "crop-thumb";
-    thumb.alt = "";
+    thumb.alt = "Photo sent to OCR";
     if (info.submitted) {
       thumb.src = `/api/ident-crop/${trackId}?s=${info.submitted}`;
     }
     const body = document.createElement("div");
     const title = document.createElement("h3");
-    const catalog = (info.choice && catalogBySku[info.choice]) || null;
-    if (info.choice && catalog) {
-      title.textContent = `#${trackId} ${catalog.name}`;
-    } else if (info.choice) {
-      title.textContent = `#${trackId} ${info.choice}`;
-    } else {
-      title.textContent = `#${trackId} ${info.hint || "Unidentified item"}`;
-    }
+    const main = (info.label_main || info.hint || "Reading label…").trim();
+    const isFruit = !info.choice && /apple|banana|orange|lemon|pear|peach|grape|mango|pineapple|fruit|berries/i.test(info.hint || "");
+    title.textContent = isFruit ? `🍎 ${main}` : main;
     body.append(title);
-    // Prominent volume line: the demo succeeds only when 0,33 vs 0,75 is shown.
-    if (catalog && catalog.size) {
-      const sizeLine = document.createElement("div");
-      sizeLine.className = "size-line";
-      sizeLine.textContent = catalog.size;
-      body.append(sizeLine);
-    }
     const badge = document.createElement("span");
-    if (info.status === "candidate" && info.choice) {
-      badge.className = "badge candidate";
-      const conf = info.confidence == null ? "" : ` · ${(info.confidence).toFixed(2)}`;
-      badge.textContent = info.complete ? `Candidate${conf} · OCR paused` : `Candidate${conf}`;
-    } else if ((info.lines || 0) === 0 && !info.choice) {
+    const sub = (info.label_sub || "").trim();
+    if (sub === "Recognized") {
+      badge.className = "badge recognized";
+      badge.textContent = "Recognized";
+    } else if (sub) {
+      badge.className = "badge likely";
+      badge.textContent = sub;
+    } else {
       badge.className = "badge reading";
       badge.textContent = "Reading label…";
-    } else if (info.status === "unknown") {
-      badge.className = "badge needs";
-      badge.textContent = "Needs more evidence";
-    } else if (!info.choice) {
-      badge.className = "badge needs";
-      badge.textContent = `Needs more evidence (${info.lines || 0} lines)`;
-    } else {
-      badge.className = "badge needs";
-      badge.textContent = "Needs more evidence";
     }
     body.append(badge);
-    if (isFruitHint(info.hint)) {
-      const fruit = document.createElement("span");
-      fruit.className = "badge fruit";
-      fruit.textContent = `🍎 Fruit detected (${info.hint})`;
-      body.append(fruit);
-    }
-    if (info.choice) {
-      const note = document.createElement("div");
-      note.className = "candidate-note";
-      note.textContent = "Catalog candidate — not a verified SKU.";
-      body.append(note);
-    }
-    const ocrBox = document.createElement("div");
-    ocrBox.className = "ocr-evidence";
-    const ocrTexts = Array.isArray(info.ocr_texts) ? info.ocr_texts.filter(Boolean) : [];
-    if (ocrTexts.length) {
-      ocrTexts.slice(0, 6).forEach((line, index) => {
-        if (index > 0) ocrBox.append(document.createElement("br"));
-        ocrBox.append(highlightVolume(line));
-      });
-    } else if ((info.lines || 0) > 0) {
-      ocrBox.textContent = `${info.lines} OCR line(s) collected — text pending…`;
-    } else {
-      ocrBox.textContent = "Point the label at the camera — OCR text will appear here.";
-    }
-    body.append(ocrBox);
-    const meta = document.createElement("div");
-    meta.className = "card-meta";
-    const retry = (info.jev_retry_in_s != null)
-      ? ` · Jev retry in ${info.jev_retry_in_s}s` : "";
-    meta.textContent = `Track #${trackId} · hint ${info.hint || "—"} · OCR runs ${info.ocr_runs ?? 0} · sharp ${info.sharpness ?? "?"}${retry}`;
-    body.append(meta);
-    if (info.jev_error) {
-      const error = document.createElement("div");
-      error.className = "card-error";
-      error.textContent = `Jev: ${info.jev_error}`;
-      body.append(error);
+    // Provisional guess vs. label-supported volume: the size is shown with
+    // the name, but only marked as seen when the volume text is visible.
+    if (info.display_size) {
+      const volume = document.createElement("div");
+      if (info.size_supported === true) {
+        volume.className = "volume-note";
+        volume.textContent = `${info.display_size} · seen on label`;
+      } else if (info.size_supported === false) {
+        volume.className = "volume-note unconfirmed";
+        volume.textContent = `${info.display_size} · not yet confirmed on label`;
+      } else {
+        volume.className = "volume-note unconfirmed";
+        volume.textContent = info.display_size;
+      }
+      body.append(volume);
     }
     card.append(thumb, body);
     identList.appendChild(card);
+    const ocrTexts = Array.isArray(info.ocr_texts) ? info.ocr_texts.filter(Boolean) : [];
     for (const line of ocrTexts.slice(0, 4)) {
       rawLines.push(`[#${trackId}] ${line}`);
     }
     if (info.jev_error) rawLines.push(`[#${trackId} Jev] ${info.jev_error}`);
+    if (info.choice || ocrTexts.length) {
+      const conf = (typeof info.confidence === "number")
+        ? ` · match ${(info.confidence * 100).toFixed(0)}%` : "";
+      scoreLines.push(`[#${trackId}] ${info.choice || "no match yet"}${conf} · ` +
+        `OCR ${info.ocr_runs ?? 0} runs, sharp ${info.sharpness ?? "?"} · ` +
+        `volume on label: ${info.size_supported === true ? "yes" : info.size_supported === false ? "not yet" : "n/a"}`);
+    }
   }
   const rawBox = document.getElementById("rawOcr");
   if (rawBox) rawBox.textContent = rawLines.length ? rawLines.join("\n") : "No OCR text yet.";
+  const scoreBox = document.getElementById("detailScores");
+  if (scoreBox) scoreBox.textContent = scoreLines.length ? scoreLines.join("\n") : "No matches yet.";
 }
 
 async function loadReadiness() {
@@ -457,15 +405,9 @@ async function loadReadiness() {
     const response = await fetch("/api/ident-readiness");
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const state = await response.json();
-    catalogBySku = {};
-    for (const product of (state.catalog_products || [])) {
-      if (product && product.sku) catalogBySku[product.sku] = product;
-    }
     const skus = state.products || [];
-    const has033 = skus.includes("saint-spring-0-33l");
-    const has075 = skus.includes("saint-spring-0-75l");
     const catalog = state.catalog_ok
-      ? `catalog: ${skus.length} products${has033 && has075 ? " (0,33 л + 0,75 л ready)" : " (⚠ water sizes missing)"}`
+      ? `catalog: ${skus.length} products`
       : "catalog: MISSING";
     const ocr = state.ocr_available ? "OCR CPU: ready" : (state.ocr_error ? "OCR CPU: unavailable" : "OCR CPU: starting…");
     const jev = state.jev_key_present ? "Jev key: set" : "Jev key: MISSING (add TYPESAFE_API_KEY to .env)";
@@ -473,7 +415,7 @@ async function loadReadiness() {
     const jevBox = document.getElementById("jevStatus");
     if (jevBox) {
       const budget = state.jev_budget_unlimited
-        ? "attempts unlimited for this MVP test"
+        ? "attempts unlimited for this test"
         : `budget ${state.jev_budget_remaining ?? "?"} left of ${state.jev_budget_max ?? "?"}`;
       jevBox.textContent = `Jev matching: ${state.jev_attempts ?? 0} attempts · ` +
         `${state.jev_successes ?? 0} ok · ${state.jev_failures ?? 0} failed · ` +

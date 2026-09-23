@@ -131,6 +131,56 @@ def useful_evidence(norms):
     return bool(solid) or len(small) >= 2
 
 
+def parse_size_ml(size_text):
+    """Milliliters from a catalog size string ("0,33 л" -> 330).
+
+    Returns None when no volume/weight with a unit is present (e.g. a
+    "2,5%" variant string must never parse as a volume)."""
+    if not size_text:
+        return None
+    match = re.search(r"(\d+(?:[.,]\d+)?)\s*([^\d\s]+)", str(size_text))
+    if not match:
+        return None
+    try:
+        number = float(match.group(1).replace(",", "."))
+    except ValueError:
+        return None
+    unit = match.group(2).casefold()
+    if "мл" in unit or "ml" in unit:
+        return int(round(number))
+    if "л" in unit or unit.startswith("l"):
+        return int(round(number * 1000))
+    if "г" in unit or unit.startswith("g"):
+        return int(round(number))
+    return None
+
+
+def size_evidence_patterns(size_ml):
+    """Uppercase substrings proving a volume is printed on the label.
+
+    Handles equivalent printed forms: "0,33 Л", "0.33L", "330 МЛ".
+    Matching is digit-bounded, so "330" never matches "13300"."""
+    if size_ml is None:
+        return []
+    patterns = [str(size_ml)]
+    if size_ml < 1000:
+        liters = size_ml / 1000
+        decimals = ("%g" % liters).split(".")[1]
+        patterns += [f"0,{decimals}", f"0.{decimals}", f"0{decimals}"]
+    return patterns
+
+
+def ocr_supports_size(fingerprint_norms, size_ml):
+    """True when visible OCR text prints the given volume in any form."""
+    if size_ml is None:
+        return False
+    for pattern in size_evidence_patterns(size_ml):
+        expression = re.compile(r"(?<!\d)" + re.escape(pattern) + r"(?!\d)")
+        if any(expression.search(norm) for norm in fingerprint_norms):
+            return True
+    return False
+
+
 def _diagnostic_line(line):
     """Text/score plus crop-pixel textline geometry (poly/box) when present.
 
@@ -528,15 +578,77 @@ class IdentificationService:
             self.capture = {"upload_wh": tuple(upload_wh), "fps": round(fps, 2),
                             "detect_ms": round(detect_ms, 1)}
 
+    def _product_by_sku(self, sku):
+        for product in self.products:
+            if product.get("sku") == sku:
+                return product
+        return None
+
+    def _choice_size_info(self, choice):
+        """(size_ml, has_size_siblings) for a catalog choice.
+
+        Siblings share the brand but print a different volume (e.g. the two
+        Святой Источник bottles). Only sibling choices need explicit volume
+        text before they may complete; unique products keep the confidence
+        rule unchanged."""
+        product = self._product_by_sku(choice)
+        if product is None:
+            return (None, False)
+        size_ml = parse_size_ml(product.get("size"))
+        if size_ml is None:
+            return (None, False)
+        brand = str(product.get("brand", "")).casefold().strip()
+        if not brand:
+            return (size_ml, False)
+        for other in self.products:
+            if other.get("sku") == choice:
+                continue
+            if str(other.get("brand", "")).casefold().strip() != brand:
+                continue
+            other_ml = parse_size_ml(other.get("size"))
+            if other_ml is not None and other_ml != size_ml:
+                return (size_ml, True)
+        return (size_ml, False)
+
+    def _display_labels(self, evidence):
+        """Audience-facing labels: human name + size, never SKU/confidence.
+
+        Provisional matches show "Likely match · checking label" while OCR
+        keeps collecting; only completed tracks show "Recognized"."""
+        choice = evidence.result.get("choice")
+        product = self._product_by_sku(choice) if choice else None
+        if product is None:
+            hint = (evidence.hint or "").strip()
+            if hint:
+                return (hint, "Reading label…", None, None, None)
+            return ("Reading label…", "", None, None, None)
+        name = str(product.get("name", "")).strip() or choice
+        size = str(product.get("size", "")).strip()
+        display_name = f"{name}, {size}" if size else name
+        size_ml, _siblings = self._choice_size_info(choice)
+        supported = ocr_supports_size(evidence.fingerprint, size_ml)
+        if evidence.complete:
+            return (display_name, "Recognized", display_name, size, supported)
+        return (display_name, "Likely match · checking label",
+                display_name, size, supported)
+
     def snapshot(self):
         with self.lock:
-            return {
-                track_id: {
+            snapshots = {}
+            for track_id, evidence in self.tracks.items():
+                label_main, label_sub, display_name, display_size, size_supported = (
+                    self._display_labels(evidence))
+                snapshots[track_id] = {
                     "status": evidence.result.get("status", "needs_more_evidence"),
                     "complete": evidence.complete,
                     "choice": evidence.result.get("choice"),
                     "confidence": evidence.result.get("confidence"),
                     "probabilities": evidence.result.get("probabilities"),
+                    "display_name": display_name,
+                    "display_size": display_size,
+                    "size_supported": size_supported,
+                    "label_main": label_main,
+                    "label_sub": label_sub,
                     "hint": evidence.hint,
                     "lines": len(evidence.lines),
                     "evidence_chars": sum(len(n) for n in evidence.lines),
@@ -556,8 +668,7 @@ class IdentificationService:
                     "crop_wh": list(evidence.last_crop_wh),
                     "pending": track_id in self.slots,
                 }
-                for track_id, evidence in self.tracks.items()
-            }
+            return snapshots
 
     def _budget_exhausted(self):
         """True only when a positive cap is configured and fully consumed."""
@@ -954,12 +1065,22 @@ class IdentificationService:
             if not error_text:
                 evidence.result = result
                 confidence = result.get("confidence")
-                evidence.complete = (
+                meets_confidence = (
                     result.get("status") == "candidate" and bool(result.get("choice"))
                     and isinstance(confidence, (int, float))
                     and math.isfinite(confidence)
                     and self.config.stop_confidence <= confidence <= 1
                 )
+                if meets_confidence and result.get("choice"):
+                    # Sibling sizes share a brand (Святой Источник 0,33/0,75):
+                    # a volume is confirmed only by visible volume text, never
+                    # by brand text alone. The stop threshold itself is
+                    # unchanged, so a growing catalog cannot weaken this rule.
+                    size_ml, has_siblings = self._choice_size_info(result["choice"])
+                    if has_siblings and not ocr_supports_size(
+                            evidence.fingerprint, size_ml):
+                        meets_confidence = False
+                evidence.complete = meets_confidence
                 if evidence.complete:
                     with self.slot_lock:
                         meta = self.slot_meta.pop(track_id, None)

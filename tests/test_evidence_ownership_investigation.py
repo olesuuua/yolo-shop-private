@@ -42,15 +42,24 @@ def make_service(jev_fn):
 
 
 class OwnershipFixtures(unittest.TestCase):
-    # a) correct owner, correct text -> completes (CONSTRUCTED analogue of O1
-    #    had the gate accepted it; O1 itself never reached OCR).
+    # a) correct owner, correct text incl. the distinguishing volume ->
+    #    completes (CONSTRUCTED analogue of O1 had the gate accepted it;
+    #    O1 itself never reached OCR). Brand text alone must NOT finalize
+    #    a sibling volume: the size gate keeps it provisional.
     def test_a_correct_owner_correct_text_completes(self):
         svc = make_service(lambda *a: candidate("saint-spring-0-33l", 0.95))
         ev = svc._merge(1, "Bottle", [{"text": "СВЯТОЙ ИСТОЧНИК", "score": 0.9}],
                         request_id="a1")
         svc._identify(1, ev)
-        self.assertTrue(svc.is_complete(1))
+        self.assertFalse(svc.is_complete(1))  # brand alone: provisional only
         self.assertEqual(svc.snapshot()[1]["choice"], "saint-spring-0-33l")
+        self.assertEqual(svc.snapshot()[1]["label_sub"],
+                         "Likely match · checking label")
+        svc._merge(1, "Bottle", [{"text": "ОБЪЁМ 0,33 Л", "score": 0.9}],
+                   request_id="a2")
+        svc._identify(1, ev)
+        self.assertTrue(svc.is_complete(1))
+        self.assertEqual(svc.snapshot()[1]["label_sub"], "Recognized")
 
     # b) correct owner with neighboring text -> stays unresolved (OBSERVED
     #    pattern O2/O3: neighbor/generic text, needs_more, no completion).
@@ -65,15 +74,18 @@ class OwnershipFixtures(unittest.TestCase):
         self.assertIsNone(svc.snapshot()[7]["choice"])
         self.assertEqual(len(ev.fingerprint), 2)  # both texts accumulated
 
-    # c) OCR hallucination single crop CAN complete if Jev is confident
-    #    (CONSTRUCTED risk analogue of O4; O4 itself stayed unresolved
-    #    because Jev was disabled in that experiment).
+    # c) OCR hallucination of brand text alone can NO LONGER finalize a
+    #    sibling volume (CONSTRUCTED analogue of O4; O4 itself stayed
+    #    unresolved because Jev was disabled in that experiment). The track
+    #    stays a provisional likely-match until volume text is visible.
     def test_c_single_hallucination_can_complete_constructed(self):
         svc = make_service(lambda *a: candidate("saint-spring-0-33l", 0.95))
         ev = svc._merge(2, "Bottle", [{"text": "СВЯТОЙ ИСТОЧНИК", "score": 0.6}],
                         request_id="172:2:232-like")
         svc._identify(2, ev)
-        self.assertTrue(svc.is_complete(2))  # constructed wrong-completion risk
+        self.assertFalse(svc.is_complete(2))  # size gate: brand alone never finalizes
+        self.assertEqual(svc.snapshot()[2]["label_sub"],
+                         "Likely match · checking label")
 
     # d) numeric ID switches bottles with NO absence -> mixed evidence
     #    (CONSTRUCTED mechanism for OBSERVED O5 reuse pattern).

@@ -208,14 +208,24 @@ def parse_client_message(data: bytes):
     return ("crop", header, raw[10 + header_len:])
 
 
-def ident_label(status, choice, confidence) -> str:
-    if status == "candidate" and choice:
-        if confidence is None:
-            return f"candidate: {choice}?"
-        return f"candidate: {choice}? {confidence:.2f}"
-    if status == "unknown":
-        return "need evidence"
-    return "reading label"
+def ident_label(info) -> tuple:
+    """Audience overlay labels anchored to the tracked box.
+
+    Returns (main, sub): the human-readable product name + size and a
+    plain qualifier ("Likely match · checking label" or "Recognized").
+    Never a SKU slug, a numeric confidence, or the word "Candidate"."""
+    if not isinstance(info, dict):
+        return ("Reading label…", "")
+    main = str(info.get("label_main") or "").strip()
+    sub = str(info.get("label_sub") or "").strip()
+    if main:
+        return (main, sub)
+    # Back-compat for snapshots without display labels: still human words.
+    if info.get("choice"):
+        return ("Likely match", "checking label")
+    if info.get("status") == "unknown":
+        return ("Need a clearer view", "")
+    return ("Reading label…", "")
 
 
 def annotate_frame(frame, detections, tracker, identification=None):
@@ -232,14 +242,19 @@ def annotate_frame(frame, detections, tracker, identification=None):
             label += " PACKED"
         elif state.inside_frames:
             label += f" entering {state.inside_frames}/{tracker.min_inside_frames}"
-        draw_label(frame, label, (max(2, x1), max(44, y1 - 34)), color)
+        draw_label(frame, label, (max(2, x1), max(70, y1 - 60)), color)
         info = identification.get(detection.track_id)
         if info is not None:
-            # Identification sits directly above the box, under the class
-            # label, so it is never hidden behind the bottle or the frame edge.
-            draw_label(frame, ident_label(info.get("status"), info.get("choice"),
-                                          info.get("confidence")),
-                       (max(2, x1), max(18, y1 - 8)), (140, 220, 255), scale=0.55)
+            # Human-readable name + size sits directly above the box; the
+            # qualifier line stacks above it, under the class label, so no
+            # label is hidden behind the bottle or the frame edge.
+            main, sub = ident_label(info)
+            draw_label(frame, main, (max(2, x1), max(18, y1 - 8)),
+                       (140, 220, 255), scale=0.55)
+            if sub:
+                draw_label(frame, sub, (max(2, x1), max(44, y1 - 34)),
+                           (120, 255, 140) if sub == "Recognized"
+                           else (250, 215, 140), scale=0.5)
 
     x1, y1, x2, y2 = map(int, tracker.roi)
     cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 220, 255), 3)

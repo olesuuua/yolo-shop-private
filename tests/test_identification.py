@@ -433,6 +433,79 @@ class IdentificationTests(unittest.TestCase):
         self.assertEqual(hamming(0b1010, 0b1010), 0)
         self.assertEqual(hamming(0b1010, 0b0101), 4)
 
+    def test_brand_text_alone_never_finalizes_sibling_volume(self):
+        # The two Святой Источник bottles share a brand: a confident Jev
+        # guess from brand text stays provisional until volume text is seen.
+        service = IdentificationService(
+            jev_fn=lambda *a: candidate("saint-spring-0-75l", 0.95))
+        evidence = service._merge(1, "Bottle", [
+            {"text": "СВЯТОЙ ИСТОЧНИК", "score": 0.9},
+            {"text": "SAINT SPRING STILL", "score": 0.8}])
+        service._identify(1, evidence)
+        snap = service.snapshot()[1]
+        self.assertFalse(service.is_complete(1))
+        self.assertEqual(snap["choice"], "saint-spring-0-75l")
+        self.assertEqual(snap["label_sub"], "Likely match · checking label")
+        # The guessed size is shown (provisional) but never marked as seen.
+        self.assertIn("0,75", snap["label_main"])
+        self.assertFalse(snap["size_supported"])
+        # Conflicting volume text must not finalize the guessed volume.
+        service2 = IdentificationService(
+            jev_fn=lambda *a: candidate("saint-spring-0-75l", 0.95))
+        evidence2 = service2._merge(2, "Bottle", [
+            {"text": "СВЯТОЙ ИСТОЧНИК", "score": 0.9},
+            {"text": "ОБЪЁМ 0,33 Л", "score": 0.9}])
+        service2._identify(2, evidence2)
+        self.assertFalse(service2.is_complete(2))
+
+    def test_matching_volume_text_completes_without_lowered_threshold(self):
+        # 0.70 stays the bar: below it even explicit volume text is only a
+        # provisional likely-match; at/above it the size gate completes.
+        low = IdentificationService(
+            jev_fn=lambda *a: candidate("saint-spring-0-33l", 0.65))
+        low_ev = low._merge(1, "Bottle", [
+            {"text": "СВЯТОЙ ИСТОЧНИК", "score": 0.9},
+            {"text": "ОБЪЁМ 0,33 Л", "score": 0.9}])
+        low._identify(1, low_ev)
+        self.assertFalse(low.is_complete(1))
+        self.assertEqual(low.snapshot()[1]["label_sub"],
+                         "Likely match · checking label")
+        high = IdentificationService(
+            jev_fn=lambda *a: candidate("saint-spring-0-33l", 0.8))
+        high_ev = high._merge(1, "Bottle", [
+            {"text": "СВЯТОЙ ИСТОЧНИК", "score": 0.9},
+            {"text": "ОБЪЁМ 0,33 Л", "score": 0.9}])
+        high._identify(1, high_ev)
+        snap = high.snapshot()[1]
+        self.assertTrue(high.is_complete(1))
+        self.assertEqual(snap["label_sub"], "Recognized")
+        self.assertTrue(snap["size_supported"])
+        self.assertIn("0,33", snap["label_main"])
+
+    def test_unique_products_keep_confidence_only_completion(self):
+        # No size siblings: the original confidence rule is untouched.
+        service = IdentificationService(
+            jev_fn=lambda *a: candidate("senezhskaya-0-5l", 0.7))
+        evidence = service._merge(1, "Bottle", [{"text": "СЕНЕЖСКАЯ", "score": 0.9}])
+        service._identify(1, evidence)
+        self.assertTrue(service.is_complete(1))
+        self.assertEqual(service.snapshot()[1]["label_sub"], "Recognized")
+
+    def test_audience_labels_never_expose_sku_or_confidence(self):
+        service = IdentificationService(
+            jev_fn=lambda *a: candidate("saint-spring-0-75l", 0.65))
+        evidence = service._merge(1, "Bottle", [{"text": "СВЯТОЙ ИСТОЧНИК", "score": 0.9}])
+        service._identify(1, evidence)
+        snap = service.snapshot()[1]
+        for text in (snap["label_main"], snap["label_sub"]):
+            self.assertNotIn("saint-spring-0-75l", text)
+            self.assertNotIn("0.65", text)
+            self.assertNotIn("Candidate", text)
+        from vision import ident_label
+        main, sub = ident_label(snap)
+        self.assertNotIn("saint-spring", main + sub)
+        self.assertNotIn("Candidate", main + sub)
+
 
 if __name__ == "__main__":
     unittest.main()

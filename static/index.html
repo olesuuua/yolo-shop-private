@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>LightStore — Live MVP demo</title>
+  <title>LightStore — Live demo</title>
 
   <style>
     :root {
@@ -25,48 +25,43 @@
     main {
       width: min(1400px, 97vw);
       margin: 0 auto;
-      padding: 20px 0 40px;
+      padding: 14px 0 24px;
     }
 
     header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      gap: 16px;
+      gap: 12px;
       flex-wrap: wrap;
-      margin-bottom: 12px;
+      margin-bottom: 10px;
     }
 
     h1 {
       margin: 0;
-      font-size: clamp(1.2rem, 2vw, 1.8rem);
-    }
-
-    h2 {
-      margin: 0 0 10px;
-      font-size: 1.05rem;
+      font-size: clamp(1.1rem, 1.8vw, 1.5rem);
     }
 
     #status {
-      margin: 6px 0 0;
+      margin: 4px 0 0;
       color: #aeb6c7;
-      font-size: 0.95rem;
+      font-size: 0.9rem;
     }
 
     .controls {
       display: flex;
       flex-wrap: wrap;
-      gap: 10px;
+      gap: 8px;
       align-items: center;
     }
 
     button {
-      padding: 10px 15px;
+      padding: 9px 14px;
       border: 0;
       border-radius: 9px;
       background: #4f46e5;
       color: #fff;
-      font-size: 0.95rem;
+      font-size: 0.92rem;
       font-weight: 700;
       cursor: pointer;
     }
@@ -88,11 +83,13 @@
       background: #dc2626;
     }
 
-    /* Primary demo area: large video + prominent product cards. */
+    #resetButton { background: #334155; }
+
+    /* Audience view: large video + compact recognition area. */
     .demo-grid {
       display: grid;
-      grid-template-columns: minmax(0, 1.55fr) minmax(340px, 1fr);
-      gap: 18px;
+      grid-template-columns: minmax(0, 1.6fr) minmax(300px, 380px);
+      gap: 14px;
       align-items: start;
     }
 
@@ -135,36 +132,34 @@
       border: 1px solid #263049;
       border-radius: 14px;
       background: #0e1420;
-      padding: 14px;
-      min-height: 200px;
+      padding: 12px;
+      min-height: 160px;
     }
 
-    #productPanel .panel-sub {
-      margin: 0 0 10px;
-      color: #93a0b8;
-      font-size: 0.82rem;
-      line-height: 1.45;
+    #productPanel h2 {
+      margin: 0 0 8px;
+      font-size: 0.95rem;
     }
 
     #identList {
       display: grid;
-      gap: 12px;
+      gap: 10px;
     }
 
     .product-card {
       border: 1px solid #334155;
       border-radius: 12px;
       background: #131b2c;
-      padding: 12px;
+      padding: 10px;
       display: grid;
-      grid-template-columns: 56px minmax(0, 1fr);
-      gap: 12px;
+      grid-template-columns: 52px minmax(0, 1fr);
+      gap: 10px;
       align-items: start;
     }
 
     .product-card .crop-thumb {
-      width: 56px;
-      height: 76px;
+      width: 52px;
+      height: 70px;
       object-fit: cover;
       border-radius: 6px;
       border: 1px solid #3b4455;
@@ -176,152 +171,103 @@
     }
 
     .product-card h3 {
-      margin: 0 0 6px;
-      font-size: 1.12rem;
+      margin: 0 0 5px;
+      font-size: 1.02rem;
       line-height: 1.25;
-    }
-
-    .product-card .size-line {
-      font-size: 1.35rem;
-      font-weight: 800;
-      color: #fde68a;
-      margin: 2px 0 6px;
     }
 
     .badge {
       display: inline-block;
-      padding: 4px 10px;
+      padding: 3px 10px;
       border-radius: 999px;
-      font-size: 0.82rem;
-      font-weight: 800;
-      letter-spacing: 0.02em;
-      margin-bottom: 8px;
-    }
-
-    .badge.reading { background: #854d0e; color: #fef3c7; }
-    .badge.candidate { background: #1d4ed8; color: #dbeafe; }
-    .badge.needs { background: #374151; color: #e5e7eb; }
-    .badge.fruit { background: #166534; color: #dcfce7; margin-left: 6px; }
-
-    .ocr-evidence {
-      margin: 6px 0 0;
-      padding: 8px;
-      border-radius: 8px;
-      background: #0a0f1a;
-      border: 1px solid #232c40;
-      font-size: 0.86rem;
-      line-height: 1.5;
-      color: #dbe4f3;
-      white-space: pre-wrap;
-      word-break: break-word;
-    }
-
-    .ocr-evidence mark {
-      background: #facc15;
-      color: #111;
-      border-radius: 3px;
-      padding: 0 3px;
-      font-weight: 800;
-    }
-
-    .card-meta {
-      margin-top: 6px;
-      color: #9fb0c9;
-      font-size: 0.78rem;
-      line-height: 1.5;
-    }
-
-    .card-error {
-      margin-top: 6px;
-      color: #fca5a5;
       font-size: 0.8rem;
-      line-height: 1.45;
+      font-weight: 700;
     }
 
-    .candidate-note {
-      margin-top: 4px;
-      color: #93c5fd;
-      font-size: 0.76rem;
-      font-style: italic;
+    .badge.likely { background: #854d0e; color: #fef3c7; }
+    .badge.recognized { background: #166534; color: #dcfce7; }
+    .badge.reading { background: #374151; color: #e5e7eb; }
+
+    .volume-note {
+      margin-top: 5px;
+      font-size: 0.82rem;
+      color: #fde68a;
+    }
+
+    .volume-note.unconfirmed {
+      color: #9fb0c9;
     }
 
     .empty-count {
       color: #aab3c2;
-      font-size: 0.9rem;
+      font-size: 0.88rem;
     }
 
-    /* Secondary technical area. */
+    details.tech {
+      margin-top: 12px;
+      border: 1px solid #262b36;
+      border-radius: 12px;
+      background: #0d121c;
+      padding: 10px 14px;
+    }
+
+    details.tech summary {
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 0.9rem;
+      color: #bfdbfe;
+    }
+
     .tech-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 16px;
-      margin-top: 18px;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 12px;
+      margin-top: 10px;
     }
 
     .tech-card {
       border: 1px solid #262b36;
-      border-radius: 12px;
-      background: #0d121c;
-      padding: 14px;
+      border-radius: 10px;
+      background: #0a0f1a;
+      padding: 10px 12px;
+      font-size: 0.82rem;
     }
 
     .tech-card h2 {
-      font-size: 0.85rem;
+      margin: 0 0 6px;
+      font-size: 0.75rem;
       text-transform: uppercase;
       letter-spacing: 0.07em;
       color: #bfdbfe;
-    }
-
-    #counter {
-      width: 100%;
-      padding: 0;
-      border: 0;
-      border-radius: 0;
-      background: none;
-      box-shadow: none;
-    }
-
-    .counter-title {
-      margin-bottom: 8px;
-      color: #dbeafe;
-      font-size: 0.78rem;
-      font-weight: 800;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
     }
 
     .counter-total {
       display: flex;
       justify-content: space-between;
       align-items: baseline;
-      gap: 12px;
-      margin-bottom: 8px;
-    }
-
-    .counter-total span {
-      color: #cbd5e1;
-      font-size: 0.85rem;
+      gap: 10px;
+      margin-bottom: 6px;
     }
 
     .counter-total strong {
       color: #fff;
-      font-size: 1.7rem;
+      font-size: 1.3rem;
       line-height: 1;
     }
 
     #classCounts, #packedCounts {
       display: grid;
-      gap: 4px;
-      max-height: 160px;
+      gap: 3px;
+      max-height: 140px;
       overflow-y: auto;
     }
 
     .class-row {
       display: flex;
       justify-content: space-between;
-      gap: 12px;
+      gap: 10px;
       color: #d9e2f0;
-      font-size: 0.86rem;
+      font-size: 0.82rem;
     }
 
     .class-row .count {
@@ -329,17 +275,11 @@
       font-weight: 800;
     }
 
-    .class-row.fruit-row {
-      color: #bbf7d0;
-      font-weight: 700;
-    }
+    .hint { color: #aeb6c7; line-height: 1.5; font-size: 0.85rem; }
+    #lastEvent { color: #86efac; line-height: 1.5; font-size: 0.85rem; }
 
-    .hint { color: #aeb6c7; line-height: 1.5; font-size: 0.9rem; }
-    #lastEvent { color: #86efac; line-height: 1.5; }
-    #resetButton { background: #334155; }
-
-    #rawOcr {
-      max-height: 260px;
+    #rawOcr, #detailScores, #evidenceText {
+      max-height: 220px;
       overflow: auto;
       white-space: pre-wrap;
       word-break: break-word;
@@ -347,17 +287,15 @@
       border: 1px solid #232c40;
       border-radius: 8px;
       padding: 8px;
-      font-size: 0.78rem;
+      font-size: 0.76rem;
       color: #cbd5e1;
     }
 
     #jevStatus {
-      font-size: 0.85rem;
+      font-size: 0.82rem;
       line-height: 1.55;
       color: #dbe4f3;
     }
-
-    #jevStatus .err { color: #fca5a5; }
 
     @media (max-width: 980px) {
       .demo-grid { grid-template-columns: 1fr; }
@@ -378,7 +316,7 @@
     @media (max-width: 560px) {
       main {
         width: 100%;
-        padding: 14px;
+        padding: 10px;
       }
     }
   </style>
@@ -388,92 +326,91 @@
   <main>
     <header>
       <div>
-        <h1>LightStore · Live MVP demo</h1>
-        <p class="hint" id="modelInfo" aria-live="polite"></p>
-        <p id="status">Click “Start camera” to begin.</p>
+        <h1>LightStore · Live demo</h1>
+        <p id="status">Click “Start” to begin.</p>
       </div>
 
       <div class="controls">
-        <label>Input <select id="sourceSelect"><option value="camera">Camera</option><option value="video">Video file</option></select></label>
-        <span id="videoControls" hidden>
-          <input id="videoFile" type="file" accept="video/*">
-          <button id="pauseVideo">Pause</button><button id="restartVideo">Restart</button>
-          <span id="videoTime">0 / ? s</span>
-        </span>
-        <button id="startButton">Start camera</button>
+        <button id="startButton">Start</button>
         <button id="stopButton" disabled>Stop</button>
-        <button id="resetButton">Reset session</button>
+        <button id="resetButton">Reset</button>
       </div>
     </header>
 
-    <p class="hint">Live demonstration: hold one <strong>Святой Источник</strong> bottle in view at a time.
-      Success means the card shows <strong>0,33&nbsp;л</strong> vs <strong>0,75&nbsp;л</strong> — brand alone is not enough.
-      Catalog matches are <em>candidates, not verified SKUs</em>.</p>
-
     <div class="demo-grid">
       <section id="viewer" class="viewer" aria-label="Camera stream">
-        <img id="result" alt="Annotated packing camera stream">
+        <img id="result" alt="Annotated camera stream">
         <div class="placeholder">
           Processed camera stream will appear here
         </div>
       </section>
 
-      <aside id="productPanel" aria-live="polite" aria-label="Tracked products">
-        <h2>Tracked products</h2>
-        <p class="panel-sub">Large cards for the demo. “Candidate” means a catalog suggestion, not a verified SKU.
-          Show the volume line (0,33&nbsp;л / 0,75&nbsp;л) before counting a test as passed.</p>
-        <div id="identList"><div class="empty-count">No tracked products yet — start the camera and show a bottle.</div></div>
-        <p class="hint" id="identReadiness">Checking identification prerequisites…</p>
-        <p id="jevStatus" aria-live="polite"></p>
+      <aside id="productPanel" aria-live="polite" aria-label="Recognition">
+        <h2>Recognition</h2>
+        <div id="identList"><div class="empty-count">Nothing in view yet — show a bottle to the camera.</div></div>
       </aside>
     </div>
 
-    <div class="tech-grid">
-      <section class="tech-card" aria-label="Session counters">
-        <div id="counter">
-          <h2>Session counters (secondary)</h2>
-          <div class="counter-title">Packed this session</div>
-          <div class="counter-total">
-            <span>Total items</span>
-            <strong id="packedTotal">0</strong>
-          </div>
-          <div id="packedCounts"><div class="empty-count">Nothing packed yet</div></div>
-          <p id="lastEvent">Waiting for a transfer</p>
-          <div class="counter-title" style="margin-top:12px">Detected now</div>
-          <div class="counter-total">
-            <span>Total items</span>
-            <strong id="totalCount">0</strong>
-          </div>
-          <div id="classCounts">
-            <div class="empty-count">No detections yet</div>
-          </div>
-        </div>
-      </section>
+    <details class="tech">
+      <summary>Details (diagnostics, raw OCR, replay, evidence)</summary>
+      <div class="tech-grid">
+        <section class="tech-card" aria-label="Input source">
+          <h2>Input source</h2>
+          <label>Input <select id="sourceSelect"><option value="camera">Camera</option><option value="video">Video file</option></select></label>
+          <span id="videoControls" hidden>
+            <input id="videoFile" type="file" accept="video/*">
+            <button id="pauseVideo">Pause</button><button id="restartVideo">Restart</button>
+            <span id="videoTime">0 / ? s</span>
+          </span>
+          <p class="hint" id="modelInfo" aria-live="polite"></p>
+          <p class="hint" id="identReadiness">Checking prerequisites…</p>
+          <p id="jevStatus" aria-live="polite"></p>
+        </section>
 
-      <section class="tech-card" aria-label="Raw OCR evidence">
-        <h2>Raw OCR evidence (secondary)</h2>
-        <pre id="rawOcr">No OCR text yet.</pre>
-      </section>
+        <section class="tech-card" aria-label="Session counters">
+          <h2>Counters</h2>
+          <div id="counter">
+            <div class="counter-total">
+              <span>Packed</span>
+              <strong id="packedTotal">0</strong>
+            </div>
+            <div id="packedCounts"><div class="empty-count">Nothing packed yet</div></div>
+            <p id="lastEvent">Waiting for a transfer</p>
+            <div class="counter-total" style="margin-top:8px">
+              <span>Detected now</span>
+              <strong id="totalCount">0</strong>
+            </div>
+            <div id="classCounts">
+              <div class="empty-count">No detections yet</div>
+            </div>
+          </div>
+        </section>
 
-      <section class="tech-card" aria-label="Diagnostics">
-        <h2>Diagnostics (secondary)</h2>
-        <p class="hint" id="diag" style="display: none" aria-live="off"></p>
-        <p class="hint">Append <code>?diag=1</code> to enable frame timings, crop pipeline details, and the replay evidence panel below.</p>
-      </section>
-    </div>
+        <section class="tech-card" aria-label="Raw OCR evidence">
+          <h2>Raw OCR</h2>
+          <pre id="rawOcr">No OCR text yet.</pre>
+        </section>
 
-    <section id="evidencePanel" hidden>
-      <h2>Replay evidence</h2><p id="evidenceLoss"></p>
-      <select id="evidenceSelect" aria-label="OCR request"></select>
-      <button id="exportEvidence">Export evidence JSON</button>
-      <div style="position:relative;width:min(640px,100%)"><img id="evidenceOriginal" style="display:block;width:100%" alt="Matching original frame"><div id="evidenceBox" hidden style="position:absolute;border:2px solid yellow;pointer-events:none"></div></div>
-      <img id="evidenceCrop" style="max-width:320px;max-height:400px" alt="Exact uploaded JPEG crop">
-      <pre id="evidenceText" style="max-height:300px;overflow:auto;white-space:pre-wrap"></pre>
-    </section>
+        <section class="tech-card" aria-label="Match detail">
+          <h2>Match detail (percentages)</h2>
+          <pre id="detailScores">No matches yet.</pre>
+          <p class="hint" id="diag" style="display: none" aria-live="off"></p>
+        </section>
+      </div>
+
+      <section id="evidencePanel" hidden>
+        <h2>Replay evidence</h2><p id="evidenceLoss"></p>
+        <select id="evidenceSelect" aria-label="OCR request"></select>
+        <button id="exportEvidence">Export evidence JSON</button>
+        <div style="position:relative;width:min(640px,100%)"><img id="evidenceOriginal" style="display:block;width:100%" alt="Matching original frame"><div id="evidenceBox" hidden style="position:absolute;border:2px solid yellow;pointer-events:none"></div></div>
+        <img id="evidenceCrop" style="max-width:320px;max-height:400px" alt="Exact uploaded JPEG crop">
+        <pre id="evidenceText"></pre>
+      </section>
+    </details>
     <video id="camera" playsinline muted></video>
     <canvas id="canvas"></canvas>
   </main>
 
-  <script src="/static/app.js?v=mvp1" defer></script>
+  <script src="/static/app.js?v=mvp2" defer></script>
 </body>
 </html>
