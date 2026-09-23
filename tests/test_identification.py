@@ -106,14 +106,15 @@ class IdentificationTests(unittest.TestCase):
         self.addCleanup(service.close)
         return service
 
-    def test_catalog_has_eight_unique_products(self):
+    def test_catalog_has_nine_unique_products(self):
         service = self.make_service()
         skus = [p["sku"] for p in service.products]
-        self.assertEqual(len(skus), 8)
-        self.assertEqual(len(set(skus)), 8)
+        self.assertEqual(len(skus), 9)
+        self.assertEqual(len(set(skus)), 9)
         self.assertIn("aqua-minerale-0-5l", skus)
         self.assertIn("senezhskaya-0-5l", skus)
         self.assertIn("saint-spring-0-75l", skus)
+        self.assertIn("saint-spring-0-33l", skus)
         self.assertIn("stantsiya-molochnaya-kefir-1-0-430g", skus)
         self.assertIn("dobryi-cola-no-sugar-0-5l", skus)
         self.assertIn("red-bull-sugar-free-0-25l", skus)
@@ -169,7 +170,7 @@ class IdentificationTests(unittest.TestCase):
         lines, skus, hint = calls[0]
         self.assertEqual(hint, "Bottle")  # Hint travels, never filters.
         self.assertEqual(set(skus), {"aqua-minerale-0-5l", "senezhskaya-0-5l",
-                                       "saint-spring-0-75l", "prostokvashino-2-5-930ml",
+                                       "saint-spring-0-75l", "saint-spring-0-33l", "prostokvashino-2-5-930ml",
                                        "domik-v-derevne-2-5-930ml",
                                        "stantsiya-molochnaya-kefir-1-0-430g",
                                        "dobryi-cola-no-sugar-0-5l",
@@ -266,7 +267,7 @@ class IdentificationTests(unittest.TestCase):
         service = self.make_service()
         readiness = service.readiness()
         self.assertTrue(readiness["catalog_ok"])
-        self.assertEqual(len(readiness["products"]), 8)
+        self.assertEqual(len(readiness["products"]), 9)
         self.assertEqual(readiness["ocr_device"], "cpu")
         self.assertNotIn("TYPESAFE_API_KEY", str(readiness).upper().replace("JEV_KEY_PRESENT", ""))
         self.assertIsInstance(readiness["jev_key_present"], bool)

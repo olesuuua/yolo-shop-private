@@ -211,11 +211,11 @@ def parse_client_message(data: bytes):
 def ident_label(status, choice, confidence) -> str:
     if status == "candidate" and choice:
         if confidence is None:
-            return f"ID: {choice}?"
-        return f"ID: {choice}? {confidence:.2f}"
+            return f"candidate: {choice}?"
+        return f"candidate: {choice}? {confidence:.2f}"
     if status == "unknown":
-        return "ID: unknown"
-    return "ID: need evidence"
+        return "need evidence"
+    return "reading label"
 
 
 def annotate_frame(frame, detections, tracker, identification=None):

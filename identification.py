@@ -34,6 +34,22 @@ SUBMIT_INTERVAL_EMPTY_S = 0.75
 # Minimum gap between Jev calls for the same track; a call also requires a
 # changed evidence fingerprint, so idle bottles cause no repeat traffic.
 JEV_DEBOUNCE_S = 12.0
+# Failure recovery is separate from the successful-result debounce above:
+# at most two retries per consecutive failure sequence (initial + 2).
+# Nominal earliest-eligibility delays are 1s then 3s; a Retry-After hint
+# extends via max(nominal, retry_after). Actual dispatch additionally depends
+# on worker availability and scheduler wake-up. Success resets consecutive
+# failures to 0; changed evidence after success follows the normal debounce.
+# New fingerprints never replenish an exhausted consecutive-failure budget.
+# Terminal errors never retry. The process-wide attempt cap survives UI
+# resets and track replacement; only a process restart clears it.
+# LIGHTSTORE_JEV_MAX_ATTEMPTS=0 means unlimited attempts for live MVP
+# testing (no process-wide ceiling); any positive integer keeps a bounded
+# budget. Debounce, bounded transient retries, and duplicate/stale guards
+# are unchanged in both modes.
+JEV_RETRY_DELAYS = (1.0, 3.0)
+JEV_MAX_RETRIES = 2
+JEV_MAX_ATTEMPTS = 0
 # Near-identical still frames are not re-OCRed (hamming distance on a 64-bit
 # perceptual hash of the crop). New views always re-run.
 DUPLICATE_HAMMING_MAX = 5
@@ -46,6 +62,13 @@ try:
     JEV_WORKERS = int(os.environ.get("LIGHTSTORE_JEV_WORKERS", "4"))
 except ValueError:
     raise ValueError("LIGHTSTORE_JEV_WORKERS must be an integer between 1 and 8.") from None
+try:
+    _JEV_MAX_ENV = os.environ.get("LIGHTSTORE_JEV_MAX_ATTEMPTS", str(JEV_MAX_ATTEMPTS))
+    JEV_MAX_ATTEMPTS_ENV = int(_JEV_MAX_ENV)
+except ValueError:
+    raise ValueError("LIGHTSTORE_JEV_MAX_ATTEMPTS must be an integer >= 0 (0 = unlimited).") from None
+if JEV_MAX_ATTEMPTS_ENV < 0:
+    raise ValueError("LIGHTSTORE_JEV_MAX_ATTEMPTS must be an integer >= 0 (0 = unlimited).")
 
 
 @dataclass
@@ -59,6 +82,8 @@ class IdentConfig:
     jev_inline: bool = False
     stop_confidence: float = 0.7
     jev_workers: int = JEV_WORKERS
+    jev_max_attempts: int = JEV_MAX_ATTEMPTS_ENV
+    jev_retry_delays: tuple = JEV_RETRY_DELAYS
 
     def __post_init__(self):
         if not math.isfinite(self.stop_confidence) or not 0 <= self.stop_confidence <= 1:
@@ -66,6 +91,13 @@ class IdentConfig:
         if (not isinstance(self.jev_workers, int) or isinstance(self.jev_workers, bool)
                 or not 1 <= self.jev_workers <= 8):
             raise ValueError("jev_workers must be an integer between 1 and 8")
+        if (not isinstance(self.jev_max_attempts, int) or isinstance(self.jev_max_attempts, bool)
+                or self.jev_max_attempts < 0):
+            raise ValueError("jev_max_attempts must be an integer >= 0 (0 = unlimited)")
+        delays = tuple(self.jev_retry_delays)
+        if len(delays) != 2 or not all(isinstance(d, (int, float)) and math.isfinite(d) and d >= 0 for d in delays):
+            raise ValueError("jev_retry_delays must be two non-negative finite seconds (1.0, 3.0).")
+        self.jev_retry_delays = (float(delays[0]), float(delays[1]))
 
 
 def dhash(jpeg_bytes):
@@ -145,6 +177,17 @@ class TrackEvidence:
     last_jev_ms: float = 0.0
     result: dict = field(default_factory=lambda: {"status": "needs_more_evidence"})
     jev_error: str = ""
+    # Failure-recovery state, separate from the successful-result debounce
+    # (last_jev_fingerprint/last_jev_time, updated only on success).
+    jev_failures: int = 0
+    jev_next_retry_at: float = None
+    jev_next_retry_delay: float = 0.0
+    jev_terminal: bool = False
+    jev_terminal_error: str = ""
+    jev_exhausted: bool = False
+    jev_last_attempt_fingerprint: tuple = None
+    jev_last_attempt_source_ids: list = field(default_factory=list)
+    jev_last_attempt_time: float = 0.0
 
 
 class OcrWorkerClient:
@@ -261,6 +304,15 @@ class IdentificationService:
         self.ocr_factory = ocr_factory or (lambda: OcrWorkerClient(ROOT, "cpu"))
         self.jev_fn = jev_fn
         self.jev_calls = 0
+        # Service-wide external-attempt budget: every dispatched HTTP attempt
+        # (success or failure) reserves one unit atomically before network
+        # dispatch. Survives reset()/prune(); only a process restart clears it.
+        self.jev_attempts = 0
+        self.jev_successes = 0
+        self.jev_failures_total = 0
+        self.jev_retries = 0
+        self.jev_stale_drops = 0
+        self.jev_budget_blocked = 0
         self.capture = {"upload_wh": (), "fps": 0.0, "detect_ms": 0.0}
         try:
             from jev_catalog import load_catalog
@@ -309,6 +361,8 @@ class IdentificationService:
             self.ocr = None
 
     def reset(self):
+        # UI reset clears per-track evidence (cancelling pending retries) but
+        # never the service-wide attempt budget/counters.
         with self.lock:
             self.tracks = {}
             self.jev_inflight.clear()
@@ -482,9 +536,18 @@ class IdentificationService:
                     "complete": evidence.complete,
                     "choice": evidence.result.get("choice"),
                     "confidence": evidence.result.get("confidence"),
+                    "probabilities": evidence.result.get("probabilities"),
                     "hint": evidence.hint,
                     "lines": len(evidence.lines),
                     "evidence_chars": sum(len(n) for n in evidence.lines),
+                    "ocr_texts": [entry["text"] for _, entry in sorted(
+                        evidence.lines.items(),
+                        key=lambda kv: (-kv[1].get("score", 0), kv[1].get("text", "")))[:8]],
+                    "jev_error": evidence.jev_error or "",
+                    "jev_failures": evidence.jev_failures,
+                    "jev_retry_in_s": (None if evidence.jev_next_retry_at is None
+                                       else round(max(0.0, evidence.jev_next_retry_at
+                                                      - time.monotonic()), 1)),
                     "submitted": evidence.submitted,
                     "ocr_runs": evidence.ocr_runs,
                     "dedup_skips": evidence.dedup_skips,
@@ -496,6 +559,98 @@ class IdentificationService:
                 for track_id, evidence in self.tracks.items()
             }
 
+    def _budget_exhausted(self):
+        """True only when a positive cap is configured and fully consumed."""
+        budget_max = self.config.jev_max_attempts
+        return budget_max > 0 and self.jev_attempts >= budget_max
+
+    def _budget_remaining(self):
+        budget_max = self.config.jev_max_attempts
+        if budget_max <= 0:
+            return None
+        return max(0, budget_max - self.jev_attempts)
+
+    def jev_stats(self):
+        """Bounded service-wide Jev diagnostics (no secrets)."""
+        with self.lock:
+            budget_max = self.config.jev_max_attempts
+            attempts = self.jev_attempts
+            remaining = None if budget_max <= 0 else max(0, budget_max - attempts)
+            return {
+                "attempts": attempts,
+                "successes": self.jev_successes,
+                "failures": self.jev_failures_total,
+                "retries": self.jev_retries,
+                "budget_max": budget_max,
+                "budget_unlimited": budget_max <= 0,
+                "budget_remaining": remaining,
+                "budget_blocked": self.jev_budget_blocked,
+                "stale_drops": self.jev_stale_drops,
+                "inflight": len(self.jev_inflight),
+            }
+
+    def _budget_message(self):
+        return (
+            f"Jev attempt budget exhausted ({self.jev_attempts}/{self.config.jev_max_attempts} used); "
+            "no further external calls will be made in this server process. "
+            "UI reset and track changes do not replenish the budget."
+        )
+
+    def _mark_budget_blocked_locked(self, evidence):
+        """Stable per-track exhaustion note. Returns True if newly marked."""
+        if "budget exhausted" in (evidence.jev_error or ""):
+            return False
+        evidence.jev_error = self._budget_message()
+        self.jev_budget_blocked += 1
+        return True
+
+    def _snapshot_state(self, evidence):
+        """Eligibility generation: success stamp + failure/backoff/terminal state.
+
+        Fingerprint/sources intentionally excluded so a pending retry may send
+        the newest useful evidence. Any success, retryable failure (failures /
+        next_retry_at), terminal, exhaustion, or completion change invalidates
+        a stale worker selection.
+        """
+        return (evidence.last_jev_fingerprint, evidence.last_jev_time,
+                evidence.jev_failures, evidence.jev_next_retry_at,
+                evidence.jev_terminal, evidence.jev_exhausted, evidence.complete)
+
+    def _select_snapshot(self):
+        """Oldest due selection with snapshot. Caller owns no lock.
+
+        Returns (track_id, evidence, snapshot) or (None, None, None) when
+        nothing is dispatchable. When the process-wide budget is exhausted
+        and due work exists, newly due tracks are marked once with a clear
+        message and None is returned so workers return to a blocking wait
+        instead of spinning; counters stay stable across polls.
+        """
+        with self.lock:
+            if self._budget_exhausted():
+                newly = 0
+                for track_id, evidence in self.tracks.items():
+                    if track_id in self.jev_inflight:
+                        continue
+                    if self._jev_due(evidence):
+                        if "budget exhausted" not in (evidence.jev_error or ""):
+                            evidence.jev_error = self._budget_message()
+                            newly += 1
+                self.jev_budget_blocked += newly
+                return (None, None, None)
+            due = [(track_id, evidence) for track_id, evidence in self.tracks.items()
+                   if track_id not in self.jev_inflight and self._jev_due(evidence)]
+            if not due:
+                return (None, None, None)
+
+            def _key(item):
+                ev = item[1]
+                if ev.jev_next_retry_at is not None:
+                    return ev.jev_next_retry_at
+                return ev.last_jev_time
+            due.sort(key=_key)
+            track_id, evidence = due[0]
+            return (track_id, evidence, self._snapshot_state(evidence))
+
     def debug(self):
         """Full per-track detail for diagnosis; served by /api/ident-debug."""
         with self.lock:
@@ -506,9 +661,24 @@ class IdentificationService:
             def rel(moment):
                 return None if moment is None else round(moment - base, 2)
 
+            budget_max = self.config.jev_max_attempts
+            jev = {
+                "attempts": self.jev_attempts,
+                "successes": self.jev_successes,
+                "failures": self.jev_failures_total,
+                "retries": self.jev_retries,
+                "budget_max": budget_max,
+                "budget_unlimited": budget_max <= 0,
+                "budget_remaining": (None if budget_max <= 0
+                                     else max(0, budget_max - self.jev_attempts)),
+                "budget_blocked": self.jev_budget_blocked,
+                "stale_drops": self.jev_stale_drops,
+                "inflight": len(self.jev_inflight),
+            }
             return {
                 "capture": dict(self.capture),
                 "queue_depth": len(self.slots),
+                "jev": jev,
                 "tracks": {
                     str(track_id): {
                         "hint": evidence.hint,
@@ -524,6 +694,16 @@ class IdentificationService:
                         "crop_wh": list(evidence.last_crop_wh),
                         "absent_frames": evidence.absent_frames,
                         "jev_error": evidence.jev_error,
+                        "jev_failures": evidence.jev_failures,
+                        "jev_terminal": evidence.jev_terminal,
+                        "jev_terminal_error": evidence.jev_terminal_error,
+                        "jev_exhausted": evidence.jev_exhausted,
+                        "jev_next_retry_in_s": (
+                            None if evidence.jev_next_retry_at is None
+                            else round(max(0.0, evidence.jev_next_retry_at - now), 2)
+                        ),
+                        "jev_last_attempt_fingerprint": list(evidence.jev_last_attempt_fingerprint or ()),
+                        "jev_last_attempt_source_ids": list(evidence.jev_last_attempt_source_ids or [])[:20],
                         "t_first_seen": rel(evidence.first_seen_at),
                         "t_first_submit": rel(evidence.first_submit_at),
                         "t_first_ocr_done": rel(evidence.first_ocr_done_at),
@@ -550,17 +730,41 @@ class IdentificationService:
         from dotenv import load_dotenv
         load_dotenv(ROOT / ".env")
         key_present = bool(os.environ.get("TYPESAFE_API_KEY", "").strip())
+        with self.lock:
+            jev_calls = self.jev_calls
+            attempts = self.jev_attempts
+            successes = self.jev_successes
+            failures = self.jev_failures_total
+            retries = self.jev_retries
+            stale_drops = self.jev_stale_drops
+            blocked = self.jev_budget_blocked
+            budget_max = self.config.jev_max_attempts
         return {
             "catalog_ok": not self.catalog_error and bool(self.products),
             "catalog_error": self.catalog_error,
             "products": [p["sku"] for p in self.products],
+            "catalog_products": [
+                {"sku": p.get("sku"), "name": p.get("name"), "brand": p.get("brand"),
+                 "size": p.get("size"), "variant": p.get("variant"),
+                 "category": p.get("category")}
+                for p in self.products
+            ],
             "ocr_available": self.ocr is not None,
             "ocr_error": self.ocr_error,
             "ocr_device": "cpu",
             "jev_key_present": key_present,
             "jev_model": os.environ.get("TYPESAFE_MODEL", "jev-latest"),
-            "jev_calls": self.jev_calls,
+            "jev_calls": jev_calls,
             "jev_workers": self.config.jev_workers,
+            "jev_attempts": attempts,
+            "jev_successes": successes,
+            "jev_failures": failures,
+            "jev_retries": retries,
+            "jev_budget_max": budget_max,
+            "jev_budget_unlimited": budget_max <= 0,
+            "jev_budget_remaining": (None if budget_max <= 0 else max(0, budget_max - attempts)),
+            "jev_budget_blocked": blocked,
+            "jev_stale_drops": stale_drops,
         }
 
     def _merge(self, track_id, hint, lines, expected=None, request_id=None):
@@ -601,33 +805,105 @@ class IdentificationService:
             return evidence
 
     def _jev_due(self, evidence):
+        """Success debounce and failure backoff are separate.
+
+        - No pending retry: successful-result path. Requires a fingerprint
+          different from the last *successful* dispatch and the normal
+          12s debounce.
+        - Pending retry: failure-recovery path. Fires when the backoff
+          deadline (earliest eligibility; actual dispatch also needs a free
+          worker and scheduler wake-up) passes, even for unchanged evidence,
+          and sends the newest useful evidence.
+        Terminal/exhausted evidence is never due. Consecutive retryable
+        failures never reset on new fingerprints; only success resets to 0.
+        Budget state is checked at dispatch, not here.
+        """
         if evidence.complete:
             return False
         if self.jev_fn is None or not self.products:
             return False
         if not useful_evidence(evidence.fingerprint):
             return False
+        if evidence.jev_terminal or evidence.jev_exhausted:
+            return False
         now = time.monotonic()
+        if evidence.jev_next_retry_at is not None:
+            return now >= evidence.jev_next_retry_at
         if evidence.fingerprint == evidence.last_jev_fingerprint:
             return False
         return now - evidence.last_jev_time >= self.config.jev_debounce_s
 
-    def _identify(self, track_id, evidence):
+    @staticmethod
+    def _classify_jev_exception(exc):
+        """Structured category without parsing human-readable messages."""
+        try:
+            from jev_catalog import JevRetryableError, JevTerminalError
+            if isinstance(exc, JevRetryableError):
+                return ("retryable", getattr(exc, "retry_after", None))
+            if isinstance(exc, JevTerminalError):
+                return ("terminal", None)
+            base = None
+            try:
+                from jev_catalog import JevError as _Base
+                base = _Base
+            except Exception:
+                base = None
+            if base is not None and isinstance(exc, base):
+                return ("terminal", None)
+        except Exception:
+            pass
+        # Unknown exception kinds (e.g. plain RuntimeError from a fake in
+        # tests): fail closed as terminal so programming errors never retry.
+        return ("terminal", None)
+
+    def _identify(self, track_id, evidence, _snapshot=None):
+        # Reserve one in-flight slot plus one budget unit atomically, then
+        # dispatch outside the lock using the newest useful evidence.
+        # When _snapshot (taken at selection) is supplied, eligibility is
+        # revalidated atomically with reservation: a stale selection that lost
+        # a race (peer success, backoff scheduled, retries exhausted, or
+        # terminal) is rejected without consuming budget or dispatching.
+        # Direct calls pass _snapshot=None and keep the legacy allowlist
+        # behavior (fresh snapshot always matches); the worker loop always
+        # passes the selection snapshot.
         with self.lock:
             if self.tracks.get(track_id) is not evidence or evidence.complete:
                 if self.tracks.get(track_id) is evidence:
                     self.jev_inflight.discard(track_id)
-                return
+                return False
+            if track_id in self.jev_inflight:
+                return False
+            if self._budget_exhausted():
+                self._mark_budget_blocked_locked(evidence)
+                return False
+            if _snapshot is not None and self._snapshot_state(evidence) != _snapshot:
+                return False
+            if not useful_evidence(evidence.fingerprint):
+                return False
+            is_retry = evidence.jev_failures > 0
+            self.jev_attempts += 1
+            self.jev_calls += 1
+            if is_retry:
+                self.jev_retries += 1
+            self.jev_inflight.add(track_id)
             request_fingerprint = evidence.fingerprint
             source_ids = sorted({r for n in request_fingerprint[:MAX_JEV_LINES]
                                  for r in evidence.sources.get(n, [])})
             lines = [{"text": evidence.lines[n]["text"], "score": evidence.lines[n]["score"]}
                      for n in request_fingerprint[:MAX_JEV_LINES]]
+            hint = evidence.hint or None
+            # The pending backoff is now running; a failure below schedules
+            # the next one, a success clears the failure count.
+            evidence.jev_next_retry_at = None
+            evidence.jev_next_retry_delay = 0.0
+            evidence.jev_last_attempt_fingerprint = request_fingerprint
+            evidence.jev_last_attempt_source_ids = list(source_ids)
+            evidence.jev_last_attempt_time = time.monotonic()
         started = time.monotonic()
-        call_completed = False
+        category = None
+        retry_after = None
         try:
-            outcome = self.jev_fn(lines, self.products, evidence.hint or None)
-            call_completed = True
+            outcome = self.jev_fn(lines, self.products, hint)
             answer = outcome.get("answer", {})
             choice = answer.get("choice")
             status = outcome.get("status", "needs_more_evidence")
@@ -643,27 +919,39 @@ class IdentificationService:
             error_text = ""
         except Exception as exc:
             # No result is accepted on failure; the track stays unresolved.
+            category, retry_after = self._classify_jev_exception(exc)
             result = {"status": "needs_more_evidence", "choice": None,
                       "confidence": None, "probabilities": None}
-            error_text = str(exc)
+            error_text = str(exc) or exc.__class__.__name__
             logger.warning("Jev request failed for track %s: %s", track_id, error_text)
         elapsed_ms = (time.monotonic() - started) * 1000
         with self.lock:
-            if call_completed:
-                self.jev_calls += 1
-            if self.tracks.get(track_id) is evidence:
-                self.jev_inflight.discard(track_id)
             current = self.tracks.get(track_id)
-            if current is evidence:
-                for request_id in source_ids:
-                    diagnostic = self.diagnostics.get(request_id)
-                    if diagnostic is not None:
-                        if "jev" in diagnostic:
-                            diagnostic["jev_outcomes_replaced"] = diagnostic.get("jev_outcomes_replaced", 0) + 1
-                        diagnostic["jev"] = {"source_request_ids": source_ids, "lines": lines,
-                                             "result": result, "duration_ms": elapsed_ms,
-                                             "source_ids_dropped": evidence.sources_dropped,
-                                             "error": bool(error_text)}
+            if current is not evidence:
+                # Replacement evidence (numeric ID reuse) or prune/reset won:
+                # count the dispatch globally but never touch the new object
+                # nor clear its in-flight reservation.
+                if error_text:
+                    self.jev_failures_total += 1
+                else:
+                    self.jev_successes += 1
+                self.jev_stale_drops += 1
+                return True
+            self.jev_inflight.discard(track_id)
+            if not error_text:
+                self.jev_successes += 1
+            else:
+                self.jev_failures_total += 1
+            for request_id in source_ids:
+                diagnostic = self.diagnostics.get(request_id)
+                if diagnostic is not None:
+                    if "jev" in diagnostic:
+                        diagnostic["jev_outcomes_replaced"] = diagnostic.get("jev_outcomes_replaced", 0) + 1
+                    diagnostic["jev"] = {"source_request_ids": source_ids, "lines": lines,
+                                         "result": result, "duration_ms": elapsed_ms,
+                                         "source_ids_dropped": evidence.sources_dropped,
+                                         "error": bool(error_text)}
+            if not error_text:
                 evidence.result = result
                 confidence = result.get("confidence")
                 evidence.complete = (
@@ -678,7 +966,10 @@ class IdentificationService:
                         if meta and meta[2] is not None: meta[2]["ocr_status"] = "complete"
                         self.slots.pop(track_id, None)
                         self.slot_order = deque(t for t in self.slot_order if t != track_id)
-                evidence.jev_error = error_text
+                evidence.jev_error = ""
+                evidence.jev_failures = 0
+                evidence.jev_next_retry_at = None
+                evidence.jev_next_retry_delay = 0.0
                 # OCR may have added evidence while this HTTP request was in
                 # flight. Record only what the request actually contained so
                 # the newer evidence can trigger a subsequent call.
@@ -687,7 +978,54 @@ class IdentificationService:
                 evidence.last_jev_ms = elapsed_ms
                 if evidence.first_ident_at is None and result.get("choice"):
                     evidence.first_ident_at = evidence.last_jev_time
-        self.jev_wake.set()
+                self.jev_wake.set()
+                return True
+            # Failure path: never touch last_jev_fingerprint/last_jev_time so
+            # the successful-result debounce is preserved and unchanged
+            # evidence can still recover via backoff.
+            # At most two retries per consecutive failure sequence: failures
+            # counts consecutive retryable failures since the last success;
+            # success resets it to 0. Changed evidence after a success may
+            # later trigger a normal call after the successful-result debounce.
+            if category == "terminal":
+                evidence.result = result
+                evidence.jev_error = error_text
+                evidence.jev_terminal = True
+                evidence.jev_terminal_error = error_text[:500]
+                evidence.jev_next_retry_at = None
+                evidence.jev_next_retry_delay = 0.0
+                evidence.last_jev_ms = elapsed_ms
+                self.jev_wake.set()
+                return True
+            # Retryable: bounded backoff, initial + at most two retries.
+            evidence.result = result
+            evidence.jev_failures += 1
+            evidence.last_jev_ms = elapsed_ms
+            if evidence.jev_failures > JEV_MAX_RETRIES:
+                evidence.jev_exhausted = True
+                evidence.jev_next_retry_at = None
+                evidence.jev_next_retry_delay = 0.0
+                evidence.jev_error = (
+                    f"{error_text} (Jev retries exhausted after "
+                    f"{evidence.jev_failures} attempts; no further retries for this evidence.)"
+                )[:800]
+                self.jev_wake.set()
+                return True
+            delays = tuple(self.config.jev_retry_delays)
+            nominal = float(delays[min(evidence.jev_failures - 1, len(delays) - 1)])
+            delay = nominal
+            try:
+                if retry_after is not None and math.isfinite(float(retry_after)):
+                    delay = max(nominal, float(retry_after))
+            except (TypeError, ValueError):
+                pass
+            # Earliest eligibility only: actual dispatch additionally depends
+            # on worker availability and scheduler wake-up (1s poll).
+            evidence.jev_next_retry_at = time.monotonic() + delay
+            evidence.jev_next_retry_delay = delay
+            evidence.jev_error = f"{error_text} (retry in {delay:.1f}s.)"[:800]
+            self.jev_wake.set()
+            return True
 
     def _ensure_ocr(self):
         if self.ocr is not None or self.ocr_gave_up:
@@ -785,21 +1123,24 @@ class IdentificationService:
                         self.jev_wake.set()
 
     def _jev_loop(self):
-        """Pool worker: reserve one due track, then call Jev outside locks."""
+        """Pool worker: select with snapshot, reserve atomically, dispatch.
+
+        Eligibility (_jev_due snapshot) is revalidated atomically with
+        in-flight reservation and budget consumption inside _identify, so a
+        worker holding a stale selection cannot dispatch after a peer has
+        succeeded, scheduled backoff, exhausted retries, or marked terminal.
+        When the process-wide budget is exhausted, _select_snapshot marks
+        newly due tracks once and returns None so workers return to a
+        blocking wait instead of spinning; counters stay stable.
+        Backoff is per-track; other tracks stay schedulable while one waits.
+        """
         while not self.stop_event.is_set():
             self.jev_wake.wait(timeout=1.0)
             self.jev_wake.clear()
             if self.stop_event.is_set():
                 break
             while not self.stop_event.is_set():
-                with self.lock:
-                    due = [(track_id, evidence) for track_id, evidence in self.tracks.items()
-                           if track_id not in self.jev_inflight and self._jev_due(evidence)]
-                    if due:
-                        # Oldest first: the longest-waiting bottle is identified first.
-                        due.sort(key=lambda item: item[1].last_jev_time)
-                        track_id, evidence = due[0]
-                        self.jev_inflight.add(track_id)
-                if not due:
+                track_id, evidence, snapshot = self._select_snapshot()
+                if track_id is None:
                     break
-                self._identify(track_id, evidence)
+                self._identify(track_id, evidence, _snapshot=snapshot)

@@ -1,0 +1,699 @@
+{
+ "provenance": {
+  "installed": {
+   "model": "cyrillic_PP-OCRv5_mobile_rec",
+   "cache": ".cache/paddlex/official_models",
+   "input": "BGR sub (CropByPolys-quad)",
+   "score_thresh": 0.0,
+   "load_s": 0.75
+  },
+  "alternative": {
+   "pkg": "easyocr 1.7.2",
+   "torch": "2.7.1+cpu",
+   "torchvision": "0.22.1+cpu",
+   "numpy": "2.4.6",
+   "opencv-headless": "5.0.0.93",
+   "pillow": "12.3.0",
+   "model_file": "cyrillic_g2.pth",
+   "bytes": 15256523,
+   "sha256": "48d0f3b58f28aa64651ab1032cc2d498c4de25135829668e87c14e7a07529f29",
+   "source": "https://github.com/JaidedAI/EasyOCR/releases/download/v1.6.1/cyrillic_g2.zip",
+   "model_lang": "cyrillic",
+   "model_storage": "/tmp/easyocr-scratch/models (scratch only)",
+   "load_s": 0.05,
+   "input": "identical pixels BGR->RGB (format compliance)",
+   "options": {
+    "decoder": "greedy",
+    "contrast_ths": 0.1,
+    "adjust_contrast": 0.5,
+    "quantize": true,
+    "workers": 0,
+    "allowlist": null,
+    "rotation_info": null,
+    "batch_size": 1
+   },
+   "threads": {
+    "OMP": 2,
+    "torch_threads": 2
+   },
+   "downloads_during_eval": "disabled (download_enabled=False)"
+  },
+  "rss_mb": {
+   "paddle_proc_base": 59.3,
+   "paddle_proc_peak": 443.4,
+   "easy_proc_base": 340.4,
+   "easy_proc_peak": 391.3,
+   "note": "separate processes; peaks not strictly comparable"
+  }
+ },
+ "results": {
+  "388-C1": {
+   "paddle": {
+    "text": "СВЯТОЙ",
+    "score": 0.6719936728477478,
+    "ms": 62.9,
+    "pass1_ms": 62.6,
+    "shape": [
+     114,
+     415,
+     3
+    ]
+   },
+   "easy": {
+    "text": "СВЯтOU",
+    "score": 0.38719461398951815,
+    "ms": 10.6,
+    "pass1_ms": 11.3,
+    "shape": [
+     114,
+     415,
+     3
+    ]
+   }
+  },
+  "388-C1_alt": {
+   "paddle": {
+    "text": "CBЯTOUК",
+    "score": 0.5245741009712219,
+    "ms": 62.3,
+    "pass1_ms": 62.6,
+    "shape": [
+     229,
+     438,
+     3
+    ]
+   },
+   "easy": {
+    "text": "святоб",
+    "score": 0.742624516261118,
+    "ms": 6.0,
+    "pass1_ms": 6.8,
+    "shape": [
+     229,
+     438,
+     3
+    ]
+   }
+  },
+  "388-C2": {
+   "paddle": {
+    "text": "ИСТОЧНИК",
+    "score": 0.744735062122345,
+    "ms": 62.3,
+    "pass1_ms": 62.4,
+    "shape": [
+     136,
+     511,
+     3
+    ]
+   },
+   "easy": {
+    "text": "UСТОчHUK",
+    "score": 0.21213200298513413,
+    "ms": 10.6,
+    "pass1_ms": 10.6,
+    "shape": [
+     136,
+     511,
+     3
+    ]
+   }
+  },
+  "388-C2_alt": {
+   "paddle": {
+    "text": "ИСТОЧК",
+    "score": 0.3595413863658905,
+    "ms": 62.0,
+    "pass1_ms": 62.3,
+    "shape": [
+     261,
+     536,
+     3
+    ]
+   },
+   "easy": {
+    "text": "u8RSTH'",
+    "score": 0.27386786390475976,
+    "ms": 8.0,
+    "pass1_ms": 8.2,
+    "shape": [
+     261,
+     536,
+     3
+    ]
+   }
+  },
+  "404-M1": {
+   "paddle": {
+    "text": "ПОСТО",
+    "score": 0.23181180655956268,
+    "ms": 62.1,
+    "pass1_ms": 62.2,
+    "shape": [
+     231,
+     471,
+     3
+    ]
+   },
+   "easy": {
+    "text": "сюiвк уу ",
+    "score": 0.010024455095990896,
+    "ms": 16.3,
+    "pass1_ms": 16.5,
+    "shape": [
+     231,
+     471,
+     3
+    ]
+   }
+  },
+  "404-M1_alt": {
+   "paddle": {
+    "text": "П",
+    "score": 0.11496729403734207,
+    "ms": 62.2,
+    "pass1_ms": 62.2,
+    "shape": [
+     278,
+     498,
+     3
+    ]
+   },
+   "easy": {
+    "text": "Фwey ",
+    "score": 0.006121433281424465,
+    "ms": 12.1,
+    "pass1_ms": 12.0,
+    "shape": [
+     278,
+     498,
+     3
+    ]
+   }
+  },
+  "437-C": {
+   "paddle": {
+    "text": "AKBA",
+    "score": 0.9826415777206421,
+    "ms": 62.6,
+    "pass1_ms": 62.5,
+    "shape": [
+     106,
+     258,
+     3
+    ]
+   },
+   "easy": {
+    "text": "АквА",
+    "score": 0.8527225255966187,
+    "ms": 8.1,
+    "pass1_ms": 8.2,
+    "shape": [
+     106,
+     258,
+     3
+    ]
+   }
+  },
+  "437-C_alt": {
+   "paddle": {
+    "text": "AKBA",
+    "score": 0.9795746803283691,
+    "ms": 62.4,
+    "pass1_ms": 62.1,
+    "shape": [
+     150,
+     279,
+     3
+    ]
+   },
+   "easy": {
+    "text": "АквА",
+    "score": 0.9129282236099243,
+    "ms": 5.9,
+    "pass1_ms": 5.9,
+    "shape": [
+     150,
+     279,
+     3
+    ]
+   }
+  },
+  "437-M1": {
+   "paddle": {
+    "text": "",
+    "score": 0.0,
+    "ms": 62.4,
+    "pass1_ms": 62.8,
+    "shape": [
+     120,
+     260,
+     3
+    ]
+   },
+   "easy": {
+    "text": "(42.3",
+    "score": 0.03599155178039239,
+    "ms": 16.5,
+    "pass1_ms": 16.3,
+    "shape": [
+     120,
+     260,
+     3
+    ]
+   }
+  },
+  "437-M1_alt": {
+   "paddle": {
+    "text": "",
+    "score": 0.0,
+    "ms": 62.2,
+    "pass1_ms": 62.3,
+    "shape": [
+     138,
+     268,
+     3
+    ]
+   },
+   "easy": {
+    "text": "сл",
+    "score": 0.3176747782916563,
+    "ms": 5.9,
+    "pass1_ms": 5.9,
+    "shape": [
+     138,
+     268,
+     3
+    ]
+   }
+  },
+  "455-M1": {
+   "paddle": {
+    "text": "",
+    "score": 0.0,
+    "ms": 61.9,
+    "pass1_ms": 62.2,
+    "shape": [
+     118,
+     340,
+     3
+    ]
+   },
+   "easy": {
+    "text": "",
+    "score": 0.0,
+    "ms": 16.5,
+    "pass1_ms": 16.4,
+    "shape": [
+     118,
+     340,
+     3
+    ]
+   }
+  },
+  "455-M1_alt": {
+   "paddle": {
+    "text": "",
+    "score": 0.0,
+    "ms": 62.1,
+    "pass1_ms": 62.1,
+    "shape": [
+     348,
+     122,
+     3
+    ]
+   },
+   "easy": {
+    "text": "1",
+    "score": 0.35629322257208074,
+    "ms": 7.8,
+    "pass1_ms": 7.9,
+    "shape": [
+     348,
+     122,
+     3
+    ]
+   }
+  },
+  "571-B2": {
+   "paddle": {
+    "text": "OMUKBH",
+    "score": 0.33871933817863464,
+    "ms": 62.1,
+    "pass1_ms": 62.3,
+    "shape": [
+     51,
+     244,
+     3
+    ]
+   },
+   "easy": {
+    "text": "хомоген",
+    "score": 0.07484563640732347,
+    "ms": 25.7,
+    "pass1_ms": 26.6,
+    "shape": [
+     51,
+     244,
+     3
+    ]
+   }
+  },
+  "571-B2_alt": {
+   "paddle": {
+    "text": "ОЛaН",
+    "score": 0.19168949127197266,
+    "ms": 62.6,
+    "pass1_ms": 62.2,
+    "shape": [
+     137,
+     255,
+     3
+    ]
+   },
+   "easy": {
+    "text": "&ф4у",
+    "score": 0.3306499421596527,
+    "ms": 5.9,
+    "pass1_ms": 6.0,
+    "shape": [
+     137,
+     255,
+     3
+    ]
+   }
+  },
+  "571-B3": {
+   "paddle": {
+    "text": "Bgepe",
+    "score": 0.8219404220581055,
+    "ms": 62.6,
+    "pass1_ms": 62.5,
+    "shape": [
+     58,
+     199,
+     3
+    ]
+   },
+   "easy": {
+    "text": "8gce",
+    "score": 0.13289155066013336,
+    "ms": 10.6,
+    "pass1_ms": 10.5,
+    "shape": [
+     58,
+     199,
+     3
+    ]
+   }
+  },
+  "571-B3_alt": {
+   "paddle": {
+    "text": "Bgpe",
+    "score": 0.41178882122039795,
+    "ms": 62.0,
+    "pass1_ms": 62.2,
+    "shape": [
+     113,
+     216,
+     3
+    ]
+   },
+   "easy": {
+    "text": "?%ньъ",
+    "score": 0.08302874550728521,
+    "ms": 12.1,
+    "pass1_ms": 12.1,
+    "shape": [
+     113,
+     216,
+     3
+    ]
+   }
+  },
+  "571-M1": {
+   "paddle": {
+    "text": "H",
+    "score": 0.2670465111732483,
+    "ms": 62.3,
+    "pass1_ms": 62.4,
+    "shape": [
+     100,
+     311,
+     3
+    ]
+   },
+   "easy": {
+    "text": "'",
+    "score": 0.6636089783779688,
+    "ms": 10.5,
+    "pass1_ms": 10.4,
+    "shape": [
+     100,
+     311,
+     3
+    ]
+   }
+  },
+  "571-M1_alt": {
+   "paddle": {
+    "text": "",
+    "score": 0.0,
+    "ms": 62.0,
+    "pass1_ms": 62.1,
+    "shape": [
+     138,
+     328,
+     3
+    ]
+   },
+   "easy": {
+    "text": "'4",
+    "score": 0.6448762193867036,
+    "ms": 8.2,
+    "pass1_ms": 8.3,
+    "shape": [
+     138,
+     328,
+     3
+    ]
+   }
+  },
+  "571-M2": {
+   "paddle": {
+    "text": "DegepeB",
+    "score": 0.4358211159706116,
+    "ms": 62.1,
+    "pass1_ms": 62.2,
+    "shape": [
+     100,
+     283,
+     3
+    ]
+   },
+   "easy": {
+    "text": "28 гу",
+    "score": 0.03047823585096266,
+    "ms": 17.0,
+    "pass1_ms": 16.6,
+    "shape": [
+     100,
+     283,
+     3
+    ]
+   }
+  },
+  "571-M2_alt": {
+   "paddle": {
+    "text": "Degerea",
+    "score": 0.49297967553138733,
+    "ms": 62.2,
+    "pass1_ms": 62.0,
+    "shape": [
+     128,
+     298,
+     3
+    ]
+   },
+   "easy": {
+    "text": "2соу",
+    "score": 0.1712112061531477,
+    "ms": 8.1,
+    "pass1_ms": 8.2,
+    "shape": [
+     128,
+     298,
+     3
+    ]
+   }
+  },
+  "N172-akb": {
+   "paddle": {
+    "text": "AKB",
+    "score": 0.9743225574493408,
+    "ms": 62.6,
+    "pass1_ms": 62.3,
+    "shape": [
+     142,
+     307,
+     3
+    ]
+   },
+   "easy": {
+    "text": "Акв",
+    "score": 0.8041855692863464,
+    "ms": 8.0,
+    "pass1_ms": 8.2,
+    "shape": [
+     142,
+     307,
+     3
+    ]
+   }
+  },
+  "N172-ckaa": {
+   "paddle": {
+    "text": "CKAA",
+    "score": 0.6911793947219849,
+    "ms": 62.8,
+    "pass1_ms": 62.7,
+    "shape": [
+     98,
+     228,
+     3
+    ]
+   },
+   "easy": {
+    "text": "'к",
+    "score": 0.3596163224916485,
+    "ms": 8.1,
+    "pass1_ms": 8.2,
+    "shape": [
+     98,
+     228,
+     3
+    ]
+   }
+  },
+  "N388-mirror": {
+   "paddle": {
+    "text": "",
+    "score": 0.0,
+    "ms": 62.5,
+    "pass1_ms": 63.1,
+    "shape": [
+     94,
+     274,
+     3
+    ]
+   },
+   "easy": {
+    "text": "5ПlGa",
+    "score": 0.16292484323149636,
+    "ms": 8.2,
+    "pass1_ms": 8.3,
+    "shape": [
+     94,
+     274,
+     3
+    ]
+   }
+  },
+  "N404-edge": {
+   "paddle": {
+    "text": "60",
+    "score": 0.6263155937194824,
+    "ms": 62.2,
+    "pass1_ms": 62.1,
+    "shape": [
+     87,
+     138,
+     3
+    ]
+   },
+   "easy": {
+    "text": "60",
+    "score": 0.4895658558753197,
+    "ms": 6.0,
+    "pass1_ms": 5.8,
+    "shape": [
+     87,
+     138,
+     3
+    ]
+   }
+  },
+  "N437-cap": {
+   "paddle": {
+    "text": "",
+    "score": 0.0,
+    "ms": 62.4,
+    "pass1_ms": 62.5,
+    "shape": [
+     81,
+     69,
+     3
+    ]
+   },
+   "easy": {
+    "text": "M5",
+    "score": 0.1099382476382621,
+    "ms": 5.7,
+    "pass1_ms": 5.8,
+    "shape": [
+     81,
+     69,
+     3
+    ]
+   }
+  },
+  "N463-neigh": {
+   "paddle": {
+    "text": "2,50",
+    "score": 0.766787052154541,
+    "ms": 62.2,
+    "pass1_ms": 62.2,
+    "shape": [
+     52,
+     139,
+     3
+    ]
+   },
+   "easy": {
+    "text": "26",
+    "score": 0.44015769066055865,
+    "ms": 8.0,
+    "pass1_ms": 8.2,
+    "shape": [
+     52,
+     139,
+     3
+    ]
+   }
+  },
+  "N580-top": {
+   "paddle": {
+    "text": "2,5%",
+    "score": 0.9632939696311951,
+    "ms": 62.2,
+    "pass1_ms": 62.3,
+    "shape": [
+     30,
+     82,
+     3
+    ]
+   },
+   "easy": {
+    "text": "2 5o",
+    "score": 0.28311034573783567,
+    "ms": 8.0,
+    "pass1_ms": 8.2,
+    "shape": [
+     30,
+     82,
+     3
+    ]
+   }
+  }
+ }
+}

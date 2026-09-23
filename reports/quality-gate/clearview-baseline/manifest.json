@@ -1,0 +1,47 @@
+[
+ {
+  "path": "data/local/products/milk-1/store-description.png",
+  "sha256": "426bfe568a27ad7ec74e15be9b3bf6582f9efd4fc354faae05dd6b0d47ba0d60",
+  "bytes": 367413,
+  "dims_wh": [
+   591,
+   1280
+  ]
+ },
+ {
+  "path": "data/local/products/milk-2/store-description.png",
+  "sha256": "8879389298caaee90dc14c763b8a1db968cc9ecd6754d780b19e75cbdf6235b5",
+  "bytes": 385661,
+  "dims_wh": [
+   591,
+   1280
+  ]
+ },
+ {
+  "path": "data/local/products/bottle-1/water_aq1.jpg",
+  "sha256": "91079d6245d3321703acd4471d33c0491bebde0614ab63fa60e716217f1f1e1f",
+  "bytes": 111337,
+  "dims_wh": [
+   960,
+   1280
+  ]
+ },
+ {
+  "path": "data/local/products/bottle-2/water_sn1.jpg",
+  "sha256": "3f1fd9c339e119c812eaeb2234be066b536d39ba4d9a13d92646abaa45fb19ad",
+  "bytes": 127306,
+  "dims_wh": [
+   960,
+   1280
+  ]
+ },
+ {
+  "path": "outputs/test-bottles1.jpg",
+  "sha256": "93d515bc7563f960dda90ebfa658f7dc301469bfcd0d6dcc3fa82f80426887f9",
+  "bytes": 105848,
+  "dims_wh": [
+   640,
+   480
+  ]
+ }
+]

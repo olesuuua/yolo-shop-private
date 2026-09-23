@@ -8,6 +8,59 @@ MAX_JEV_CANDIDATES=20
 PRODUCT_FIELDS={'sku','name','object_classes','brand','category','variant','size',
                 'aliases','verified_label_text'}
 
+class JevError(Exception):
+    """Base for structured Jev failures. Category is the type, never the message."""
+    retryable = False
+    retry_after = None
+
+class JevRetryableError(JevError):
+    """Transient failure: transport error, HTTP 429, or 5xx. Safe to retry."""
+    retryable = True
+    def __init__(self, message, retry_after=None):
+        super().__init__(message)
+        self.retry_after = retry_after
+
+class JevTerminalError(JevError):
+    """Terminal failure: config/auth/request/response-validation. Must not retry."""
+    retryable = False
+    retry_after = None
+
+def _parse_retry_after(headers):
+    """Seconds from a Retry-After header value; None when absent/unparseable."""
+    if not headers:
+        return None
+    try:
+        raw = headers.get("Retry-After", headers.get("retry-after"))
+    except Exception:
+        return None
+    if raw is None:
+        return None
+    text = str(raw).strip()
+    if not text:
+        return None
+    try:
+        seconds = float(text)
+        if math.isfinite(seconds) and seconds >= 0:
+            return seconds
+        return None
+    except ValueError:
+        pass
+    try:
+        from email.utils import parsedate_to_datetime
+        moment = parsedate_to_datetime(text)
+        if moment is None:
+            return None
+        from datetime import datetime, timezone
+        now = datetime.now(timezone.utc)
+        if moment.tzinfo is None:
+            moment = moment.replace(tzinfo=timezone.utc)
+        delta = (moment - now).total_seconds()
+        if math.isfinite(delta) and delta >= 0:
+            return delta
+        return 0.0
+    except Exception:
+        return None
+
 def load_catalog():
     products=json.loads((ROOT/'data/local/catalog.json').read_text())['products']
     ids=[p['sku'] for p in products]
@@ -103,14 +156,25 @@ def validate_answer(data,payload):
 def classify(lines,products=None,object_class=None):
     load_dotenv(ROOT/'.env')
     key=os.environ.get('TYPESAFE_API_KEY','').strip()
-    if not key: raise RuntimeError('TYPESAFE_API_KEY is missing.')
+    if not key: raise JevTerminalError('TYPESAFE_API_KEY is missing.')
     payload=build_request(lines,products or load_catalog(),object_class)
     try:
         r=requests.post('https://api.typesafe.ai/v1/systemone',headers={'Authorization':f'Bearer {key}'},json=payload,timeout=(10,45))
     except requests.RequestException:
-        raise RuntimeError('Jev connection failed; no result accepted.') from None
-    if r.status_code!=200: raise RuntimeError(f'Jev HTTP {r.status_code}; no result accepted.')
-    return validate_answer(r.json(),payload)
+        raise JevRetryableError('Jev connection failed; no result accepted.') from None
+    if r.status_code!=200:
+        retry_after = _parse_retry_after(getattr(r, 'headers', None))
+        if r.status_code==429 or 500<=r.status_code<=599:
+            raise JevRetryableError(f'Jev HTTP {r.status_code}; no result accepted.', retry_after=retry_after) from None
+        raise JevTerminalError(f'Jev HTTP {r.status_code}; no result accepted.') from None
+    try:
+        data=r.json()
+    except Exception:
+        raise JevTerminalError('Jev response was not valid JSON; no result accepted.') from None
+    try:
+        return validate_answer(data,payload)
+    except (ValueError, KeyError, TypeError, AttributeError) as exc:
+        raise JevTerminalError(str(exc) or 'Jev response failed validation; no result accepted.') from None
 
 if __name__=='__main__':
     import argparse

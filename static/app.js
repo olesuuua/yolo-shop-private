@@ -305,8 +305,12 @@ function renderCounts(counts, totalElement, listElement, emptyText) {
   for (const [label, count] of entries) {
     const row = document.createElement("div");
     row.className = "class-row";
+    if (/apple|banana|orange|lemon|pear|peach|grape|mango|fruit/i.test(label)) {
+      row.classList.add("fruit-row");
+    }
     const name = document.createElement("span");
-    name.textContent = label;
+    // Fruit detections are first-class demo results, not background counts.
+    name.textContent = (/apple/i.test(label) ? `🍎 ${label}` : label);
     const value = document.createElement("span");
     value.className = "count";
     value.textContent = count;
@@ -315,42 +319,137 @@ function renderCounts(counts, totalElement, listElement, emptyText) {
   }
 }
 
+// MVP demo: prominent product cards beside the large video.
+// States: "Reading label", "Candidate" (catalog suggestion, never verified),
+// or "Needs more evidence". OCR evidence is shown verbatim with the
+// volume tokens (0,33 / 0,75) highlighted so the water-bottle distinction
+// is visible at a glance. Jev errors are shown as text; the key never
+// leaves the backend.
+let catalogBySku = {};
+function highlightVolume(text) {
+  const fragment = document.createDocumentFragment();
+  const pattern = /0[.,]\s?33|0[.,]\s?75|0[.,]\s?5\b|330\s?мл|750\s?мл/gi;
+  let last = 0;
+  let match;
+  const source = String(text);
+  while ((match = pattern.exec(source)) !== null) {
+    if (match.index > last) fragment.append(source.slice(last, match.index));
+    const mark = document.createElement("mark");
+    mark.textContent = match[0];
+    fragment.append(mark);
+    last = match.index + match[0].length;
+  }
+  fragment.append(source.slice(last));
+  return fragment;
+}
+
+function isFruitHint(hint) {
+  return /apple|banana|orange|lemon|pear|peach|grape|mango|pineapple|fruit|berries/i.test(hint || "");
+}
+
 function renderIdentification(identification) {
   const entries = Object.entries(identification || {}).sort(([a], [b]) => Number(a) - Number(b));
   identList.replaceChildren();
+  const rawLines = [];
   if (!entries.length) {
     const empty = document.createElement("div");
     empty.className = "empty-count";
-    empty.textContent = "No tracked bottles yet";
+    empty.textContent = "No tracked products yet — start the camera and show a bottle.";
     identList.appendChild(empty);
-    return;
   }
   for (const [trackId, info] of entries) {
-    const row = document.createElement("div");
-    row.className = "class-row";
+    const card = document.createElement("article");
+    card.className = "product-card";
     const thumb = document.createElement("img");
     thumb.className = "crop-thumb";
     thumb.alt = "";
     if (info.submitted) {
       thumb.src = `/api/ident-crop/${trackId}?s=${info.submitted}`;
     }
-    const name = document.createElement("span");
-    name.textContent = `#${trackId} ${info.hint || ""}`.trim();
-    const value = document.createElement("span");
-    value.className = "count";
-    if (info.status === "candidate" && info.choice) {
-      value.textContent = info.confidence == null ? `${info.choice}?` : `${info.choice}? ${info.confidence.toFixed(2)}`;
-      if (info.complete) value.textContent = `${info.choice} ${info.confidence.toFixed(2)} · OCR paused`;
-    } else if (info.status === "unknown") {
-      value.textContent = "unknown";
-    } else if (info.lines) {
-      value.textContent = `need evidence (${info.lines} lines)`;
+    const body = document.createElement("div");
+    const title = document.createElement("h3");
+    const catalog = (info.choice && catalogBySku[info.choice]) || null;
+    if (info.choice && catalog) {
+      title.textContent = `#${trackId} ${catalog.name}`;
+    } else if (info.choice) {
+      title.textContent = `#${trackId} ${info.choice}`;
     } else {
-      value.textContent = `collecting… (sharp ${info.sharpness ?? "?"})`;
+      title.textContent = `#${trackId} ${info.hint || "Unidentified item"}`;
     }
-    row.append(thumb, name, value);
-    identList.appendChild(row);
+    body.append(title);
+    // Prominent volume line: the demo succeeds only when 0,33 vs 0,75 is shown.
+    if (catalog && catalog.size) {
+      const sizeLine = document.createElement("div");
+      sizeLine.className = "size-line";
+      sizeLine.textContent = catalog.size;
+      body.append(sizeLine);
+    }
+    const badge = document.createElement("span");
+    if (info.status === "candidate" && info.choice) {
+      badge.className = "badge candidate";
+      const conf = info.confidence == null ? "" : ` · ${(info.confidence).toFixed(2)}`;
+      badge.textContent = info.complete ? `Candidate${conf} · OCR paused` : `Candidate${conf}`;
+    } else if ((info.lines || 0) === 0 && !info.choice) {
+      badge.className = "badge reading";
+      badge.textContent = "Reading label…";
+    } else if (info.status === "unknown") {
+      badge.className = "badge needs";
+      badge.textContent = "Needs more evidence";
+    } else if (!info.choice) {
+      badge.className = "badge needs";
+      badge.textContent = `Needs more evidence (${info.lines || 0} lines)`;
+    } else {
+      badge.className = "badge needs";
+      badge.textContent = "Needs more evidence";
+    }
+    body.append(badge);
+    if (isFruitHint(info.hint)) {
+      const fruit = document.createElement("span");
+      fruit.className = "badge fruit";
+      fruit.textContent = `🍎 Fruit detected (${info.hint})`;
+      body.append(fruit);
+    }
+    if (info.choice) {
+      const note = document.createElement("div");
+      note.className = "candidate-note";
+      note.textContent = "Catalog candidate — not a verified SKU.";
+      body.append(note);
+    }
+    const ocrBox = document.createElement("div");
+    ocrBox.className = "ocr-evidence";
+    const ocrTexts = Array.isArray(info.ocr_texts) ? info.ocr_texts.filter(Boolean) : [];
+    if (ocrTexts.length) {
+      ocrTexts.slice(0, 6).forEach((line, index) => {
+        if (index > 0) ocrBox.append(document.createElement("br"));
+        ocrBox.append(highlightVolume(line));
+      });
+    } else if ((info.lines || 0) > 0) {
+      ocrBox.textContent = `${info.lines} OCR line(s) collected — text pending…`;
+    } else {
+      ocrBox.textContent = "Point the label at the camera — OCR text will appear here.";
+    }
+    body.append(ocrBox);
+    const meta = document.createElement("div");
+    meta.className = "card-meta";
+    const retry = (info.jev_retry_in_s != null)
+      ? ` · Jev retry in ${info.jev_retry_in_s}s` : "";
+    meta.textContent = `Track #${trackId} · hint ${info.hint || "—"} · OCR runs ${info.ocr_runs ?? 0} · sharp ${info.sharpness ?? "?"}${retry}`;
+    body.append(meta);
+    if (info.jev_error) {
+      const error = document.createElement("div");
+      error.className = "card-error";
+      error.textContent = `Jev: ${info.jev_error}`;
+      body.append(error);
+    }
+    card.append(thumb, body);
+    identList.appendChild(card);
+    for (const line of ocrTexts.slice(0, 4)) {
+      rawLines.push(`[#${trackId}] ${line}`);
+    }
+    if (info.jev_error) rawLines.push(`[#${trackId} Jev] ${info.jev_error}`);
   }
+  const rawBox = document.getElementById("rawOcr");
+  if (rawBox) rawBox.textContent = rawLines.length ? rawLines.join("\n") : "No OCR text yet.";
 }
 
 async function loadReadiness() {
@@ -358,10 +457,28 @@ async function loadReadiness() {
     const response = await fetch("/api/ident-readiness");
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const state = await response.json();
-    const catalog = state.catalog_ok ? `catalog: ${state.products.length} products` : "catalog: MISSING";
+    catalogBySku = {};
+    for (const product of (state.catalog_products || [])) {
+      if (product && product.sku) catalogBySku[product.sku] = product;
+    }
+    const skus = state.products || [];
+    const has033 = skus.includes("saint-spring-0-33l");
+    const has075 = skus.includes("saint-spring-0-75l");
+    const catalog = state.catalog_ok
+      ? `catalog: ${skus.length} products${has033 && has075 ? " (0,33 л + 0,75 л ready)" : " (⚠ water sizes missing)"}`
+      : "catalog: MISSING";
     const ocr = state.ocr_available ? "OCR CPU: ready" : (state.ocr_error ? "OCR CPU: unavailable" : "OCR CPU: starting…");
     const jev = state.jev_key_present ? "Jev key: set" : "Jev key: MISSING (add TYPESAFE_API_KEY to .env)";
     identReadiness.textContent = `${catalog} · ${ocr} · ${jev}`;
+    const jevBox = document.getElementById("jevStatus");
+    if (jevBox) {
+      const budget = state.jev_budget_unlimited
+        ? "attempts unlimited for this MVP test"
+        : `budget ${state.jev_budget_remaining ?? "?"} left of ${state.jev_budget_max ?? "?"}`;
+      jevBox.textContent = `Jev matching: ${state.jev_attempts ?? 0} attempts · ` +
+        `${state.jev_successes ?? 0} ok · ${state.jev_failures ?? 0} failed · ` +
+        `${budget}. Idle bottles never stream calls (12 s debounce + changed evidence).`;
+    }
   } catch (error) {
     identReadiness.textContent = `Cannot load identification status: ${error.message}`;
   }

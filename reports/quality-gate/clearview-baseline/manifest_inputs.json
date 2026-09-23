@@ -1,0 +1,72 @@
+[
+ {
+  "file": "inputs/P-side-082007.jpg",
+  "sha256": "df04f66f85a335dc1e2222d08c386039c697f6d52c421f400810306c421113e2",
+  "bytes": 1460781,
+  "dims_wh": [
+   3000,
+   4000
+  ],
+  "provenance": "user-supplied 2026-09-23 phone capture"
+ },
+ {
+  "file": "inputs/P-back-081955.jpg",
+  "sha256": "482127c3ba29a8bccd92a4b2108456d7ecc52a1c64562da5817c54ba5d996382",
+  "bytes": 1606523,
+  "dims_wh": [
+   3000,
+   4000
+  ],
+  "provenance": "user-supplied 2026-09-23 phone capture"
+ },
+ {
+  "file": "inputs/P-front-081946.jpg",
+  "sha256": "46ec6ebc00169d1bceee13bb5751c3309ecc0d4086a060da203262f4a1c6b4c9",
+  "bytes": 1453761,
+  "dims_wh": [
+   3000,
+   4000
+  ],
+  "provenance": "user-supplied 2026-09-23 phone capture"
+ },
+ {
+  "file": "inputs/D-front-2288.jpg",
+  "sha256": "53f89b2d4dcd8cd7a872acd5d0c0ad0d2c27375e20d600383003653b47d42f30",
+  "bytes": 3400403,
+  "dims_wh": [
+   3000,
+   4000
+  ],
+  "provenance": "user-supplied 2026-09-23 phone capture"
+ },
+ {
+  "file": "inputs/D-side-2289.jpg",
+  "sha256": "7c35a40ac8324f9ba70b616b0e9a5167faaa32b356e9338666356086c26dbd5f",
+  "bytes": 3117878,
+  "dims_wh": [
+   3000,
+   4000
+  ],
+  "provenance": "user-supplied 2026-09-23 phone capture"
+ },
+ {
+  "file": "inputs/D-back-2290.jpg",
+  "sha256": "e6a4e692512fecd21225b8352ee13ba3974d0dfe355e9f5afc0a5fb3eb851cf1",
+  "bytes": 3495188,
+  "dims_wh": [
+   3000,
+   4000
+  ],
+  "provenance": "user-supplied 2026-09-23 phone capture"
+ },
+ {
+  "file": "inputs/D-side-2291.jpg",
+  "sha256": "dafe306d97a1c3d46facc448b5383e8d80ddb8c06223d437a910e1b83d4bd831",
+  "bytes": 3461224,
+  "dims_wh": [
+   3000,
+   4000
+  ],
+  "provenance": "user-supplied 2026-09-23 phone capture"
+ }
+]

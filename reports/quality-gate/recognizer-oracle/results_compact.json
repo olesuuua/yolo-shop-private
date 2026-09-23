@@ -1,0 +1,503 @@
+{
+ "provenance": {
+  "models": [
+   "PP-OCRv5_mobile_det(not used here)",
+   "cyrillic_PP-OCRv5_mobile_rec"
+  ],
+  "crop_op": "CropByPolys quad get_minarea_rect_crop (perspective warp, INTER_CUBIC, BORDER_REPLICATE)",
+  "rec_preprocessing": "model-internal resize/normalize; UNAVAILABLE for inspection beyond input sub shapes",
+  "alt_extraction": "axis-aligned bbox +4px pad (boundary check only)"
+ },
+ "lines": {
+  "571-M1": {
+   "source": "reports/video-comparison/evidence/v3-warm-b/571_3_311-crop_jpeg.jpg",
+   "sha256": "91d77bdd0a07b99f",
+   "img_wh": [
+    537,
+    1021
+   ],
+   "quad": [
+    [
+     170,
+     640
+    ],
+    [
+     480,
+     610
+    ],
+    [
+     490,
+     710
+    ],
+    [
+     180,
+     740
+    ]
+   ],
+   "gt": "ДОМИК",
+   "note": "script; ligature uncertainty",
+   "sub_shape": [
+    100,
+    311,
+    3
+   ],
+   "raw_text": "H",
+   "score": 0.2918759286403656,
+   "ms": 61.5,
+   "alt_text": "",
+   "alt_score": 0.0,
+   "alt_ms": 61.2,
+   "acc": {
+    "norm_pred": "H",
+    "ratio": 0.0,
+    "exact": false
+   },
+   "alt_acc": {
+    "norm_pred": "",
+    "ratio": 0.0,
+    "exact": false
+   }
+  },
+  "571-M2": {
+   "source": "reports/video-comparison/evidence/v3-warm-b/571_3_311-crop_jpeg.jpg",
+   "sha256": "91d77bdd0a07b99f",
+   "img_wh": [
+    537,
+    1021
+   ],
+   "quad": [
+    [
+     190,
+     720
+    ],
+    [
+     470,
+     700
+    ],
+    [
+     480,
+     800
+    ],
+    [
+     200,
+     820
+    ]
+   ],
+   "gt": "В ДЕРЕВНЕ",
+   "note": "script; partial uncertainty",
+   "sub_shape": [
+    100,
+    283,
+    3
+   ],
+   "raw_text": "DegepeB",
+   "score": 0.39256566762924194,
+   "ms": 61.3,
+   "alt_text": "Degerea",
+   "alt_score": 0.4605630040168762,
+   "alt_ms": 60.7,
+   "acc": {
+    "norm_pred": "DEGEPEB",
+    "ratio": 0.0,
+    "exact": false
+   },
+   "alt_acc": {
+    "norm_pred": "DEGEREA",
+    "ratio": 0.0,
+    "exact": false
+   }
+  },
+  "571-B2": {
+   "source": "reports/video-comparison/evidence/v3-warm-b/571_3_311-crop_jpeg.jpg",
+   "sha256": "91d77bdd0a07b99f",
+   "img_wh": [
+    537,
+    1021
+   ],
+   "quad": [
+    [
+     239,
+     743
+    ],
+    [
+     469,
+     663
+    ],
+    [
+     486,
+     712
+    ],
+    [
+     255,
+     792
+    ]
+   ],
+   "gt": "ДОМИК (B geometry)",
+   "note": "exact B-run brand box 1",
+   "sub_shape": [
+    51,
+    244,
+    3
+   ],
+   "raw_text": "OMUKBHE",
+   "score": 0.32856106758117676,
+   "ms": 61.3,
+   "alt_text": "ОЛaН",
+   "alt_score": 0.2026020884513855,
+   "alt_ms": 61.2,
+   "acc": {
+    "norm_pred": "OMUKBHE",
+    "ratio": 0.261,
+    "exact": false
+   },
+   "alt_acc": {
+    "norm_pred": "ОЛAН",
+    "ratio": 0.1,
+    "exact": false
+   }
+  },
+  "571-B3": {
+   "source": "reports/video-comparison/evidence/v3-warm-b/571_3_311-crop_jpeg.jpg",
+   "sha256": "91d77bdd0a07b99f",
+   "img_wh": [
+    537,
+    1021
+   ],
+   "quad": [
+    [
+     215,
+     768
+    ],
+    [
+     409,
+     720
+    ],
+    [
+     423,
+     777
+    ],
+    [
+     229,
+     825
+    ]
+   ],
+   "gt": "В ДЕРЕВНЕ (B geometry)",
+   "note": "exact B-run brand box 2",
+   "sub_shape": [
+    58,
+    199,
+    3
+   ],
+   "raw_text": "Bgepe",
+   "score": 0.8239886164665222,
+   "ms": 61.0,
+   "alt_text": "Bgpe",
+   "alt_score": 0.40143170952796936,
+   "alt_ms": 60.5,
+   "acc": {
+    "norm_pred": "BGEPE",
+    "ratio": 0.333,
+    "exact": false
+   },
+   "alt_acc": {
+    "norm_pred": "BGPE",
+    "ratio": 0.261,
+    "exact": false
+   }
+  },
+  "404-M1": {
+   "source": "reports/video-comparison/evidence/v1-ocr-cold/404_2_61-crop_jpeg.jpg",
+   "sha256": "7feb37f7b24ca270",
+   "img_wh": [
+    941,
+    1776
+   ],
+   "quad": [
+    [
+     360,
+     1380
+    ],
+    [
+     820,
+     1330
+    ],
+    [
+     850,
+     1560
+    ],
+    [
+     380,
+     1600
+    ]
+   ],
+   "gt": "ПРОСТОКВАШИНО",
+   "note": "curved band; quad approximate",
+   "sub_shape": [
+    231,
+    471,
+    3
+   ],
+   "raw_text": "ПОСТО",
+   "score": 0.2342654913663864,
+   "ms": 32.9,
+   "alt_text": "П",
+   "alt_score": 0.11638687551021576,
+   "alt_ms": 33.1,
+   "acc": {
+    "norm_pred": "ПОСТО",
+    "ratio": 0.556,
+    "exact": false
+   },
+   "alt_acc": {
+    "norm_pred": "П",
+    "ratio": 0.143,
+    "exact": false
+   }
+  },
+  "437-M1": {
+   "source": "reports/video-comparison/evidence/v2-warm-a/437_3_121-crop_jpeg.jpg",
+   "sha256": "a82fe4020190a524",
+   "img_wh": [
+    561,
+    1397
+   ],
+   "quad": [
+    [
+     120,
+     950
+    ],
+    [
+     380,
+     960
+    ],
+    [
+     370,
+     1080
+    ],
+    [
+     120,
+     1070
+    ]
+   ],
+   "gt": "ПРОСТОКВАШИНО",
+   "note": "small+partial; uncertain",
+   "sub_shape": [
+    120,
+    260,
+    3
+   ],
+   "raw_text": "",
+   "score": 0.0,
+   "ms": 32.4,
+   "alt_text": "",
+   "alt_score": 0.0,
+   "alt_ms": 32.1,
+   "acc": {
+    "norm_pred": "",
+    "ratio": 0.0,
+    "exact": false
+   },
+   "alt_acc": {
+    "norm_pred": "",
+    "ratio": 0.0,
+    "exact": false
+   }
+  },
+  "455-M1": {
+   "source": "reports/video-comparison/evidence/v3-warm-a/455_3_148-crop_jpeg.jpg",
+   "sha256": "6b37ef37f6851e54",
+   "img_wh": [
+    498,
+    950
+   ],
+   "quad": [
+    [
+     380,
+     450
+    ],
+    [
+     498,
+     430
+    ],
+    [
+     498,
+     750
+    ],
+    [
+     380,
+     770
+    ]
+   ],
+   "gt": "ДОМИК В ДЕРЕВНЕ",
+   "note": "rotated/small; highly uncertain",
+   "sub_shape": [
+    118,
+    340,
+    3
+   ],
+   "raw_text": "",
+   "score": 0.0,
+   "ms": 32.5,
+   "alt_text": "",
+   "alt_score": 0.0,
+   "alt_ms": 32.1,
+   "acc": {
+    "norm_pred": "",
+    "ratio": 0.0,
+    "exact": false
+   },
+   "alt_acc": {
+    "norm_pred": "",
+    "ratio": 0.0,
+    "exact": false
+   }
+  },
+  "388-C1": {
+   "source": "reports/video-comparison/evidence/v1-ocr-cold/388_2_31-crop_jpeg.jpg",
+   "sha256": "dbb717ecba1568a9",
+   "img_wh": [
+    758,
+    1650
+   ],
+   "quad": [
+    [
+     232,
+     860
+    ],
+    [
+     632,
+     749
+    ],
+    [
+     662,
+     858
+    ],
+    [
+     262,
+     970
+    ]
+   ],
+   "gt": "СВЯТОЙ",
+   "note": "positive control",
+   "sub_shape": [
+    114,
+    415,
+    3
+   ],
+   "raw_text": "СВЯТОЙ",
+   "score": 0.6958680152893066,
+   "ms": 32.2,
+   "alt_text": "CBЯTOUК",
+   "alt_score": 0.5258551239967346,
+   "alt_ms": 32.5,
+   "acc": {
+    "norm_pred": "СВЯТОЙ",
+    "ratio": 1.0,
+    "exact": true
+   },
+   "alt_acc": {
+    "norm_pred": "CBЯTOUК",
+    "ratio": 0.154,
+    "exact": false
+   }
+  },
+  "388-C2": {
+   "source": "reports/video-comparison/evidence/v1-ocr-cold/388_2_31-crop_jpeg.jpg",
+   "sha256": "dbb717ecba1568a9",
+   "img_wh": [
+    758,
+    1650
+   ],
+   "quad": [
+    [
+     176,
+     935
+    ],
+    [
+     672,
+     815
+    ],
+    [
+     704,
+     948
+    ],
+    [
+     207,
+     1068
+    ]
+   ],
+   "gt": "ИСТОЧНИК",
+   "note": "positive control",
+   "sub_shape": [
+    136,
+    511,
+    3
+   ],
+   "raw_text": "ИСТОЧНИК",
+   "score": 0.7342045903205872,
+   "ms": 32.6,
+   "alt_text": "ИСТЧК",
+   "alt_score": 0.37501028180122375,
+   "alt_ms": 32.1,
+   "acc": {
+    "norm_pred": "ИСТОЧНИК",
+    "ratio": 1.0,
+    "exact": true
+   },
+   "alt_acc": {
+    "norm_pred": "ИСТЧК",
+    "ratio": 0.769,
+    "exact": false
+   }
+  },
+  "437-C": {
+   "source": "reports/video-comparison/evidence/v2-warm-a/437_4_122-crop_jpeg.jpg",
+   "sha256": "a7d081db31cde46e",
+   "img_wh": [
+    541,
+    1211
+   ],
+   "quad": [
+    [
+     102,
+     661
+    ],
+    [
+     357,
+     698
+    ],
+    [
+     342,
+     803
+    ],
+    [
+     86,
+     766
+    ]
+   ],
+   "gt": "AKBA",
+   "note": "positive control",
+   "sub_shape": [
+    106,
+    258,
+    3
+   ],
+   "raw_text": "AKBA",
+   "score": 0.9827733039855957,
+   "ms": 32.5,
+   "alt_text": "AKBA",
+   "alt_score": 0.9800244569778442,
+   "alt_ms": 32.9,
+   "acc": {
+    "norm_pred": "AKBA",
+    "ratio": 1.0,
+    "exact": true
+   },
+   "alt_acc": {
+    "norm_pred": "AKBA",
+    "ratio": 1.0,
+    "exact": true
+   }
+  }
+ }
+}
