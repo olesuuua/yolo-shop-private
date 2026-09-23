@@ -1,0 +1,538 @@
+{
+  "video": "bd973609-16e0-480c-a5c5-08f68bb55b03-63a78026-13b9-4a4e-b4f1-59f8d84628bf-mp4.mp4",
+  "model": "yolov8n-oiv7.pt (openimages profile, Plastic bag id 394)",
+  "conf_threshold": 0.1,
+  "inference_size": 640,
+  "latency_ms": {
+    "n": 12,
+    "median": 31.0,
+    "min": 19.6,
+    "max": 443.1
+  },
+  "frames": [
+    {
+      "frame": 0,
+      "stage": "empty-table (control)",
+      "opening_640x480": null,
+      "latency_ms": 443.1,
+      "plastic_bag_detections": [],
+      "other_detections": [
+        {
+          "class": "Laptop",
+          "conf": 0.11,
+          "box": [
+            513.6,
+            0.6,
+            640.0,
+            240.9
+          ]
+        }
+      ],
+      "best_conf": null,
+      "best_box": null,
+      "opening_iou": null,
+      "center_error_px": null,
+      "bottom_edge_error_px": null,
+      "annotated": "stage_f0000.jpg"
+    },
+    {
+      "frame": 150,
+      "stage": "initial acquisition (bag entering, motion blur)",
+      "opening_640x480": null,
+      "latency_ms": 32.9,
+      "plastic_bag_detections": [],
+      "other_detections": [
+        {
+          "class": "Clothing",
+          "conf": 0.115,
+          "box": [
+            1.1,
+            1.6,
+            549.6,
+            480.0
+          ]
+        }
+      ],
+      "best_conf": null,
+      "best_box": null,
+      "opening_iou": null,
+      "center_error_px": null,
+      "bottom_edge_error_px": null,
+      "annotated": "stage_f0150.jpg"
+    },
+    {
+      "frame": 300,
+      "stage": "placement (hand spreading the bag)",
+      "opening_640x480": [
+        100,
+        170,
+        380,
+        370
+      ],
+      "latency_ms": 32.9,
+      "plastic_bag_detections": [],
+      "other_detections": [
+        {
+          "class": "Clothing",
+          "conf": 0.37,
+          "box": [
+            0.3,
+            127.8,
+            568.4,
+            479.7
+          ]
+        },
+        {
+          "class": "Bed",
+          "conf": 0.111,
+          "box": [
+            1.3,
+            0.9,
+            639.9,
+            480.0
+          ]
+        }
+      ],
+      "best_conf": null,
+      "best_box": null,
+      "opening_iou": null,
+      "center_error_px": null,
+      "bottom_edge_error_px": null,
+      "annotated": "stage_f0300.jpg"
+    },
+    {
+      "frame": 600,
+      "stage": "placement settling (hand at rim)",
+      "opening_640x480": [
+        125,
+        155,
+        375,
+        375
+      ],
+      "latency_ms": 33.3,
+      "plastic_bag_detections": [
+        {
+          "class": "Plastic bag",
+          "conf": 0.133,
+          "box": [
+            47.3,
+            153.5,
+            398.3,
+            479.4
+          ]
+        }
+      ],
+      "other_detections": [
+        {
+          "class": "Computer keyboard",
+          "conf": 0.313,
+          "box": [
+            0.0,
+            0.0,
+            114.8,
+            69.1
+          ]
+        },
+        {
+          "class": "Clothing",
+          "conf": 0.144,
+          "box": [
+            48.4,
+            154.7,
+            395.4,
+            479.3
+          ]
+        }
+      ],
+      "best_conf": 0.133,
+      "best_box": [
+        47.3,
+        153.5,
+        398.3,
+        479.4
+      ],
+      "opening_iou": 0.481,
+      "center_error_px": 58.2,
+      "bottom_edge_error_px": 104.4,
+      "annotated": "stage_f0600.jpg"
+    },
+    {
+      "frame": 750,
+      "stage": "stable open bag, no hand",
+      "opening_640x480": [
+        115,
+        165,
+        415,
+        375
+      ],
+      "latency_ms": 30.5,
+      "plastic_bag_detections": [
+        {
+          "class": "Plastic bag",
+          "conf": 0.161,
+          "box": [
+            73.4,
+            144.3,
+            485.6,
+            457.0
+          ]
+        }
+      ],
+      "other_detections": [
+        {
+          "class": "Computer keyboard",
+          "conf": 0.205,
+          "box": [
+            1.2,
+            0.0,
+            148.4,
+            59.4
+          ]
+        }
+      ],
+      "best_conf": 0.161,
+      "best_box": [
+        73.4,
+        144.3,
+        485.6,
+        457.0
+      ],
+      "opening_iou": 0.489,
+      "center_error_px": 33.9,
+      "bottom_edge_error_px": 82.0,
+      "annotated": "stage_f0750.jpg"
+    },
+    {
+      "frame": 900,
+      "stage": "stable open bag, no hand",
+      "opening_640x480": [
+        120,
+        160,
+        420,
+        380
+      ],
+      "latency_ms": 29.1,
+      "plastic_bag_detections": [],
+      "other_detections": [
+        {
+          "class": "Person",
+          "conf": 0.251,
+          "box": [
+            464.6,
+            0.3,
+            640.0,
+            480.0
+          ]
+        },
+        {
+          "class": "Clothing",
+          "conf": 0.249,
+          "box": [
+            556.0,
+            85.0,
+            640.0,
+            477.0
+          ]
+        },
+        {
+          "class": "Footwear",
+          "conf": 0.241,
+          "box": [
+            459.6,
+            0.0,
+            543.3,
+            132.6
+          ]
+        },
+        {
+          "class": "Clothing",
+          "conf": 0.241,
+          "box": [
+            113.7,
+            176.5,
+            513.2,
+            479.5
+          ]
+        },
+        {
+          "class": "Computer keyboard",
+          "conf": 0.185,
+          "box": [
+            43.1,
+            0.0,
+            190.7,
+            79.9
+          ]
+        },
+        {
+          "class": "Bed",
+          "conf": 0.103,
+          "box": [
+            101.8,
+            173.9,
+            518.8,
+            479.3
+          ]
+        }
+      ],
+      "best_conf": null,
+      "best_box": null,
+      "opening_iou": null,
+      "center_error_px": null,
+      "bottom_edge_error_px": null,
+      "annotated": "stage_f0900.jpg"
+    },
+    {
+      "frame": 1050,
+      "stage": "product entering (hand + water bottle)",
+      "opening_640x480": [
+        125,
+        155,
+        475,
+        415
+      ],
+      "latency_ms": 29.7,
+      "plastic_bag_detections": [
+        {
+          "class": "Plastic bag",
+          "conf": 0.186,
+          "box": [
+            121.7,
+            145.8,
+            556.7,
+            478.5
+          ]
+        }
+      ],
+      "other_detections": [
+        {
+          "class": "Clothing",
+          "conf": 0.294,
+          "box": [
+            122.7,
+            147.1,
+            547.2,
+            478.4
+          ]
+        }
+      ],
+      "best_conf": 0.186,
+      "best_box": [
+        121.7,
+        145.8,
+        556.7,
+        478.5
+      ],
+      "opening_iou": 0.629,
+      "center_error_px": 47.7,
+      "bottom_edge_error_px": 63.5,
+      "annotated": "stage_f1050.jpg"
+    },
+    {
+      "frame": 1200,
+      "stage": "product inside (water bottle lying in bag)",
+      "opening_640x480": [
+        90,
+        100,
+        490,
+        425
+      ],
+      "latency_ms": 30.6,
+      "plastic_bag_detections": [
+        {
+          "class": "Plastic bag",
+          "conf": 0.392,
+          "box": [
+            69.7,
+            100.1,
+            578.3,
+            459.8
+          ]
+        }
+      ],
+      "other_detections": [
+        {
+          "class": "Clothing",
+          "conf": 0.107,
+          "box": [
+            89.9,
+            100.6,
+            576.6,
+            457.7
+          ]
+        }
+      ],
+      "best_conf": 0.392,
+      "best_box": [
+        69.7,
+        100.1,
+        578.3,
+        459.8
+      ],
+      "opening_iou": 0.71,
+      "center_error_px": 38.2,
+      "bottom_edge_error_px": 34.8,
+      "annotated": "stage_f1200.jpg"
+    },
+    {
+      "frame": 1350,
+      "stage": "product entering (second bottle, cola)",
+      "opening_640x480": [
+        125,
+        90,
+        475,
+        390
+      ],
+      "latency_ms": 19.6,
+      "plastic_bag_detections": [],
+      "other_detections": [
+        {
+          "class": "Person",
+          "conf": 0.19,
+          "box": [
+            144.2,
+            112.4,
+            635.6,
+            479.6
+          ]
+        },
+        {
+          "class": "Clothing",
+          "conf": 0.117,
+          "box": [
+            131.9,
+            60.6,
+            621.6,
+            447.6
+          ]
+        },
+        {
+          "class": "Clothing",
+          "conf": 0.11,
+          "box": [
+            423.8,
+            279.5,
+            639.7,
+            480.0
+          ]
+        }
+      ],
+      "best_conf": null,
+      "best_box": null,
+      "opening_iou": null,
+      "center_error_px": null,
+      "bottom_edge_error_px": null,
+      "annotated": "stage_f1350.jpg"
+    },
+    {
+      "frame": 1500,
+      "stage": "stable, two bottles inside",
+      "opening_640x480": [
+        125,
+        85,
+        475,
+        385
+      ],
+      "latency_ms": 35.6,
+      "plastic_bag_detections": [],
+      "other_detections": [
+        {
+          "class": "Clothing",
+          "conf": 0.135,
+          "box": [
+            90.5,
+            72.3,
+            569.5,
+            464.0
+          ]
+        },
+        {
+          "class": "Person",
+          "conf": 0.125,
+          "box": [
+            477.4,
+            329.1,
+            632.7,
+            479.7
+          ]
+        }
+      ],
+      "best_conf": null,
+      "best_box": null,
+      "opening_iou": null,
+      "center_error_px": null,
+      "bottom_edge_error_px": null,
+      "annotated": "stage_f1500.jpg"
+    },
+    {
+      "frame": 1650,
+      "stage": "hand obstruction (gathering the bag)",
+      "opening_640x480": null,
+      "latency_ms": 31.0,
+      "plastic_bag_detections": [],
+      "other_detections": [
+        {
+          "class": "Clothing",
+          "conf": 0.215,
+          "box": [
+            179.1,
+            0.6,
+            636.5,
+            480.0
+          ]
+        },
+        {
+          "class": "Person",
+          "conf": 0.153,
+          "box": [
+            177.3,
+            0.0,
+            635.7,
+            480.0
+          ]
+        },
+        {
+          "class": "Rose",
+          "conf": 0.144,
+          "box": [
+            177.7,
+            0.0,
+            637.7,
+            480.0
+          ]
+        }
+      ],
+      "best_conf": null,
+      "best_box": null,
+      "opening_iou": null,
+      "center_error_px": null,
+      "bottom_edge_error_px": null,
+      "annotated": "stage_f1650.jpg"
+    },
+    {
+      "frame": 1800,
+      "stage": "bag movement (gathered, opening collapsed)",
+      "opening_640x480": null,
+      "latency_ms": 29.1,
+      "plastic_bag_detections": [],
+      "other_detections": [
+        {
+          "class": "Clothing",
+          "conf": 0.422,
+          "box": [
+            123.6,
+            2.6,
+            452.0,
+            464.3
+          ]
+        }
+      ],
+      "best_conf": null,
+      "best_box": null,
+      "opening_iou": null,
+      "center_error_px": null,
+      "bottom_edge_error_px": null,
+      "annotated": "stage_f1800.jpg"
+    }
+  ]
+}
