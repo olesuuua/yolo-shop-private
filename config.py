@@ -183,6 +183,16 @@ BAG_GRACE_PERIOD_S = 2.0
 # Calibrated on the bag video: mask-rim flicker from a reaching hand carved
 # ~20 px, while genuine removals travel much farther.
 BAG_RIM_MARGIN_PX = 16.0
+# Bag-self suppression: a product box covering this fraction of the locked
+# footprint while itself lying this fraction inside is the bag, not a
+# product (live blue-bag scene: false Storage box scored ~0.9/~0.95).
+BAG_SELF_FOOT_FRAC = 0.55
+BAG_SELF_BOX_FRAC = 0.50
+# "Packing..." pending state for items hidden mid-insertion (e.g. by a
+# hand): a reliably-outside track that vanishes at the bag boundary waits
+# this many processed frames (~2 s at the measured ~1.75 processed fps).
+# Reappearance outside cancels; expiry counts the item once.
+PENDING_PACK_FRAMES = 4
 MIN_OUTSIDE_FRAMES = 3
 MIN_INSIDE_FRAMES = 3
 TRACK_TTL_FRAMES = 60

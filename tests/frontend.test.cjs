@@ -23,6 +23,8 @@ async function controller(url = "") {
   const requests = [];
   const revoked = [];
   const timeouts = [];
+  const mediaCalls = [];
+  const mediaNext = [];
   const mediaRequest = deferred();
   const track = { stopped: false, stop() { this.stopped = true; } };
   const media = { getTracks: () => [track] };
@@ -78,7 +80,14 @@ async function controller(url = "") {
       }
     },
     window: { addEventListener() {} },
-    navigator: { mediaDevices: { getUserMedia: () => mediaRequest.promise } },
+    navigator: { mediaDevices: { getUserMedia: (constraints) => {
+      mediaCalls.push(constraints);
+      if (mediaNext.length) {
+        const next = mediaNext.shift();
+        return next && next.reject ? Promise.reject(next.reject) : Promise.resolve(media);
+      }
+      return mediaRequest.promise;
+    } } },
     location: { protocol: "http:", host: "localhost:8000", search: url },
     WebSocket: Socket, HTMLMediaElement: { HAVE_CURRENT_DATA: 2 },
     fetch(url) {
@@ -102,6 +111,7 @@ async function controller(url = "") {
   await context.loadSession();
   return {
     context, elements, captures, created, sockets, requests, mediaRequest, media, track, revoked, timeouts,
+    mediaCalls, mediaNext,
     fireTimeouts(ms = null) {
       for (const timer of timeouts.filter(t => ms == null || t.ms === ms)) {
         const index = timeouts.indexOf(timer);
@@ -710,4 +720,29 @@ test("detection continues while a crop is pending", async () => {
   assert.equal(sentDetectionFrames(socket).length, 2);
   cropEncode(new Blob(["jpeg"])); // the crop finishes encoding after it
   assert.equal((await parseEnvelope(socket.sent.at(-1))).header.request_id, "1:7:1");
+});
+
+test("camera prefers 1920x1080 16:9 and reports the selected resolution", async () => {
+  const app = await controller();
+  app.camera().videoWidth = 1920; app.camera().videoHeight = 1080;
+  const socket = await app.connect();
+  assert.ok(app.mediaCalls.length >= 1);
+  const first = app.mediaCalls[0];
+  assert.equal(first.video.width && first.video.width.ideal, 1920);
+  assert.equal(first.video.height && first.video.height.ideal, 1080);
+  assert.equal(first.video.aspectRatio && first.video.aspectRatio.ideal, 16 / 9);
+  assert.equal(app.elements.get("cameraInfo").textContent, "Camera 1920×1080");
+  socket.close();
+});
+
+test("camera falls back through constraint sets on rejection", async () => {
+  const app = await controller();
+  const overconstrained = Object.assign(new Error("no match"), { name: "OverconstrainedError" });
+  app.mediaNext.push({ reject: overconstrained }, { reject: overconstrained });
+  app.camera().videoWidth = 1280; app.camera().videoHeight = 960;
+  const socket = await app.connect();
+  assert.ok(app.mediaCalls.length >= 3);
+  assert.equal(app.mediaCalls[0].video.width.ideal, 1920);
+  assert.equal(app.elements.get("cameraInfo").textContent, "Camera 1280×960");
+  socket.close();
 });

@@ -23,6 +23,7 @@ const packedTotal = document.getElementById("packedTotal");
 const packedCounts = document.getElementById("packedCounts");
 const lastEvent = document.getElementById("lastEvent");
 const modelInfo = document.getElementById("modelInfo");
+const cameraInfo = document.getElementById("cameraInfo");
 const bagStatus = document.getElementById("bagStatus");
 const identList = document.getElementById("identList");
 const identReadiness = document.getElementById("identReadiness");
@@ -433,10 +434,11 @@ function renderSession(response) {
   sessionVersion = response.session_version;
   if (response.inference_device) inferenceDevice = response.inference_device;
   if (response.model_label) modelInfo.textContent = response.model_label;
-  renderCounts(response.packed_counts || {}, packedTotal, packedCounts, "Nothing packed yet");
+  renderCounts(response.packed_display_counts || response.packed_counts || {}, packedTotal, packedCounts, "Nothing packed yet");
   const event = response.last_event;
+  const eventName = event ? (event.display_name || event.class_name) : null;
   lastEvent.textContent = event
-    ? `Last packed: ${event.class_name} #${event.track_id} · ${new Date(event.timestamp).toLocaleTimeString()}`
+    ? `Last packed: ${eventName} · ${new Date(event.timestamp).toLocaleTimeString()}`
     : "Waiting for a transfer";
   if (bagStatus) {
     const bag = response.bag_zone;
@@ -488,20 +490,33 @@ async function start() {
       throw new Error("Camera access requires localhost or HTTPS.");
     }
     setStatus("Requesting camera permission...");
+    // Prefer the phone's full 1920x1080 16:9 feed (ideal never rejects;
+    // the browser picks the closest match) with a safe fallback chain.
+    // Detection still uploads 640x480; the retained full-resolution grab
+    // (and therefore OCR crops) gains the extra pixels automatically.
+    const cameraAttempts = [
+      { video: { width: { ideal: 1920 }, height: { ideal: 1080 }, aspectRatio: { ideal: 16 / 9 }, facingMode: { ideal: "environment" } }, audio: false },
+      { video: { width: { ideal: 1920 }, height: { ideal: 1080 }, facingMode: { ideal: "environment" } }, audio: false },
+      { video: { facingMode: { ideal: "environment" } }, audio: false },
+      { video: true, audio: false },
+    ];
     let acquiredStream = null;
-    try {
-      acquiredStream = await navigator.mediaDevices.getUserMedia({
-        video: { width: { ideal: 1280 }, height: { ideal: 960 }, facingMode: { ideal: "environment" } },
-        audio: false
-      });
-    } catch (error) {
-      // Single-camera laptops often reject the facing-mode constraint; retry plainly.
-      if (error && (error.name === "OverconstrainedError" || error.name === "NotFoundError")) {
-        acquiredStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
-      } else {
-        throw error;
+    let lastError = null;
+    for (const attempt of cameraAttempts) {
+      try {
+        acquiredStream = await navigator.mediaDevices.getUserMedia(attempt);
+        lastError = null;
+        break;
+      } catch (error) {
+        lastError = error;
+        // Hard constraint failures fall through to the next attempt;
+        // anything else (permission denied, no device) aborts loudly.
+        if (!(error && (error.name === "OverconstrainedError" || error.name === "NotFoundError"))) {
+          throw error;
+        }
       }
     }
+    if (!acquiredStream) throw lastError || new Error("Could not acquire the camera.");
     if (generation !== connectionGeneration) {
       acquiredStream.getTracks().forEach((track) => track.stop());
       return;
@@ -516,6 +531,11 @@ async function start() {
         setTimeout(() => reject(new Error("Camera did not start producing frames.")), 10000)
       ),
     ]);
+    // Report the dimensions Chrome actually selected: the detection path
+    // stays 640x480, but retained OCR crops follow this resolution.
+    if (cameraInfo && camera.videoWidth > 0 && camera.videoHeight > 0) {
+      cameraInfo.textContent = `Camera ${camera.videoWidth}×${camera.videoHeight}`;
+    }
     if (generation !== connectionGeneration) return;
     } else {
       if (!videoUrl) throw new Error("Select a playable local video first.");
@@ -536,7 +556,7 @@ async function start() {
       if (socket !== connection) return;
       running = true;
       if (isVideo()) startButton.disabled = false;
-      setStatus("Connected. Move products into the yellow bag zone.");
+      setStatus("Connected. Move products into the bag outline.");
       if (isVideo()) resetSession().then(ok => { if (ok) playVideo(); }); else sendNextFrame();
     };
     connection.onmessage = (event) => {

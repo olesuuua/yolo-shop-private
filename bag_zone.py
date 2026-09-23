@@ -189,6 +189,38 @@ def grid_iou(a: np.ndarray, b: np.ndarray) -> float:
     return float(np.logical_and(a, b).sum()) / float(union) if union else 0.0
 
 
+def box_footprint_fractions(bbox, grid: np.ndarray) -> tuple[float, float]:
+    """(footprint_fraction, box_fraction) of the box∩footprint area.
+
+    ``footprint_fraction`` is large only for bag-sized boxes sitting on the
+    bag; contained products cover a small part of the footprint.
+    ``box_fraction`` additionally requires the box itself to lie mostly
+    inside, so big neighboring items are never mistaken for the bag.
+    """
+    try:
+        x1, y1, x2, y2 = (float(v) for v in bbox)
+    except (TypeError, ValueError):
+        return (0.0, 0.0)
+    box_area = max(0.0, x2 - x1) * max(0.0, y2 - y1)
+    foot_area = float(grid.sum()) * (640.0 / GRID_WIDTH) * (480.0 / GRID_HEIGHT)
+    if box_area <= 0 or foot_area <= 0:
+        return (0.0, 0.0)
+    inter = box_overlap_fraction(bbox, grid) * box_area
+    return (inter / foot_area, inter / box_area)
+
+
+def is_bag_self(bbox, grid: np.ndarray,
+                foot_frac: float = 0.55, box_frac: float = 0.5) -> bool:
+    """True when a product box is really the bag itself.
+
+    Calibrated on the live blue-bag scene: the false `Storage box` box
+    covering the bag scores footprint≈0.9/box≈0.95, while genuine products
+    beside it score ≈0 on at least one ratio.
+    """
+    f_foot, f_box = box_footprint_fractions(bbox, grid)
+    return f_foot >= foot_frac and f_box >= box_frac
+
+
 def _sample_grid(grid: np.ndarray, x: float, y: float) -> bool:
     gx = min(GRID_WIDTH - 1, max(0, int(x * GRID_WIDTH / 640.0)))
     gy = min(GRID_HEIGHT - 1, max(0, int(y * GRID_HEIGHT / 480.0)))

@@ -8,7 +8,8 @@ from typing import Iterable
 
 from config import (
     BAG_OVERLAP_THRESHOLD, BAG_ROI, FOOD_CLASSES,
-    MIN_INSIDE_FRAMES, MIN_OUTSIDE_FRAMES, TRACK_TTL_FRAMES,
+    MIN_INSIDE_FRAMES, MIN_OUTSIDE_FRAMES, PENDING_PACK_FRAMES,
+    TRACK_TTL_FRAMES,
 )
 
 BBox = tuple[float, float, float, float]
@@ -22,6 +23,12 @@ def bbox_area(bbox: BBox) -> float:
 def bbox_center(bbox: BBox) -> tuple[float, float]:
     x1, y1, x2, y2 = bbox
     return (x1 + x2) / 2, (y1 + y2) / 2
+
+
+def _center_distance(a: BBox, b: BBox) -> float:
+    ax, ay = bbox_center(a)
+    bx, by = bbox_center(b)
+    return ((ax - bx) ** 2 + (ay - by) ** 2) ** 0.5
 
 
 def intersection_area(bbox: BBox, roi: BBox = BAG_ROI) -> float:
@@ -71,6 +78,9 @@ class TrackState:
     # geometry change invalidates it: the product must be seen outside the
     # NEW zone before any inside streak can count.
     outside_zone_version: int = -1
+    # "Packing..." watch: processed frame when a reliably-outside track
+    # vanished at the bag boundary (None = not pending).
+    pending_since: int | None = None
 
 
 class PackingTracker:
@@ -81,6 +91,7 @@ class PackingTracker:
         track_ttl_frames: int = TRACK_TTL_FRAMES,
         min_outside_frames: int = MIN_OUTSIDE_FRAMES,
         zone_test=None,
+        pending_pack_frames: int = PENDING_PACK_FRAMES,
     ):
         if not all(isfinite(v) for v in roi) or bbox_area(roi) <= 0:
             raise ValueError("ROI must be a finite rectangle with positive area.")
@@ -102,13 +113,17 @@ class PackingTracker:
         # under the current version.
         self.zone_version = -1
         self.packing_paused = False
+        if pending_pack_frames < 1:
+            raise ValueError("Pending-pack window must be positive.")
+        self.pending_pack_frames = pending_pack_frames
         self.reset()
 
     def set_packing_paused(self, paused: bool) -> None:
         """Freeze new packing confirmations (bag moving/lost/locating).
 
-        Outside observations still accrue; inside streaks cannot advance
-        while paused, so a zone jump alone can never manufacture an event.
+        While paused, sightings refresh geometry/recency but all transfer
+        evidence — including "Packing..." watches — is frozen: nothing
+        advances, expires, or fires until packing resumes.
         """
         self.packing_paused = bool(paused)
 
@@ -126,6 +141,35 @@ class PackingTracker:
             state.outside_frames = 0
             state.seen_outside = False
             state.outside_zone_version = -1
+            state.pending_since = None
+
+    def _pack_once(self, state: TrackState, events: list) -> None:
+        """Count one packed item for a track (normal, pending, or merged)."""
+        state.packed = True
+        state.pending_since = None
+        self.packed_ids.add(state.track_id)
+        self.packed_counts[state.class_name] += 1
+        event = {
+            "track_id": state.track_id,
+            "class_name": state.class_name,
+            "event": "packed",
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "frame_number": self.frame_number,
+        }
+        self.packed_events.append(event)
+        events.append(event.copy())
+
+    def _clearly_outside(self, bbox: BBox) -> bool:
+        """True only when the box is well clear of the packing zone."""
+        if self.zone_test is not None:
+            try:
+                clearly_outside = getattr(self.zone_test, "clearly_outside", None)
+                if clearly_outside is not None:
+                    return bool(clearly_outside(bbox))
+                return not bool(self.zone_test(bbox))
+            except Exception:
+                return False
+        return not is_inside_bag(bbox, self.roi, self.overlap_threshold)
 
     def reset(self) -> None:
         self.frame_number = 0
@@ -158,15 +202,9 @@ class PackingTracker:
                     inside = bool(self.zone_test(detection.bbox))
                 except Exception:
                     inside = False
-                try:
-                    clearly_outside = getattr(self.zone_test, "clearly_outside", None)
-                    outside = bool(clearly_outside(detection.bbox)) \
-                        if clearly_outside is not None else not inside
-                except Exception:
-                    outside = not inside
             else:
                 inside = is_inside_bag(detection.bbox, self.roi, self.overlap_threshold)
-                outside = not inside
+            outside = self._clearly_outside(detection.bbox)
             state = self.tracks.get(detection.track_id)
             if state is None:
                 state = TrackState(
@@ -178,6 +216,18 @@ class PackingTracker:
                     last_seen_frame=self.frame_number,
                 )
                 self.tracks[detection.track_id] = state
+                if inside and not state.packed and not self.packing_paused:
+                    # Tracking-ID change mid-insertion: a new ID appearing
+                    # inside next to a pending same-class track is the same
+                    # physical item — count it once under the new ID.
+                    for pending in self.tracks.values():
+                        if (pending.pending_since is not None
+                                and pending.class_name == state.class_name
+                                and not pending.packed
+                                and _center_distance(pending.last_bbox, state.last_bbox) < 120.0):
+                            pending.pending_since = None
+                            self._pack_once(state, events)
+                            break
 
             # Gaps and boundary jitter cannot count as stable transfer evidence.
             if self.frame_number - state.last_seen_frame > 1:
@@ -192,6 +242,19 @@ class PackingTracker:
                 state.was_inside_roi = inside
                 state.last_seen_frame = self.frame_number
                 continue
+            if state.pending_since is not None and not state.packed:
+                if outside:
+                    # Reappeared clearly outside: it never went in; cancel.
+                    state.pending_since = None
+                elif inside:
+                    # Reappeared inside after vanishing at the boundary:
+                    # the hidden transfer completed while unseen.
+                    self._pack_once(state, events)
+                    state.last_bbox = detection.bbox
+                    state.was_inside_roi = True
+                    state.last_seen_frame = self.frame_number
+                    continue
+                # Rim band: keep waiting, accrue nothing meanwhile.
             if outside:
                 state.outside_frames += 1
                 if state.outside_frames >= self.min_outside_frames:
@@ -211,27 +274,30 @@ class PackingTracker:
             if inside and state.seen_outside and outside_current and not state.packed:
                 state.inside_frames += 1
                 if state.inside_frames >= self.min_inside_frames:
-                    state.packed = True
-                    self.packed_ids.add(state.track_id)
-                    self.packed_counts[state.class_name] += 1
-                    event = {
-                        "track_id": state.track_id,
-                        "class_name": state.class_name,
-                        "event": "packed",
-                        "timestamp": datetime.now(timezone.utc).isoformat(),
-                        "frame_number": self.frame_number,
-                    }
-                    self.packed_events.append(event)
-                    events.append(event.copy())
+                    self._pack_once(state, events)
 
             state.last_bbox = detection.bbox
             state.was_inside_roi = inside
             state.last_seen_frame = self.frame_number
 
         for track_id, state in self.tracks.items():
-            if track_id not in seen_ids and not self.packing_paused:
-                state.inside_frames = 0
-                state.outside_frames = 0
+            if track_id in seen_ids or self.packing_paused:
+                continue
+            if state.packed or state.pending_since is not None:
+                if (state.pending_since is not None
+                        and self.frame_number - state.pending_since >= self.pending_pack_frames):
+                    # Hidden the whole wait: the boundary disappearance was
+                    # a completed transfer.
+                    self._pack_once(state, events)
+                continue
+            if state.seen_outside and not self._clearly_outside(state.last_bbox):
+                # Reliably outside, vanished at the boundary (hand
+                # occlusion): watch briefly instead of dropping the trail.
+                # Vanishing while clearly outside starts no watch.
+                state.pending_since = self.frame_number
+                continue
+            state.inside_frames = 0
+            state.outside_frames = 0
         return events
 
     def snapshot(self) -> dict:

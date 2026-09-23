@@ -9,8 +9,9 @@ import unittest
 import numpy as np
 
 from bag_zone import (
-    BagZoneTracker, NoZone, ZoneTest, box_overlap_fraction, fill_footprint,
-    grid_iou, motion_energy, rasterize,
+    BagZoneTracker, NoZone, ZoneTest, box_footprint_fractions,
+    box_overlap_fraction, fill_footprint, grid_iou, is_bag_self,
+    motion_energy, rasterize,
 )
 from tracking import Detection, PackingTracker
 
@@ -84,6 +85,25 @@ class FootprintTest(unittest.TestCase):
         grid[30:90, 40:120] = 1
         self.assertEqual(grid_iou(grid, grid.copy()), 1.0)
         self.assertEqual(grid_iou(grid, np.zeros_like(grid)), 0.0)
+
+    def test_bag_self_suppression(self):
+        # Footprint block gx 40-120 / gy 30-90 in the 160x120 grid, i.e.
+        # pixels x 160-480, y 120-360 (a bag-sized area).
+        grid = np.zeros((120, 160), np.uint8)
+        grid[30:90, 40:120] = 1
+        # Bag-sized box sitting on the footprint (live false Storage box).
+        self.assertTrue(is_bag_self((160, 120, 480, 360), grid))
+        # Genuine small product fully inside the footprint.
+        self.assertFalse(is_bag_self((300, 200, 360, 280), grid))
+        # Genuine product beside the footprint.
+        self.assertFalse(is_bag_self((10, 100, 140, 300), grid))
+        # Huge box extending far beyond: mostly not the bag.
+        self.assertFalse(is_bag_self((100, 60, 600, 420), grid))
+        # Degenerate input never suppresses.
+        self.assertFalse(is_bag_self((0, 0, 0, 0), grid))
+        foot, box = box_footprint_fractions((160, 120, 480, 360), grid)
+        self.assertGreaterEqual(foot, 0.55)
+        self.assertGreaterEqual(box, 0.5)
 
     def test_rim_hysteresis(self):
         grid = np.zeros((120, 160), np.uint8)
@@ -485,6 +505,78 @@ class DynamicPipelineTest(unittest.TestCase):
         self.assertTrue(response["bag_zone"]["packing_paused"])
         self.assertEqual(response["packed_total"], 1)
         self.assertEqual(response["events"], [])
+
+    def test_packed_display_names_without_catalog_match(self):
+        from tracking import Detection as TrackDetection
+        from vision import FrameProcessor, generic_packed_name
+
+        self.assertEqual(generic_packed_name("Bottle"), "Unidentified bottle")
+        self.assertEqual(generic_packed_name("Canned"), "Unidentified can")
+        self.assertEqual(generic_packed_name("Storage box"), "Unidentified box")
+        self.assertEqual(generic_packed_name("Apple"), "Apple")
+
+        from config import FOOD_CLASSES
+
+        names = {i: name for i, name in enumerate(sorted(FOOD_CLASSES))}
+
+        class StubModel:
+            def __init__(self):
+                self.names = names
+
+        class StubIdent:
+            def __init__(self):
+                self.entries = {}
+
+            def snapshot(self):
+                return dict(self.entries)
+
+        ident = StubIdent()
+        processor = FrameProcessor(StubModel(), identifier=ident, bag_zone=None)
+        # No catalog match anywhere: a plain detector-class transfer counts.
+        for _ in range(3):
+            processor.tracker.update([TrackDetection(7, "Bottle", (40.0, 40.0, 100.0, 100.0))])
+        for _ in range(3):
+            processor.tracker.update([TrackDetection(7, "Bottle", (300.0, 220.0, 340.0, 260.0))])
+        snapshot = processor.snapshot()
+        self.assertEqual(snapshot["packed_total"], 1)
+        self.assertEqual(snapshot["packed_counts"], {"Bottle": 1})
+        self.assertEqual(snapshot["packed_display_counts"], {"Unidentified bottle": 1})
+        self.assertEqual(snapshot["last_event"]["display_name"], "Unidentified bottle")
+        # OCR evidence completes later: the row is renamed, not recounted.
+        ident.entries = {7: {"complete": True, "label_main": "Dobryi Cola 0,5"}}
+        snapshot = processor.snapshot()
+        self.assertEqual(snapshot["packed_total"], 1)
+        self.assertEqual(snapshot["packed_display_counts"], {"Dobryi Cola 0,5": 1})
+        # The track is pruned once hidden, but the recognized name sticks.
+        ident.entries = {}
+        snapshot = processor.snapshot()
+        self.assertEqual(snapshot["packed_display_counts"], {"Dobryi Cola 0,5": 1})
+        self.assertEqual(snapshot["packed_total"], 1)
+
+    def test_bag_sized_box_suppressed_genuine_products_kept(self):
+        import cv2
+
+        script = [disc_mask(320, 240, 120)] * 30
+        processor, model, bottle_id, jpeg = self._processor(script)
+        for _ in range(3):  # lock the zone on the disc footprint
+            model.rows = []
+            response = processor.process_detect(jpeg)
+        self.assertEqual(response["bag_zone"]["status"], "stable")
+        names = model.names
+        storage_id = next(i for i, n in names.items() if n == "Storage box")
+        bag_sized = (200.0, 120.0, 440.0, 360.0)  # covers most of the disc
+        small_inside = (300.0, 220.0, 340.0, 260.0)
+        beside = (40.0, 40.0, 100.0, 100.0)
+        model.rows = [(bag_sized, storage_id, 21),
+                      (small_inside, bottle_id, 22),
+                      (beside, bottle_id, 23)]
+        response = processor.process_detect(jpeg)
+        track_ids = {t["track_id"] for t in response["tracks"]}
+        self.assertNotIn(21, track_ids)  # the bag itself: no track, no OCR
+        self.assertIn(22, track_ids)  # genuine item inside: kept
+        self.assertIn(23, track_ids)  # genuine item beside: kept
+        self.assertEqual(response["suppressed_bag_self"], 1)
+        self.assertEqual(response["visible_counts"].get("Storage box", 0), 0)
 
 
 if __name__ == "__main__":

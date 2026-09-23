@@ -208,6 +208,21 @@ def parse_client_message(data: bytes):
     return ("crop", header, raw[10 + header_len:])
 
 
+def generic_packed_name(class_name: str) -> str:
+    """Audience display name for a packed item with no catalog match.
+
+    Packing never requires identification: the detector class alone counts.
+    Apples need only their name; everything else reads as unidentified
+    until OCR evidence establishes the product name.
+    """
+    return {
+        "Bottle": "Unidentified bottle",
+        "Canned": "Unidentified can",
+        "Storage box": "Unidentified box",
+        "Apple": "Apple",
+    }.get(class_name, f"Unidentified {class_name.lower()}")
+
+
 def ident_label(info) -> tuple:
     """Audience overlay labels anchored to the tracked box.
 
@@ -228,34 +243,56 @@ def ident_label(info) -> tuple:
     return ("Reading label…", "")
 
 
+def pending_tracks(tracker) -> list:
+    """Tracks currently in the "Packing..." watch (hidden at the boundary)."""
+    pendings = []
+    for track_id, state in tracker.tracks.items():
+        if state.pending_since is None or state.packed:
+            continue
+        pendings.append({
+            "track_id": track_id, "class_name": state.class_name,
+            "bbox": [float(v) for v in state.last_bbox],
+        })
+    return pendings
+
+
 def annotate_frame(frame, detections, tracker, identification=None,
                    bag_zone=None, bag_mode="fixed"):
     identification = identification or {}
-    for detection in detections:
+    for index, detection in enumerate(detections):
         state = tracker.tracks.get(detection.track_id)
         if state is None:
             continue
         color = (90, 220, 100) if state.packed else (255, 185, 70)
         x1, y1, x2, y2 = map(int, detection.bbox)
         cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
+        # Cascade stacked labels so neighboring tracks stay readable.
+        shift = (index % 4) * 26
         label = f"{state.class_name} #{state.track_id}"
         if state.packed:
             label += " PACKED"
         elif state.inside_frames:
             label += f" entering {state.inside_frames}/{tracker.min_inside_frames}"
-        draw_label(frame, label, (max(2, x1), max(70, y1 - 60)), color)
+        draw_label(frame, label, (max(2, x1), max(70, y1 - 60 - shift)), color)
         info = identification.get(detection.track_id)
         if info is not None:
             # Human-readable name + size sits directly above the box; the
             # qualifier line stacks above it, under the class label, so no
             # label is hidden behind the bottle or the frame edge.
             main, sub = ident_label(info)
-            draw_label(frame, main, (max(2, x1), max(18, y1 - 8)),
+            draw_label(frame, main, (max(2, x1), max(18, y1 - 8 - shift)),
                        (140, 220, 255), scale=0.55)
             if sub:
-                draw_label(frame, sub, (max(2, x1), max(44, y1 - 34)),
+                draw_label(frame, sub, (max(2, x1), max(44, y1 - 34 - shift)),
                            (120, 255, 140) if sub == "Recognized"
                            else (250, 215, 140), scale=0.5)
+    # "Packing..." watches: item hidden at the boundary, single clean label
+    # at its last position.
+    for pending in pending_tracks(tracker):
+        px1, py1, px2, py2 = map(int, pending["bbox"])
+        cv2.rectangle(frame, (px1, py1), (px2, py2), (250, 215, 140), 2)
+        draw_label(frame, f"{pending['class_name']} Packing...",
+                   (max(2, px1), max(70, py1 - 60)), (250, 215, 140))
 
     x1, y1, x2, y2 = map(int, tracker.roi)
     if bag_mode == "dynamic" and bag_zone is not None:
@@ -341,6 +378,9 @@ class FrameProcessor:
         if self.bag_zone is not None:
             self.tracker.zone_test = self.bag_zone.zone_test
             self.tracker.set_packing_paused(self.bag_zone.packing_paused)
+        # Recognized names for packed tracks (track_id -> display string).
+        # Counts live in the tracker; this cache only renames their rows.
+        self.packed_labels = {}
         self.lock = Lock()
         self.session_version = 0
         self.frame_times = deque(maxlen=30)
@@ -407,6 +447,7 @@ class FrameProcessor:
     def reset(self) -> dict:
         with self.lock:
             self.tracker.reset()
+            self.packed_labels = {}
             if self.bag_zone is not None:
                 self.bag_zone.reset()
                 self.tracker.zone_test = self.bag_zone.zone_test
@@ -471,7 +512,45 @@ class FrameProcessor:
         }
         if self.bag_zone is not None:
             snapshot["bag_zone"] = self.bag_zone.snapshot()
+        display_counts, last_display = self._packed_display()
+        snapshot["packed_display_counts"] = display_counts
+        if last_display is not None:
+            snapshot["last_event"] = last_display
         return snapshot
+
+    def _packed_display(self) -> tuple:
+        """Audience names for packed items, without touching their counts.
+
+        Each packed event counts exactly once under its detector class. The
+        displayed name starts generic ("Unidentified bottle") and upgrades
+        to the recognized product name when OCR evidence completes — the
+        cached label survives track pruning so a late recognition still
+        renames the packed row instead of adding a new count.
+        """
+        identification = {}
+        if self.identifier is not None:
+            try:
+                identification = self.identifier.snapshot()
+            except Exception:
+                logger.exception("Packed display labels unavailable.")
+        for event in self.tracker.packed_events:
+            track_id = event["track_id"]
+            info = identification.get(track_id)
+            if (isinstance(info, dict) and info.get("complete")
+                    and str(info.get("label_main") or "").strip()):
+                self.packed_labels[track_id] = str(info["label_main"]).strip()
+        counts: dict[str, int] = {}
+        for event in self.tracker.packed_events:
+            name = self.packed_labels.get(
+                event["track_id"],
+                generic_packed_name(event["class_name"]))
+            counts[name] = counts.get(name, 0) + 1
+        last = None
+        if self.tracker.packed_events:
+            last = self.tracker.packed_events[-1].copy()
+            last["display_name"] = self.packed_labels.get(
+                last["track_id"], generic_packed_name(last["class_name"]))
+        return counts, last
 
     def _expire_crops(self, now: float) -> None:
         for request_id, record in list(self.crop_pending.items()):
@@ -583,6 +662,7 @@ class FrameProcessor:
             detections = extract_food_detections(result)
             bag_zone_state = None
             bag_ms = 0.0
+            suppressed_bag_self = 0
             if self.bag_zone is not None:
                 bag_start = time.monotonic()
                 bag_zone_state = self.bag_zone.update(frame, self.frame_seq + 1)
@@ -590,6 +670,24 @@ class FrameProcessor:
                 self.tracker.zone_test = self.bag_zone.zone_test
                 self.tracker.zone_version = self.bag_zone.zone_test.version
                 self.tracker.set_packing_paused(self.bag_zone.packing_paused)
+                # The bag itself can score as packaging (live: Storage box /
+                # Canned boxes covering the footprint). Drop bag-sized boxes
+                # before tracking so the bag never becomes a product track,
+                # gets OCR crops, or counts as packed. Genuine items beside
+                # or inside the bag cover far less of the footprint.
+                if (self.bag_zone.status in ("stable", "grace")
+                        and self.bag_zone.footprint is not None):
+                    from bag_zone import is_bag_self
+                    from config import BAG_SELF_BOX_FRAC, BAG_SELF_FOOT_FRAC
+                    grid = self.bag_zone.grid
+                    kept = []
+                    for detection in detections:
+                        if is_bag_self(detection.bbox, grid,
+                                       BAG_SELF_FOOT_FRAC, BAG_SELF_BOX_FRAC):
+                            suppressed_bag_self += 1
+                        else:
+                            kept.append(detection)
+                    detections = kept
             events = self.tracker.update(detections)
             full_height, full_width = full_frame.shape[:2]
             identification = {}
@@ -640,12 +738,14 @@ class FrameProcessor:
                 "crop_requests": crop_requests,
                 "tracks": [{"track_id": d.track_id, "bbox": list(map(float, d.bbox))} for d in detections],
                 "events": events,  # Only newly registered events, in frame order.
+                "pending": pending_tracks(self.tracker),
                 # Diagnostics (stage 2): network-exclusive backend timings.
                 # detect_ms is pure server processing for this frame;
                 # upload_bytes is the received detection JPEG size.
                 "detect_ms": round(detect_ms, 1),
                 "bag_ms": round(bag_ms, 1),
                 "bag_zone": bag_zone_state,
+                "suppressed_bag_self": suppressed_bag_self,
                 "upload_bytes": len(image_bytes),
             }
 
