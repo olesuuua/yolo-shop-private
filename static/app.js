@@ -446,6 +446,8 @@ function renderSession(response) {
         : "";
     } else if (bag.status === "stable") {
       bagStatus.textContent = `Bag: tracking ✓ (conf ${bag.conf})`;
+    } else if (bag.status === "grace") {
+      bagStatus.textContent = "Bag: reacquiring…";
     } else if (bag.status === "moving") {
       bagStatus.textContent = "Bag: moving — packing paused";
     } else if (bag.status === "lost") {

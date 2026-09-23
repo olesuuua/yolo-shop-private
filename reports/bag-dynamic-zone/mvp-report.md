@@ -5,7 +5,31 @@ fitted green contour that follows the bag, and packing decisions use the
 filled bag footprint. No frames were uploaded anywhere; the raw video
 (`vidoe_bag.mp4`, 1866 frames / 60 fps / 1280x720) stayed local and is not
 committed. Bottle, fruit, OCR, Jev, and replay behavior are preserved
-(full suite: **188 tests OK**, 2 pre-existing skips).
+(full suite: **191 tests OK**, 2 pre-existing skips).
+
+## 0. Urgent fix first: invisible products (GPU detector silently blind)
+
+Symptom: bottles/cans fully visible for seconds, no product boxes on the
+page. Traced stage by stage on the same frames (raw worker rows →
+ByteTrack tracks → page payload), with the dynamic bag enabled:
+
+- Worker rows (GPU): **0 rows on every frame**, including the repo's own
+  `outputs/test-bottles*.jpg`. Same checkpoint on CPU: `Bottle 0.12–0.63`
+  plus desk/keyboard rows. The Paddle GPU path (driver 580 / CUDA 13 vs the
+  pinned PaddlePaddle 3.3.1 build) runs without errors and returns nothing.
+- ByteTrack (`bytetrack-ppyoloe.yaml`: new tracks need conf >= 0.50) and
+  `extract_food_detections` (drops ID-less boxes) then have nothing to work
+  with — the page can show nothing. **Bag pause was never the cause**:
+  it gates packing counts only; the display path is independent.
+- Fix: run the production detector on **CPU** (`LIGHTSTORE_DEVICE=cpu`,
+  the historically validated Sep-21 configuration, ~145 ms/frame).
+  Verified live: `test-bottles1.jpg` → 2 Bottle tracks + `visible_counts`
+  immediately, and bottles display while the bag zone is `stable`.
+- Residual layer (not changed): sub-0.50 detections never initiate tracks
+  (uncalibrated starting values per the yaml comment). Transparent top-down
+  bottles in the bag video score ≤ 0.19 — a genuine detector limitation,
+  pre-existing. Next step if weak-view products still hide: measure live
+  bottle/can confs, then calibrate `new_track_thresh` with evidence.
 
 ## 1. Local YOLOE-26n segmentation test (raw frames, no cloud)
 
@@ -38,8 +62,8 @@ move (f1500→1650); once gathered into a ball the prompt no longer fires —
 ## 2. What was built
 
 - **`bag_zone.py`** (new): `BagLocalizer` (seg model wrapper),
-  `BagZoneTracker` state machine (`locating → stable → moving / lost`,
-  plus `unavailable`), footprint geometry (largest component → close →
+  `BagZoneTracker` state machine (`locating → stable → grace → moving /
+  lost`, plus `unavailable`), footprint geometry (largest component → close →
   hole-fill → fitted contour), `ZoneTest` packing predicate (center-in OR
   >= 0.30 overlap, same semantics as the old ROI rule) with rim hysteresis.
 - **`config.py`**: `BAG_ZONE_MODE` (`dynamic` default, `fixed` opt-out),
@@ -47,7 +71,7 @@ move (f1500→1650); once gathered into a ball the prompt no longer fires —
   `BAG_ACQUIRE_STABLE = 3`, `BAG_ADOPT_IOU = 0.50`,
   `BAG_RELOCK_IOU = 0.70`, `BAG_MOTION_THRESHOLD = 12.0` (stable pairs
   3.5–5.2 vs moving pairs 20–41), `BAG_MISSES_TO_LOSE = 2`,
-  `BAG_RIM_MARGIN_PX = 16.0`.
+  `BAG_GRACE_PERIOD_S = 2.0` (wall clock), `BAG_RIM_MARGIN_PX = 16.0`.
 - **`tracking.py`**: `PackingTracker` accepts `zone_test`; `set_packing_paused`
   freezes **all** transfer evidence while paused (a pause can neither create
   nor preserve a streak); `note_zone_relocation` discards incomplete streaks
@@ -71,20 +95,37 @@ move (f1500→1650); once gathered into a ball the prompt no longer fires —
   refreshes the contour in place without invalidating product evidence;
   larger changes bump the zone version.
 
-## 3. Verification on the recorded video
+## 2b. Bag-loss grace period (2 s)
+
+When a locked bag misses twice, the zone enters `grace` instead of going
+lost: the last outline stays visible (gray `BAG (reacquiring…)` ghost),
+packing **continues** in that frozen area, and every processed frame tries
+to reacquire (camera movement is covered: the motion trigger already forces
+per-frame inference when the scene shifts). Streaks restart at grace entry,
+so only fresh observations under the ghost can complete. Same-place
+reappearance (footprint IoU >= 0.5, no geometry change) updates the outline
+and continues normally with no extra wipe; reappearance elsewhere follows
+the moving path (freeze + pause + relock, evidence restarted). After 2 s
+wall-clock without reacquisition the outline is removed, packing pauses,
+and the page shows `BAG LOST - packing paused`. A bag that slides onto a
+stationary product mid-grace cannot pack it: relocation + versioned outside
+evidence + rim hysteresis all still apply (unit test
+`test_bag_move_during_grace_creates_no_false_pack`, plus the video check
+below).
 
 Harness: `reports/bag-dynamic-zone/verify_dynamic.py` (committed) — real
 localizer + real zone + real tracker; scripted products: track 1 genuine
 transfer (outside ×3 → live centroid after lock), track 2 stationary bottle
 at a table spot the moving bag sweeps across.
 
-| run | processed | inferences (share) | locating / stable / moving / lost | genuine packs | stationary packs |
+| run | processed | inferences (share) | locating / stable / grace / moving / lost | genuine packs | stationary packs |
 |---|---|---|---|---|---|
-| stride 5 (dense) | 374 | 41 (11%) | 87 / 216 / 5 / 66 | 1 (@frame 93) | **0** (266 crossed frames) |
-| stride 34 (~live cadence) | 55 | 13 (24%) | 20 / 22 / 5 / 8 | 1 (@frame 26) | **0** (35 crossed frames) |
+| stride 5 (dense) | 374 | 41 (11%) | 87 / 216 / 20 / 5 / 46 | 1 (@frame 93) | **0** (266 crossed frames) |
+| stride 34 (~live cadence) | 55 | 13 (24%) | 20 / 22 / 8 / 5 / 0 | 1 (@frame 26) | **0** (35 crossed frames) |
 
 Contour examples: `evidence/dynamic_f0750_stable.jpg` (fitted outline),
-`dynamic_f1600_lost.jpg` (`BAG LOST - packing paused`, packed count kept),
+`evidence/dynamic_f1600_grace.jpg` (gray ghost + reacquiring label, counts
+kept), `evidence/dynamic_f1700_lost.jpg` (`BAG LOST - packing paused`),
 plus locating/stable frames across all stages and `dynamic_results.json`.
 
 Three real failure mechanisms were found by this harness and fixed (each
@@ -125,10 +166,13 @@ no architecture change; this harness re-measures in seconds.
 
 ## 6. Live test
 
-Server + page are left running (see handoff message for URL/commit).
+Server + page run on port 8001 with `LIGHTSTORE_DEVICE=cpu` (GPU Paddle
+path is blind — see §0; revisit only after a Paddle/CUDA environment fix).
 Procedure: open the page → Start → `LOCATING BAG…` → place and spread the
 bag (≈2 s) → green fitted contour + `Bag: tracking ✓` → move a bottle from
-outside into the bag → `PACKED` after ~3–4 s inside → drag the bag while a
-bottle sits inside → amber `BAG MOVING - packing paused`, no new packs,
-counts kept → gather the bag → `BAG LOST - packing paused` → spread it
-again → re-locks and resumes.
+outside into the bag → `PACKED` after ~3–4 s inside → briefly cover the bag
+(< 2 s) → gray ghost outline, counting continues, `Bag: reacquiring…` →
+uncover → contour updates, continues → drag the bag while a bottle sits
+inside → amber `BAG MOVING - packing paused`, no new packs, counts kept →
+gather the bag (> 2 s) → `BAG LOST - packing paused` → spread it again →
+re-locks and resumes.

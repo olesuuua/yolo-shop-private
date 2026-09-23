@@ -172,8 +172,12 @@ BAG_RELOCK_IOU = 0.70
 # an immediate re-check. Calibrated on the bag video: stable pairs 3.5-5.2,
 # bag-moving pairs 20-41.
 BAG_MOTION_THRESHOLD = 12.0
-# Consecutive heartbeat/motion misses before a locked zone is declared lost.
+# Consecutive heartbeat/motion misses before a locked zone stops trusting
+# its outline. The zone first enters a wall-clock grace period (keeps the
+# ghost outline and keeps counting); only after BAG_GRACE_PERIOD_S without
+# reacquisition is it declared lost (outline removed, packing paused).
 BAG_MISSES_TO_LOSE = 2
+BAG_GRACE_PERIOD_S = 2.0
 # Rim hysteresis for outside evidence, in 640x480 pixels: a product must
 # clear the footprint by this margin before an outside observation counts.
 # Calibrated on the bag video: mask-rim flicker from a reaching hand carved

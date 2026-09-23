@@ -262,14 +262,24 @@ def annotate_frame(frame, detections, tracker, identification=None,
         # Dynamic whole-bag zone: fitted contour, never the fixed rectangle.
         status = bag_zone.status
         poly = bag_zone.footprint
-        if poly is not None and len(poly) >= 3 and status in ("stable", "moving"):
-            color = (90, 220, 100) if status == "stable" else (70, 200, 255)
+        if poly is not None and len(poly) >= 3 and status in ("stable", "moving", "grace"):
+            if status == "stable":
+                color = (90, 220, 100)
+                contour_label = "BAG"
+            elif status == "grace":
+                color = (180, 180, 180)
+                contour_label = "BAG (reacquiring...)"
+            else:
+                color = (70, 200, 255)
+                contour_label = "BAG (last seen)"
             cv2.polylines(frame, [poly.reshape(-1, 1, 2).astype(int)],
                           True, color, 3)
             bx1, by1 = int(poly[:, 0].min()), int(poly[:, 1].min())
-            draw_label(frame, "BAG" if status == "stable" else "BAG (last seen)",
+            draw_label(frame, contour_label,
                        (max(2, bx1), max(18, by1 - 12)), color)
         if status == "stable":
+            pass
+        elif status == "grace":
             pass
         elif status == "moving":
             draw_label(frame, "BAG MOVING - packing paused", (16, 60),
@@ -374,9 +384,9 @@ class FrameProcessor:
         from bag_zone import BagLocalizer, BagZoneTracker, load_bag_model
         from config import (
             BAG_ACQUIRE_STABLE, BAG_ADOPT_IOU, BAG_CONF_THRESHOLD,
-            BAG_HEARTBEAT_FRAMES, BAG_MIN_FRAC, BAG_MISSES_TO_LOSE,
-            BAG_MOTION_THRESHOLD, BAG_OVERLAP_THRESHOLD, BAG_RELOCK_IOU,
-            BAG_RIM_MARGIN_PX,
+            BAG_GRACE_PERIOD_S, BAG_HEARTBEAT_FRAMES, BAG_MIN_FRAC,
+            BAG_MISSES_TO_LOSE, BAG_MOTION_THRESHOLD, BAG_OVERLAP_THRESHOLD,
+            BAG_RELOCK_IOU, BAG_RIM_MARGIN_PX,
         )
         try:
             root = Path(__file__).resolve().parent
@@ -391,7 +401,8 @@ class FrameProcessor:
             heartbeat_frames=BAG_HEARTBEAT_FRAMES,
             acquire_stable=BAG_ACQUIRE_STABLE, adopt_iou=BAG_ADOPT_IOU,
             relock_iou=BAG_RELOCK_IOU, motion_threshold=BAG_MOTION_THRESHOLD,
-            misses_to_lose=BAG_MISSES_TO_LOSE, rim_margin=BAG_RIM_MARGIN_PX)
+            misses_to_lose=BAG_MISSES_TO_LOSE, rim_margin=BAG_RIM_MARGIN_PX,
+            grace_period_s=BAG_GRACE_PERIOD_S)
 
     def reset(self) -> dict:
         with self.lock:

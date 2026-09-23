@@ -235,16 +235,25 @@ class ZoneStateMachineTest(unittest.TestCase):
         self.assertFalse(zone.packing_paused)
 
     def test_loss_after_misses(self):
-        script = [disc_mask()] * 3 + [None] * 4
+        script = [disc_mask()] * 3 + [None] * 6
         zone = BagZoneTracker(FakeLocalizer(script), heartbeat_frames=1,
-                              misses_to_lose=2)
+                              misses_to_lose=2, grace_period_s=2.0)
         for frame_id in (1, 2, 3):
-            zone.update(blank_frame(), frame_id)
+            zone.update(blank_frame(), frame_id, now=100.0)
         self.assertEqual(zone.status, "stable")
-        zone.update(blank_frame(), 4)
-        zone.update(blank_frame(), 5)
-        self.assertEqual(zone.status, "lost")
+        zone.update(blank_frame(), 4, now=100.0)  # miss 1: still stable
+        self.assertEqual(zone.status, "stable")
+        state = zone.update(blank_frame(), 5, now=100.0)  # miss 2: grace
+        self.assertEqual(state["status"], "grace")
+        self.assertFalse(zone.packing_paused)  # counting continues
+        self.assertIsNotNone(zone.footprint)  # ghost outline kept
+        zone.update(blank_frame(), 6, now=101.0)  # inside the 2 s window
+        self.assertEqual(zone.status, "grace")
+        state = zone.update(blank_frame(), 7, now=103.0)  # window expired
+        self.assertEqual(state["status"], "lost")
         self.assertTrue(zone.packing_paused)
+        self.assertIsNone(zone.footprint)  # outline removed
+        self.assertIsInstance(zone.zone_test, NoZone)
 
     def test_motion_trigger(self):
         zone = BagZoneTracker(FakeLocalizer([disc_mask()] * 10),
@@ -257,6 +266,123 @@ class ZoneStateMachineTest(unittest.TestCase):
         self.assertGreater(zone.localizer.calls, calls)
 
     def test_motion_energy_separation(self):
+        still = np.zeros((480, 640, 3), np.uint8)
+        import cv2
+
+        prev = cv2.cvtColor(cv2.resize(still, (160, 120)), cv2.COLOR_BGR2GRAY)
+        self.assertLess(motion_energy(prev, still, (60, 80, 580, 470)), 1.0)
+        changed = still.copy()
+        changed[100:400, 100:500] = 200
+        self.assertGreater(motion_energy(prev, changed, (60, 80, 580, 470)), 12.0)
+
+
+class GracePeriodTest(unittest.TestCase):
+    """2-second bag-loss grace: ghost outline, continued counting, expiry."""
+
+    def _wired(self, script, **kwargs):
+        zone = BagZoneTracker(FakeLocalizer(script), heartbeat_frames=1,
+                              misses_to_lose=1, **kwargs)
+        tracker = PackingTracker()
+        tracker.zone_test = zone.zone_test
+        tracker.zone_version = zone.zone_test.version
+        frame_id = [0]
+
+        def step(now, detections):
+            frame_id[0] += 1
+            state = zone.update(blank_frame(), frame_id[0], now=now)
+            tracker.zone_test = zone.zone_test
+            tracker.zone_version = zone.zone_test.version
+            tracker.set_packing_paused(zone.packing_paused)
+            return state, tracker.update(detections)
+
+        return zone, tracker, step
+
+    def test_counting_continues_in_ghost_then_pauses_on_expiry(self):
+        script = [disc_mask(320, 240, 120)] * 3 + [None] * 10
+        zone, tracker, step = self._wired(script, grace_period_s=2.0)
+        outside = (40.0, 40.0, 100.0, 100.0)
+        inside = (300.0, 220.0, 340.0, 260.0)
+        for _ in range(3):
+            state, _ = step(100.0, [])
+        self.assertEqual(state["status"], "stable")
+        step(100.0, [])  # miss 1 -> grace, streaks restart
+        self.assertEqual(zone.status, "grace")
+        self.assertFalse(zone.packing_paused)
+        ghost = zone.zone_test
+        for _ in range(3):  # fresh outside evidence under the ghost
+            step(100.0, [Detection(5, "Bottle", outside)])
+        for _ in range(3):  # completes inside the ghost: still counts
+            _, events = step(100.0, [Detection(5, "Bottle", inside)])
+        self.assertEqual(zone.status, "grace")
+        self.assertEqual(len(events), 1)
+        self.assertIs(zone.zone_test, ghost)  # same frozen zone
+        for _ in range(3):  # past the 2 s deadline without reacquisition
+            state, _ = step(103.0, [Detection(5, "Bottle", inside)])
+        self.assertEqual(state["status"], "lost")
+        self.assertTrue(zone.packing_paused)
+        self.assertIsNone(zone.footprint)
+
+    def test_same_place_reappearance_continues_normally(self):
+        relocations = []
+        script = [disc_mask(320, 240, 120)] * 3 + [None] + [disc_mask(320, 240, 120)] * 10
+        zone = BagZoneTracker(
+            FakeLocalizer(script), heartbeat_frames=1, misses_to_lose=1,
+            grace_period_s=2.0,
+            on_relocation=lambda: relocations.append(1))
+        for frame_id in (1, 2, 3):
+            zone.update(blank_frame(), frame_id, now=100.0)
+        version = zone.zone_version
+        zone.update(blank_frame(), 4, now=100.0)  # miss -> grace
+        self.assertEqual(zone.status, "grace")
+        state = zone.update(blank_frame(), 5, now=100.5)  # same bag back
+        self.assertEqual(state["status"], "stable")
+        self.assertEqual(zone.zone_version, version)  # no geometry change
+        # Relocations: initial lock + grace entry; the same-place
+        # reappearance itself wipes nothing.
+        self.assertEqual(len(relocations), 2)
+
+    def test_bag_move_during_grace_creates_no_false_pack(self):
+        """Bag slides onto a stationary product mid-grace: no packed event."""
+        relocations = []
+        home = disc_mask(320, 240, 120)
+        away = disc_mask(100, 100, 60)
+        script = [home] * 3 + [None] * 3 + [away] * 10
+        zone = BagZoneTracker(
+            FakeLocalizer(script), heartbeat_frames=1, misses_to_lose=1,
+            grace_period_s=2.0,
+            on_relocation=lambda: relocations.append(1))
+        tracker = PackingTracker()
+        product = (80.0, 80.0, 140.0, 140.0)  # inside `away`, outside `home`
+        frame_id = [0]
+
+        def step(now):
+            frame_id[0] += 1
+            state = zone.update(blank_frame(), frame_id[0], now=now)
+            tracker.zone_test = zone.zone_test
+            tracker.zone_version = zone.zone_test.version
+            tracker.set_packing_paused(zone.packing_paused)
+            return state, tracker.update([Detection(9, "Bottle", product)])
+
+        for _ in range(3):
+            state, _ = step(100.0)
+        self.assertEqual(state["status"], "stable")  # locked at home
+        state, events = step(100.0)  # miss -> grace (wipes home streaks)
+        self.assertEqual(zone.status, "grace")
+        self.assertEqual(events, [])
+        for _ in range(2):  # still inside the 2 s window
+            state, events = step(100.0)
+            self.assertEqual(state["status"], "grace")
+            self.assertEqual(events, [])
+        state, events = step(100.0)  # bag reappears far away
+        self.assertEqual(state["status"], "moving")
+        self.assertTrue(zone.packing_paused)
+        self.assertEqual(events, [])
+        for _ in range(6):  # relocks over the stationary product...
+            state, events = step(100.0)
+            self.assertEqual(events, [])
+        self.assertEqual(state["status"], "stable")
+        self.assertGreaterEqual(len(relocations), 2)
+        self.assertEqual(tracker.packed_counts.get("Bottle", 0), 0)
         still = np.zeros((480, 640, 3), np.uint8)
         import cv2
 
@@ -312,7 +438,9 @@ class DynamicPipelineTest(unittest.TestCase):
         model = StubModel()
         # Heartbeat every frame: the scripted localizer drives the zone
         # through acquire -> stable -> lost within a few processed frames.
-        zone = BagZoneTracker(FakeLocalizer(script), heartbeat_frames=1)
+        # Zero grace period: expiry is immediate once misses accumulate.
+        zone = BagZoneTracker(FakeLocalizer(script), heartbeat_frames=1,
+                              grace_period_s=0.0)
         processor = FrameProcessor(model, identifier=None, bag_zone=zone)
         ok, jpeg = cv2.imencode(
             ".jpg", np.zeros((480, 640, 3), np.uint8))

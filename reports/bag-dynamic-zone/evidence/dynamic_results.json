@@ -5,12 +5,13 @@
   "status_histogram": {
     "locating": 87,
     "stable": 216,
-    "lost": 66,
-    "moving": 5
+    "grace": 20,
+    "moving": 5,
+    "lost": 46
   },
   "bag_inferences": 41,
-  "inference_ms_ema": 24.6647010401532,
-  "wall_s": 10.2,
+  "inference_ms_ema": 28.042317117219977,
+  "wall_s": 10.1,
   "genuine_inside_frames": 284,
   "stationary_inside_frames": 266,
   "packed_counts": {
@@ -21,7 +22,7 @@
       "track_id": 1,
       "class_name": "Bottle",
       "event": "packed",
-      "timestamp": "2026-09-23T10:33:47.838897+00:00",
+      "timestamp": "2026-09-23T12:40:43.982729+00:00",
       "frame_number": 93
     }
   ],
@@ -105,8 +106,8 @@
       ]
     },
     "1600": {
-      "file": "dynamic_f1600_lost.jpg",
-      "status": "lost",
+      "file": "dynamic_f1600_grace.jpg",
+      "status": "grace",
       "conf": 0.122,
       "bbox": [
         129,

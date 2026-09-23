@@ -290,9 +290,11 @@ class BagZoneTracker:
     """State machine turning bag masks into a packing zone.
 
     States: ``locating`` (no zone yet), ``stable`` (zone locked, packing
-    allowed), ``moving`` (zone frozen at last position, packing paused),
-    ``lost`` (no zone, packing paused), ``unavailable`` (no model).
-    ``packing_paused`` is True in every state except ``stable``.
+    allowed), ``grace`` (bag briefly unseen: last outline kept visible and
+    packing continues while every frame tries to reacquire), ``moving``
+    (zone frozen at last position, packing paused), ``lost`` (no zone,
+    packing paused), ``unavailable`` (no model).
+    ``packing_paused`` is True in every state except ``stable`` and ``grace``.
     """
 
     def __init__(self, localizer=None, on_relocation=None,
@@ -300,7 +302,7 @@ class BagZoneTracker:
                  heartbeat_frames: int = 10, acquire_stable: int = 3,
                  adopt_iou: float = 0.5, relock_iou: float = 0.7,
                  motion_threshold: float = 12.0, misses_to_lose: int = 2,
-                 rim_margin: float = 16.0):
+                 rim_margin: float = 16.0, grace_period_s: float = 2.0):
         self.localizer = localizer
         self.on_relocation = on_relocation
         self.overlap_threshold = overlap_threshold
@@ -311,6 +313,7 @@ class BagZoneTracker:
         self.motion_threshold = motion_threshold
         self.misses_to_lose = misses_to_lose
         self.rim_margin = rim_margin
+        self.grace_period_s = grace_period_s
         self.reset()
 
     def reset(self) -> None:
@@ -330,10 +333,11 @@ class BagZoneTracker:
         self.inference_count = 0
         self.inference_ms_ema = 0.0
         self.last_motion = 0.0
+        self.grace_deadline = 0.0
 
     @property
     def packing_paused(self) -> bool:
-        return self.status != "stable"
+        return self.status not in ("stable", "grace")
 
     def _relocation(self) -> None:
         self.misses = 0
@@ -346,13 +350,19 @@ class BagZoneTracker:
         # Frame-id guard: an old prediction must never move the zone back.
         if frame_id <= self.zone_frame_id:
             return
-        if self.status != "stable":
-            # First lock or re-lock after moving/lost: products that looked
+        if self.status in ("locating", "moving", "lost"):
+            # First lock, re-lock, or recovery: products that looked
             # "outside" under the old (or absent) zone must re-prove
             # themselves, so a bag placed over a stationary product cannot
             # count it as packed.
             self._relocation()
             significant = True
+        elif self.status == "grace":
+            # Reappearance during grace: same-place refresh continues
+            # normally; a real move still restarts product evidence.
+            significant = grid_iou(grid, self.grid) < 0.90
+            if significant:
+                self._relocation()
         else:
             # Steady-state refresh: only a real geometry change invalidates
             # outside evidence. Ordinary jitter (IoU >= 0.9) refreshes the
@@ -388,18 +398,41 @@ class BagZoneTracker:
         if self.consecutive >= self.acquire_stable:
             self._adopt(grid, poly, bbox, conf, frame_id)
 
-    def update(self, frame_640x480, frame_id: int) -> dict:
+    def update(self, frame_640x480, frame_id: int, now=None) -> dict:
         """Advance the zone with one processed frame; never raises."""
+        if now is None:
+            now = time.monotonic()
         try:
-            return self._update(frame_640x480, frame_id)
+            return self._update(frame_640x480, frame_id, now)
         except Exception:
             logger.exception("Bag zone update failed; packing stays paused.")
-            if self.status == "stable":
+            if self.status in ("stable", "grace"):
                 self.status = "moving"
                 self._relocation()
             return self.snapshot()
 
-    def _update(self, frame_640x480, frame_id: int) -> dict:
+    def _enter_grace(self, now: float) -> None:
+        # Brief disappearance: keep the ghost outline and keep counting
+        # while every frame tries to reacquire. Streaks restart so only
+        # fresh observations under the ghost can complete.
+        self.grace_deadline = now + self.grace_period_s
+        self.status = "grace"
+        self._relocation()
+
+    def _enter_lost(self) -> None:
+        # Grace expired: remove the outline and pause counting.
+        self.footprint = None
+        self.grid = np.zeros((GRID_HEIGHT, GRID_WIDTH), np.uint8)
+        self.zone_bbox = None
+        self.zone_conf = 0.0
+        self.zone_test = NoZone()
+        self.candidate_grid = None
+        self.consecutive = 0
+        self.misses = 0
+        self.status = "lost"
+        self._relocation()
+
+    def _update(self, frame_640x480, frame_id: int, now: float) -> dict:
         if self.localizer is None:
             self.status = "unavailable"
             return self.snapshot()
@@ -437,9 +470,12 @@ class BagZoneTracker:
             self.misses += 1
             self.consecutive = 0
             self.candidate_grid = None
-            if self.misses >= self.misses_to_lose and self.status == "stable":
-                self.status = "lost"
-                self._relocation()
+            if self.status == "stable":
+                if self.misses >= self.misses_to_lose:
+                    self._enter_grace(now)
+            elif self.status == "grace":
+                if now >= self.grace_deadline:
+                    self._enter_lost()
             elif self.status not in ("stable",):
                 self.status = "lost" if self.zone_frame_id >= 0 else "locating"
             return self.snapshot()
@@ -468,7 +504,20 @@ class BagZoneTracker:
                 self.candidate_grid = grid
                 self.consecutive = 1
         else:
-            # locating / moving / lost: collect stable repeats, then lock.
+            # locating / moving / lost / grace: recover the bag.
+            if self.status == "grace":
+                if grid_iou(grid, self.grid) >= self.adopt_iou:
+                    # Same-place reappearance: update the outline and
+                    # continue normally (evidence restarts only on a move).
+                    self._adopt(grid, poly, (x1, y1, x2, y2), conf, frame_id)
+                else:
+                    # Reappeared elsewhere: the bag moved during grace.
+                    self.status = "moving"
+                    self._relocation()
+                    self.candidate_grid = grid
+                    self.consecutive = 1
+                return self.snapshot()
+            # Collect stable repeats, then lock.
             self._observe_candidate(grid, frame_id)
             self._try_lock(grid, poly, (x1, y1, x2, y2), conf, frame_id)
             if self.status == "stable":
