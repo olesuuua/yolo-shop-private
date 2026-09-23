@@ -106,11 +106,11 @@ class IdentificationTests(unittest.TestCase):
         self.addCleanup(service.close)
         return service
 
-    def test_catalog_has_eleven_unique_products(self):
+    def test_catalog_has_thirteen_unique_products(self):
         service = self.make_service()
         skus = [p["sku"] for p in service.products]
-        self.assertEqual(len(skus), 11)
-        self.assertEqual(len(set(skus)), 11)
+        self.assertEqual(len(skus), 13)
+        self.assertEqual(len(set(skus)), 13)
         self.assertIn("aqua-minerale-0-5l", skus)
         self.assertIn("senezhskaya-0-5l", skus)
         self.assertIn("saint-spring-0-75l", skus)
@@ -120,6 +120,8 @@ class IdentificationTests(unittest.TestCase):
         self.assertIn("red-bull-sugar-free-0-25l", skus)
         self.assertIn("dobryi-kiwi-1l", skus)
         self.assertIn("dobryi-orange-1l", skus)
+        self.assertIn("severnaya-dolina-milk-3-2-925ml", skus)
+        self.assertIn("selyanochka-5-zlakov-400g", skus)
         required = {"sku", "name", "object_classes", "brand", "category",
                     "variant", "size", "aliases", "verified_label_text"}
         for product in service.products:
@@ -178,7 +180,9 @@ class IdentificationTests(unittest.TestCase):
                                        "dobryi-cola-no-sugar-0-5l",
                                        "red-bull-sugar-free-0-25l",
                                        "dobryi-kiwi-1l",
-                                       "dobryi-orange-1l"})
+                                       "dobryi-orange-1l",
+                                       "severnaya-dolina-milk-3-2-925ml",
+                                       "selyanochka-5-zlakov-400g"})
         self.assertTrue(all(line["text"] for line in lines))
 
     def test_uncertain_and_unknown_stay_unresolved(self):
@@ -271,7 +275,7 @@ class IdentificationTests(unittest.TestCase):
         service = self.make_service()
         readiness = service.readiness()
         self.assertTrue(readiness["catalog_ok"])
-        self.assertEqual(len(readiness["products"]), 11)
+        self.assertEqual(len(readiness["products"]), 13)
         self.assertEqual(readiness["ocr_device"], "cpu")
         self.assertNotIn("TYPESAFE_API_KEY", str(readiness).upper().replace("JEV_KEY_PRESENT", ""))
         self.assertIsInstance(readiness["jev_key_present"], bool)
