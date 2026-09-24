@@ -232,8 +232,10 @@ class ApiTests(unittest.TestCase):
             self.assertEqual(result["last_event"]["track_id"], 7)
             image = cv2.imdecode(np.frombuffer(base64.b64decode(result["image"]), np.uint8), 1)
             self.assertEqual(image.shape, (480, 640, 3))
-            # The yellow ROI is present in the encoded frame.
-            self.assertGreater(int(image[250, 220, 1]), 150)
+            # The fixed packing rectangle is present: off-white halo
+            # beside its charcoal core on the left edge.
+            self.assertGreater(int(image[250, 218, 1]), 150)
+            self.assertLess(int(image[250, 220, 1]), 80)
             self.assertEqual(self.client.get("/api/session").json()["packed_counts"], {PRIMARY_CLASS: 1})
             reset = self.client.post("/api/reset").json()
             self.assertEqual(reset["packed_counts"], {})

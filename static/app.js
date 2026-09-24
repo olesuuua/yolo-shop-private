@@ -25,6 +25,8 @@ const lastEvent = document.getElementById("lastEvent");
 const modelInfo = document.getElementById("modelInfo");
 const cameraInfo = document.getElementById("cameraInfo");
 const bagStatus = document.getElementById("bagStatus");
+const packedList = document.getElementById("packedList");
+const packedHeading = document.getElementById("packedHeading");
 const identList = document.getElementById("identList");
 const identReadiness = document.getElementById("identReadiness");
 
@@ -460,25 +462,63 @@ function renderSession(response) {
     : "Waiting for a transfer";
   if (bagStatus) {
     const bag = response.bag_zone;
+    bagStatus.style.color = "";
     if (!bag) {
       bagStatus.textContent = response.bag_zone_mode === "fixed"
         ? "Bag zone: fixed rectangle"
         : "";
     } else if (bag.status === "stable") {
       bagStatus.textContent = `Bag: tracking ✓ (conf ${bag.conf})`;
+      bagStatus.style.color = "#c4f566";
     } else if (bag.status === "grace") {
       bagStatus.textContent = "Bag: reacquiring…";
-    } else if (bag.status === "moving") {
-      bagStatus.textContent = "Bag: moving — packing paused";
-    } else if (bag.status === "lost") {
-      bagStatus.textContent = "Bag: lost — packing paused";
+    } else if (bag.status === "moving" || bag.status === "lost") {
+      bagStatus.textContent = bag.status === "moving"
+        ? "Bag: moving — packing paused" : "Bag: lost — packing paused";
+      bagStatus.style.color = "#ffb496";
     } else if (bag.status === "locating") {
       bagStatus.textContent = "Bag: locating…";
     } else {
       bagStatus.textContent = "Bag: localization unavailable — packing paused";
+      bagStatus.style.color = "#ffb496";
     }
   }
+  renderPacked(response.packed_items || []);
   return true;
+}
+
+function renderPacked(items) {
+  // Persistent packed rows: they survive the detection box disappearing.
+  // Names upgrade in place when recognition completes; counts never move.
+  if (!packedList) return;
+  const rows = Array.isArray(items) ? items : [];
+  if (packedHeading) packedHeading.hidden = rows.length === 0;
+  packedList.replaceChildren();
+  for (const item of rows) {
+    if (!item || !item.display_name) continue;
+    const card = document.createElement("article");
+    card.className = "product-card packed-card";
+    if (item.has_crop && typeof item.track_id === "number") {
+      const thumb = document.createElement("img");
+      thumb.className = "crop-thumb";
+      thumb.alt = "Packed item photo";
+      thumb.src = `/api/ident-crop/${item.track_id}`;
+      thumb.onerror = () => thumb.remove();
+      card.appendChild(thumb);
+    }
+    const body = document.createElement("div");
+    const title = document.createElement("h3");
+    title.textContent = item.display_name;
+    body.appendChild(title);
+    if (item.count > 1) {
+      const times = document.createElement("span");
+      times.className = "count";
+      times.textContent = `×${item.count}`;
+      body.appendChild(times);
+    }
+    card.appendChild(body);
+    packedList.appendChild(card);
+  }
 }
 
 function base64ToBlob(base64Text) {

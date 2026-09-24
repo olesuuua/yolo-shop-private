@@ -5,9 +5,19 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>LightStore — Live demo</title>
 
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet" />
   <style>
     :root {
       color-scheme: dark;
+      --ink: #121713;
+      --paper: #f6f8f4;
+      --lime: #c4f566;
+      --muted: #a2ada5;
+      --line: #dce2d8;
+      --peach: #ffb496;
+      --ink-soft: #46524a;
     }
 
     * {
@@ -17,9 +27,9 @@
     body {
       margin: 0;
       min-height: 100vh;
-      background: #0b0d12;
-      color: #f8fafc;
-      font-family: Arial, sans-serif;
+      background: var(--ink);
+      color: var(--paper);
+      font-family: 'DM Sans', 'Manrope', system-ui, -apple-system, 'Segoe UI', Arial, sans-serif;
     }
 
     main {
@@ -35,17 +45,44 @@
       gap: 12px;
       flex-wrap: wrap;
       margin-bottom: 10px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     }
 
     h1 {
       margin: 0;
+      font-family: 'Manrope', 'DM Sans', system-ui, sans-serif;
       font-size: clamp(1.1rem, 1.8vw, 1.5rem);
+      font-weight: 800;
+      letter-spacing: -0.01em;
+    }
+
+    .brand-mark {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 1.35em;
+      height: 1.35em;
+      margin-right: 0.45em;
+      background: var(--lime);
+      color: var(--ink);
+      border-radius: 8px;
+      font-size: 0.85em;
+      font-weight: 800;
+      vertical-align: -0.2em;
     }
 
     #status {
       margin: 4px 0 0;
-      color: #aeb6c7;
+      color: var(--muted);
       font-size: 0.9rem;
+    }
+
+    #bagStatus {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 0.9rem;
+      font-weight: 600;
     }
 
     .controls {
@@ -56,34 +93,36 @@
     }
 
     button {
-      padding: 9px 14px;
+      padding: 10px 18px;
       border: 0;
-      border-radius: 9px;
-      background: #4f46e5;
-      color: #fff;
+      border-radius: 8px;
+      background: var(--lime);
+      color: var(--ink);
+      font-family: 'Manrope', 'DM Sans', system-ui, sans-serif;
       font-size: 0.92rem;
       font-weight: 700;
       cursor: pointer;
     }
 
     button:hover:not(:disabled) {
-      background: #6366f1;
+      filter: brightness(1.06);
     }
 
     button:disabled {
       cursor: not-allowed;
-      opacity: 0.5;
+      opacity: 0.45;
     }
 
     #stopButton {
-      background: #b91c1c;
+      background: var(--peach);
+      color: var(--ink);
     }
 
-    #stopButton:hover:not(:disabled) {
-      background: #dc2626;
+    #resetButton {
+      background: transparent;
+      color: var(--paper);
+      border: 1px solid rgba(246, 248, 244, 0.35);
     }
-
-    #resetButton { background: #334155; }
 
     /* Audience view: large video + compact recognition area. */
     .demo-grid {
@@ -99,7 +138,7 @@
       overflow: hidden;
       aspect-ratio: 4 / 3;
       background: #000;
-      border: 1px solid #262b36;
+      border: 1px solid rgba(220, 226, 216, 0.25);
       border-radius: 14px;
     }
 
@@ -129,27 +168,34 @@
     }
 
     #productPanel {
-      border: 1px solid #263049;
+      border: 1px solid rgba(255, 255, 255, 0.12);
       border-radius: 14px;
-      background: #0e1420;
+      background: var(--ink);
       padding: 12px;
       min-height: 160px;
     }
 
     #productPanel h2 {
       margin: 0 0 8px;
+      font-family: 'Manrope', 'DM Sans', system-ui, sans-serif;
       font-size: 0.95rem;
+      font-weight: 700;
     }
 
-    #identList {
+    #packedHeading {
+      margin-top: 14px;
+    }
+
+    #identList, #packedList {
       display: grid;
       gap: 10px;
     }
 
     .product-card {
-      border: 1px solid #334155;
+      border: 1px solid var(--line);
       border-radius: 12px;
-      background: #131b2c;
+      background: var(--paper);
+      color: var(--ink);
       padding: 10px;
       display: grid;
       grid-template-columns: 52px minmax(0, 1fr);
@@ -162,8 +208,8 @@
       height: 70px;
       object-fit: cover;
       border-radius: 6px;
-      border: 1px solid #3b4455;
-      background: #000;
+      border: 1px solid var(--line);
+      background: var(--ink);
     }
 
     .product-card .crop-thumb:not([src]) {
@@ -174,6 +220,12 @@
       margin: 0 0 5px;
       font-size: 1.02rem;
       line-height: 1.25;
+      overflow-wrap: break-word;
+    }
+
+    .product-card .count {
+      font-weight: 800;
+      color: var(--ink);
     }
 
     .badge {
@@ -184,30 +236,36 @@
       font-weight: 700;
     }
 
-    .badge.likely { background: #854d0e; color: #fef3c7; }
-    .badge.recognized { background: #166534; color: #dcfce7; }
-    .badge.reading { background: #374151; color: #e5e7eb; }
+    .badge.likely {
+      background: transparent;
+      color: var(--ink);
+      border: 1px solid var(--ink);
+    }
+    .badge.recognized { background: var(--lime); color: var(--ink); }
+    .badge.reading { background: var(--ink); color: var(--paper); }
 
     .volume-note {
       margin-top: 5px;
       font-size: 0.82rem;
-      color: #fde68a;
+      color: var(--ink);
+      font-weight: 600;
     }
 
     .volume-note.unconfirmed {
-      color: #9fb0c9;
+      color: var(--ink-soft);
+      font-weight: 500;
     }
 
     .empty-count {
-      color: #aab3c2;
+      color: var(--muted);
       font-size: 0.88rem;
     }
 
     details.tech {
       margin-top: 12px;
-      border: 1px solid #262b36;
+      border: 1px solid rgba(255, 255, 255, 0.12);
       border-radius: 12px;
-      background: #0d121c;
+      background: var(--ink);
       padding: 10px 14px;
     }
 
@@ -215,7 +273,7 @@
       cursor: pointer;
       font-weight: 700;
       font-size: 0.9rem;
-      color: #bfdbfe;
+      color: var(--paper);
     }
 
     .tech-grid {
@@ -226,9 +284,9 @@
     }
 
     .tech-card {
-      border: 1px solid #262b36;
+      border: 1px solid rgba(255, 255, 255, 0.12);
       border-radius: 10px;
-      background: #0a0f1a;
+      background: var(--ink);
       padding: 10px 12px;
       font-size: 0.82rem;
     }
@@ -238,7 +296,7 @@
       font-size: 0.75rem;
       text-transform: uppercase;
       letter-spacing: 0.07em;
-      color: #bfdbfe;
+      color: var(--muted);
     }
 
     .counter-total {
@@ -250,7 +308,7 @@
     }
 
     .counter-total strong {
-      color: #fff;
+      color: var(--lime);
       font-size: 1.3rem;
       line-height: 1;
     }
@@ -266,35 +324,43 @@
       display: flex;
       justify-content: space-between;
       gap: 10px;
-      color: #d9e2f0;
+      color: var(--paper);
+      font-size: 0.82rem;
+    }
+
+    .fruit-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      color: var(--paper);
       font-size: 0.82rem;
     }
 
     .class-row .count {
-      color: #93c5fd;
+      color: var(--lime);
       font-weight: 800;
     }
 
-    .hint { color: #aeb6c7; line-height: 1.5; font-size: 0.85rem; }
-    #lastEvent { color: #86efac; line-height: 1.5; font-size: 0.85rem; }
+    .hint { color: var(--muted); line-height: 1.5; font-size: 0.85rem; }
+    #lastEvent { color: var(--lime); line-height: 1.5; font-size: 0.85rem; }
 
     #rawOcr, #detailScores, #evidenceText {
       max-height: 220px;
       overflow: auto;
       white-space: pre-wrap;
       word-break: break-word;
-      background: #080c14;
-      border: 1px solid #232c40;
+      background: #0c100d;
+      border: 1px solid rgba(255, 255, 255, 0.12);
       border-radius: 8px;
       padding: 8px;
       font-size: 0.76rem;
-      color: #cbd5e1;
+      color: var(--paper);
     }
 
     #jevStatus {
       font-size: 0.82rem;
       line-height: 1.55;
-      color: #dbe4f3;
+      color: var(--paper);
     }
 
     @media (max-width: 980px) {
@@ -326,7 +392,7 @@
   <main>
     <header>
       <div>
-        <h1>LightStore · Live demo</h1>
+        <h1><span class="brand-mark" aria-hidden="true">L</span>LightStore · Live demo</h1>
         <p id="status">Click “Start” to begin.</p>
         <p id="bagStatus" aria-live="polite"></p>
       </div>
@@ -349,6 +415,8 @@
       <aside id="productPanel" aria-live="polite" aria-label="Recognition">
         <h2>Recognition</h2>
         <div id="identList"><div class="empty-count">Nothing in view yet — show a bottle to the camera.</div></div>
+        <h2 id="packedHeading" hidden>Packed</h2>
+        <div id="packedList"></div>
       </aside>
     </div>
 

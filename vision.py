@@ -58,16 +58,83 @@ def extract_food_detections(result) -> list[Detection]:
 
 
 def draw_label(frame, text, origin, color=(255, 255, 255), scale=0.6):
-    # Solid pill background: legible on light bottles and dark scenes alike.
+    # Solid charcoal pill background: legible on light bottles and dark scenes alike.
     (width, height), baseline = cv2.getTextSize(
         text, cv2.FONT_HERSHEY_SIMPLEX, scale, 2)
     x, y = origin
     pad = 5
     top = max(0, y - height - pad * 2)
     cv2.rectangle(frame, (max(0, x - pad), top),
-                  (x + width + pad, y + baseline // 2), (15, 20, 25), -1)
+                  (x + width + pad, y + baseline // 2), (19, 23, 18), -1)
     cv2.putText(frame, text, (max(0, x), top + height + pad - 2),
                 cv2.FONT_HERSHEY_SIMPLEX, scale, color, 2, cv2.LINE_AA)
+
+
+# Audience overlay palette (BGR), matching the landing page.
+CHARCOAL = (19, 23, 18)
+PAPER = (244, 248, 244)
+LIME = (102, 245, 198)
+MUTED = (165, 173, 162)
+PEACH = (150, 180, 255)
+
+TAB_SCALE = 0.55
+TAB_PAD_X = 7
+TAB_GAP = 4
+
+
+def track_tab_text(class_name: str, track_id: int, identified: bool) -> str:
+    """Short tab text: "Bottle #3", plus " ✓" only when identified.
+
+    The checkmark means identification is confirmed — never packed state.
+    Packed boxes read lime instead. Same pattern for cans, boxes, apples.
+    """
+    text = f"{class_name} #{track_id}"
+    return text + " ✓" if identified else text
+
+
+def tab_rect(text, box, width=FRAME_WIDTH, height=FRAME_HEIGHT):
+    """Tab rectangle attached to a box: above it, else below it, in-frame."""
+    (text_w, text_h), baseline = cv2.getTextSize(
+        text, cv2.FONT_HERSHEY_SIMPLEX, TAB_SCALE, 2)
+    tab_w, tab_h = text_w + TAB_PAD_X * 2, text_h + baseline + 8
+    x1, y1, x2, y2 = (int(v) for v in box)
+    x = min(max(x1, 2), max(2, width - tab_w - 2))
+    y = y1 - tab_h - 2
+    if y < 2:
+        y = y2 + 2
+    y = min(y, height - tab_h - 2)
+    return (x, max(2, y), tab_w, tab_h)
+
+
+def layout_tabs(specs, width=FRAME_WIDTH, height=FRAME_HEIGHT):
+    """Place tab rects so neighbors never overlap (greedy row stagger).
+
+    ``specs``: list of (text, box). Returns list of (x, y, w, h) in the
+    same order. Each tab first tries its attached position, then steps
+    down until free; always clamped inside the frame.
+    """
+    placed = []
+    for text, box in specs:
+        x, y, tab_w, tab_h = tab_rect(text, box, width, height)
+        while any(x < px + pw + TAB_GAP and px < x + tab_w + TAB_GAP
+                  and y < py + ph + TAB_GAP and py < y + tab_h + TAB_GAP
+                  for px, py, pw, ph in placed):
+            y += tab_h + TAB_GAP
+            if y + tab_h > height - 2:
+                y = 2
+                break
+        placed.append((x, y, tab_w, tab_h))
+    return placed
+
+
+def draw_tab(frame, text, rect, fill, foreground):
+    x, y, tab_w, tab_h = (int(v) for v in rect)
+    cv2.rectangle(frame, (x, y), (x + tab_w, y + tab_h), fill, -1)
+    (text_w, text_h), _ = cv2.getTextSize(
+        text, cv2.FONT_HERSHEY_SIMPLEX, TAB_SCALE, 2)
+    cv2.putText(frame, text, (x + TAB_PAD_X, y + tab_h - 6),
+                cv2.FONT_HERSHEY_SIMPLEX, TAB_SCALE, foreground, 2,
+                cv2.LINE_AA)
 
 
 def crop_sharpness(crop) -> float:
@@ -305,109 +372,86 @@ def pending_tracks(tracker) -> list:
 
 
 def annotate_frame(frame, detections, tracker, identification=None,
-                   bag_zone=None, bag_mode="fixed", packed_names=None):
+                   bag_zone=None, bag_mode="fixed"):
+    """Audience overlay: short tabs on boxes, contour on the bag, one
+    bottom line for packed items and one bottom-right zone notice.
+
+    Long product names and stacked status lines never reach the video;
+    they live in the side panel. A "✓" tab suffix means the item is
+    identified (not packed); packed boxes read lime.
+    """
     identification = identification or {}
-    packed_names = packed_names or {}
-    for index, detection in enumerate(detections):
+    tab_specs = []  # (text, box, fill, foreground)
+    draw_boxes = []  # (box, halo)
+    for detection in detections:
         state = tracker.tracks.get(detection.track_id)
         if state is None:
             continue
-        color = (90, 220, 100) if state.packed else (255, 185, 70)
-        x1, y1, x2, y2 = map(int, detection.bbox)
-        cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
-        # Alternate the label stack above/below the box so neighboring
-        # tracks stop piling onto one row; audience overlay text stays short.
-        below_ok = (index % 2 == 1) and (y2 + 66 <= FRAME_HEIGHT - 2)
-        if below_ok:
-            class_y, main_y, sub_y = y2 + 18, y2 + 40, y2 + 62
-        else:
-            class_y, main_y, sub_y = (max(100, y1 - 60), max(74, y1 - 34),
-                                      max(48, y1 - 8))
-        label = f"{state.class_name} #{state.track_id}"
-        if state.packed:
-            label += " PACKED"
-        elif state.inside_frames:
-            label += f" entering {state.inside_frames}/{tracker.min_inside_frames}"
-        draw_label(frame, label, (max(2, x1), class_y), color)
         info = identification.get(detection.track_id)
-        if info is not None:
-            # Human-readable name + size next to the box; truncated for the
-            # overlay (the Recognition panel keeps the full text).
-            main, sub = ident_label(info)
-            draw_label(frame, main[:30], (max(2, x1), main_y),
-                       (140, 220, 255), scale=0.55)
-            if sub:
-                draw_label(frame, sub, (max(2, x1), sub_y),
-                           (120, 255, 140) if sub == "Recognized"
-                           else (250, 215, 140), scale=0.5)
-    # "Packing..." watches: item hidden at the boundary, single clean label
-    # at its last position.
+        identified = bool(isinstance(info, dict) and info.get("complete"))
+        text = f"{state.class_name} #{state.track_id}"
+        if identified:
+            text += " ✓"
+        if state.packed:
+            fill, foreground, halo = LIME, CHARCOAL, LIME
+        else:
+            fill, foreground, halo = CHARCOAL, PAPER, PAPER
+        tab_specs.append((text, tuple(detection.bbox), fill, foreground))
+        draw_boxes.append((tuple(detection.bbox), halo))
     for pending in pending_tracks(tracker):
-        px1, py1, px2, py2 = map(int, pending["bbox"])
-        cv2.rectangle(frame, (px1, py1), (px2, py2), (250, 215, 140), 2)
-        draw_label(frame, f"{pending['class_name']} Packing...",
-                   (max(2, px1), max(70, py1 - 60)), (250, 215, 140))
+        text = f"{pending['class_name']} Packing..."
+        tab_specs.append((text, tuple(pending["bbox"]), PEACH, CHARCOAL))
+        draw_boxes.append((tuple(pending["bbox"]), PEACH))
+    for (x1, y1, x2, y2), halo in draw_boxes:
+        x1, y1, x2, y2 = map(int, (x1, y1, x2, y2))
+        cv2.rectangle(frame, (x1, y1), (x2, y2), halo, 3)
+        cv2.rectangle(frame, (x1, y1), (x2, y2), CHARCOAL, 1)
+    for (text, _box, fill, foreground), rect in zip(
+            tab_specs, layout_tabs([(t, b) for t, b, _f, _g in tab_specs])):
+        draw_tab(frame, text, rect, fill, foreground)
 
+    notice = None  # (text, color) for the reserved bottom-right slot.
     x1, y1, x2, y2 = map(int, tracker.roi)
     if bag_mode == "dynamic" and bag_zone is not None:
         # Dynamic whole-bag zone: fitted contour, never the fixed rectangle.
+        # Charcoal underlay keeps the lime contour legible on white tables
+        # and colorful plastic alike; product boxes stay thin by contrast.
         status = bag_zone.status
         poly = bag_zone.footprint
         if poly is not None and len(poly) >= 3 and status in ("stable", "moving", "grace"):
+            points = poly.reshape(-1, 1, 2).astype(int)
             if status == "stable":
-                color = (90, 220, 100)
-                contour_label = "BAG"
+                cv2.polylines(frame, [points], True, CHARCOAL, 5)
+                cv2.polylines(frame, [points], True, LIME, 3)
             elif status == "grace":
-                color = (180, 180, 180)
-                contour_label = "BAG (reacquiring...)"
+                cv2.polylines(frame, [points], True, MUTED, 2)
             else:
-                color = (70, 200, 255)
-                contour_label = "BAG (last seen)"
-            cv2.polylines(frame, [poly.reshape(-1, 1, 2).astype(int)],
-                          True, color, 3)
-            bx1, by1 = int(poly[:, 0].min()), int(poly[:, 1].min())
-            draw_label(frame, contour_label,
-                       (max(2, bx1), max(18, by1 - 12)), color)
-        if status == "stable":
-            pass
-        elif status == "grace":
-            pass
+                cv2.polylines(frame, [points], True, CHARCOAL, 5)
+                cv2.polylines(frame, [points], True, PEACH, 3)
+        if status == "lost":
+            notice = ("Bag lost - packing paused", PEACH)
         elif status == "moving":
-            draw_label(frame, "BAG MOVING - packing paused", (16, 60),
-                       (70, 200, 255), scale=0.8)
-        elif status == "lost":
-            draw_label(frame, "BAG LOST - packing paused", (16, 60),
-                       (90, 120, 255), scale=0.8)
+            notice = ("Bag moving - packing paused", PEACH)
+        elif status == "grace":
+            notice = ("Reacquiring bag...", MUTED)
         elif status == "locating":
-            draw_label(frame, "LOCATING BAG...", (16, 60),
-                       (200, 200, 200), scale=0.8)
-        else:
-            draw_label(frame, "Bag localization unavailable - packing paused",
-                       (16, 60), (90, 120, 255), scale=0.8)
+            notice = ("Locating bag...", MUTED)
+        elif status == "unavailable":
+            notice = ("Bag unavailable - packing paused", PEACH)
     else:
-        cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 220, 255), 3)
-        draw_label(frame, "BAG / PACKING ZONE", (x1, max(18, y1 - 12)), (0, 220, 255))
+        cv2.rectangle(frame, (x1, y1), (x2, y2), PAPER, 3)
+        cv2.rectangle(frame, (x1, y1), (x2, y2), CHARCOAL, 1)
 
-    rows = [f"Packed: {sum(tracker.packed_counts.values())}"]
-    counts = sorted(tracker.packed_counts.items())
-    rows.extend(f"{name}: {count}" for name, count in counts[:MAX_PACKED_OVERLAY_ROWS])
-    if len(counts) > MAX_PACKED_OVERLAY_ROWS:
-        rows.append(f"+{len(counts) - MAX_PACKED_OVERLAY_ROWS} more in sidebar")
-    top = FRAME_HEIGHT - 16 - 22 * len(rows)
-    overlay = frame.copy()
-    cv2.rectangle(overlay, (8, top - 16), (214, FRAME_HEIGHT - 8), (15, 20, 25), -1)
-    cv2.addWeighted(overlay, 0.75, frame, 0.25, 0, frame)
-    for index, text in enumerate(rows):
-        draw_label(frame, text, (16, top + index * 22), (150, 245, 160))
-
-    if tracker.packed_events:
-        event = tracker.packed_events[-1]
-        if tracker.frame_number - event["frame_number"] < PACKED_BANNER_FRAMES:
-            name = packed_names.get(
-                event["track_id"],
-                f"{event['class_name']} #{event['track_id']}")
-            draw_label(frame, f"PACKED: {name}",
-                       (16, 32), (120, 255, 140), scale=0.8)
+    # Reserved bottom strip: packed line bottom-left, zone notice
+    # bottom-right. Fixed short strings on opposite sides never overlap.
+    total = sum(tracker.packed_counts.values())
+    draw_label(frame, f"Items packed: {total}", (16, 464), LIME, scale=0.6)
+    if notice is not None:
+        text, color = notice
+        (text_w, _text_h), _baseline = cv2.getTextSize(
+            text, cv2.FONT_HERSHEY_SIMPLEX, 0.55, 2)
+        draw_label(frame, text, (FRAME_WIDTH - 8 - text_w - 10, 464),
+                   color, scale=0.55)
     return frame
 
 
@@ -574,8 +618,9 @@ class FrameProcessor:
         }
         if self.bag_zone is not None:
             snapshot["bag_zone"] = self.bag_zone.snapshot()
-        display_counts, last_display = self._packed_display()
+        display_counts, last_display, display_items = self._packed_display()
         snapshot["packed_display_counts"] = display_counts
+        snapshot["packed_items"] = display_items
         if last_display is not None:
             snapshot["last_event"] = last_display
         return snapshot
@@ -611,17 +656,41 @@ class FrameProcessor:
                 logger.exception("Packed display labels unavailable.")
         self._refresh_packed_labels(identification)
         counts: dict[str, int] = {}
+        items: dict[str, dict] = {}
         for event in self.tracker.packed_events:
             name = self.packed_labels.get(
                 event["track_id"],
                 generic_packed_name(event["class_name"]))
             counts[name] = counts.get(name, 0) + 1
+            entry = items.get(name)
+            if entry is None:
+                items[name] = {
+                    "display_name": name,
+                    "count": 1,
+                    "track_id": event["track_id"],
+                    "has_crop": self._packed_has_crop(event["track_id"]),
+                }
+            else:
+                entry["count"] += 1
         last = None
         if self.tracker.packed_events:
             last = self.tracker.packed_events[-1].copy()
             last["display_name"] = self.packed_labels.get(
                 last["track_id"], generic_packed_name(last["class_name"]))
-        return counts, last
+        return counts, last, list(items.values())
+
+    def _packed_has_crop(self, track_id: int) -> bool:
+        """Whether a packed track still has an OCR crop preview available."""
+        identifier = self.identifier
+        if identifier is None:
+            return False
+        try:
+            with identifier.lock:
+                evidence = identifier.tracks.get(track_id)
+                return bool(evidence is not None
+                            and getattr(evidence, "last_crop_jpeg", b""))
+        except Exception:
+            return False
 
     def _expire_crops(self, now: float) -> None:
         for request_id, record in list(self.crop_pending.items()):
@@ -796,8 +865,7 @@ class FrameProcessor:
             )
             self._refresh_packed_labels(identification)
             frame = annotate_frame(frame, detections, self.tracker, identification,
-                                   self.bag_zone, self.bag_mode,
-                                   self.packed_labels)
+                                   self.bag_zone, self.bag_mode)
             success, image = cv2.imencode(
                 ".jpg", frame, [int(cv2.IMWRITE_JPEG_QUALITY), 80],
             )

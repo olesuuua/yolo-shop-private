@@ -755,3 +755,31 @@ test("camera falls back through constraint sets on rejection", async () => {
   assert.equal(app.elements.get("cameraInfo").textContent, "Camera 1280×960");
   socket.close();
 });
+
+test("packed section persists unnamed items and upgrades their names", async () => {
+  const app = await controller();
+  const socket = await app.connect();
+  socket.receive(detectionResponse({
+    packed_counts: { Bottle: 1 },
+    packed_display_counts: { "Unidentified bottle": 1 },
+    packed_items: [{ display_name: "Unidentified bottle", count: 1, track_id: 7, has_crop: false }],
+    last_event: { track_id: 7, class_name: "Bottle", display_name: "Unidentified bottle", timestamp: "2026-09-24T08:00:00.000Z" },
+  }));
+  const list = app.elements.get("packedList");
+  assert.equal(list.children.length, 1);
+  assert.match(list.children[0].children.at(-1).children[0].textContent, /Unidentified bottle/);
+  assert.equal(app.elements.get("packedHeading").hidden, false);
+  // Recognition clears when the box disappears, but the packed row stays,
+  // then upgrades when a reliable name arrives — with no extra count.
+  socket.receive(detectionResponse({
+    packed_counts: { Bottle: 1 },
+    packed_display_counts: { "Dobryi Cola 0,5": 1 },
+    packed_items: [{ display_name: "Dobryi Cola 0,5", count: 1, track_id: 7, has_crop: true }],
+    identification: {},
+    last_event: { track_id: 7, class_name: "Bottle", display_name: "Dobryi Cola 0,5", timestamp: "2026-09-24T08:00:00.000Z" },
+  }));
+  assert.equal(list.children.length, 1);
+  assert.match(list.children[0].children.at(-1).children[0].textContent, /Dobryi Cola/);
+  assert.match(app.elements.get("lastEvent").textContent, /Dobryi Cola/);
+  socket.close();
+});

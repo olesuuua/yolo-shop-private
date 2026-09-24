@@ -531,11 +531,13 @@ class DynamicPipelineTest(unittest.TestCase):
             response = processor.process_detect(jpeg)
         self.assertEqual(response["packed_total"], 1)
         self.assertEqual(response["events"][0]["track_id"], 7)
-        # Fitted contour is drawn (green channel dominates on the outline).
+        # Fitted lime contour is drawn (BGR ~102,245,198 on black input).
         image = cv2.imdecode(
             np.frombuffer(base64.b64decode(response["image"]), np.uint8), 1)
-        green = image[:, :, 1].astype(int) - image[:, :, 2].astype(int)
-        self.assertGreater((green > 60).sum(), 200)
+        px = image.astype(int)
+        lime = ((px[:, :, 1] > 200) & (px[:, :, 0] < 160)
+                & (px[:, :, 2] > 150)).sum()
+        self.assertGreater(lime, 200)
         # Bag disappears -> lost -> packing pauses; the same inside box
         # sitting in the frozen zone produces no further events.
         for _ in range(4):
