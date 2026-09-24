@@ -141,7 +141,11 @@ FOOD_CLASSES = frozenset(name for group in FOOD_CLASS_GROUPS.values() for name i
 
 # (left, top, right, bottom), in pixels, with origin at the top left.
 BAG_ROI = (220, 140, 420, 380)
+# Legacy fixed-ROI overlap threshold (center-inside OR overlap).
 BAG_OVERLAP_THRESHOLD = 0.30
+# Dynamic whole-bag "mostly inside": intersection ÷ product-box area >= 0.70.
+# Center-inside alone never counts. Used for the fitted footprint only.
+BAG_FOOTPRINT_OVERLAP = 0.70
 # Dynamic whole-bag zone ("dynamic") or the legacy fixed rectangle ("fixed").
 # The dynamic zone never falls back silently: without a locked bag, packing
 # confirmations pause and the page says so explicitly.
@@ -155,13 +159,33 @@ BAG_MODEL_PATH = "weights/yoloe-26n/yoloe-26n-seg.pt"
 BAG_MODEL_SHA256 = "1741c1f8da3cea47e2c01829c334a50dc0b9bbd05e685b90a3ce84fae32c8c1b"
 BAG_PROMPTS = ("plastic bag",)
 BAG_CONF_THRESHOLD = 0.10
-# Minimum mask area (fraction of the 640x480 frame) to accept: kills small
-# false fragments (measured 0.01-0.08) while real spread bags cover 0.19+.
-BAG_MIN_FRAC = 0.08
+# Minimum mask area (fraction of the 640x480 frame) to accept. Live blue-bag
+# scene (Sep 2026): the true bag scores conf ~0.3 with a rock-stable filled
+# fraction 0.076-0.077 over 150+ frames, so the old 0.08 bar rejected a
+# genuine bag by 0.003. 0.05 keeps margin below that measurement while still
+# killing small false fragments; anything admitted must additionally pass
+# 3x IoU>=0.70 consistency to lock, which flicker does not survive.
+BAG_MIN_FRAC = 0.05
 # Startup/acquisition runs every processed frame until this many consecutive
 # mutually consistent masks (pairwise IoU >= BAG_RELOCK_IOU) lock the zone.
 BAG_ACQUIRE_STABLE = 3
-BAG_REFRESH_PERIOD_S = 10.0
+# Acquisition tolerates this many consecutive unusable observations
+# (model returned nothing, or an implausible/empty mask) without restarting
+# its consistency streak; inconsistent shapes still restart it. Covers
+# confidence dips and transient occlusions, e.g. a bottle crossing the bag.
+BAG_ACQUIRE_TOLERATE_MISSES = 2
+# Prior-outline memory across bag loss (seconds). While fresh, same-position
+# subsets are treated as likely occlusion and never acquired, closing the
+# loss/reacquisition loophole for partial masks; relocation verdicts and
+# strict full-outline matches still lock immediately. Expires so a genuinely
+# changed bag is never blocked permanently (a stably visible smaller bag at
+# the same spot is accepted once the prior lapses).
+BAG_PRIOR_TTL_S = 30.0
+# Locked-outline refresh cadence (seconds). A refresh compares the live mask
+# against the trusted outline; jitter rides out via grace, moves adopt via
+# the relocation verdict. Longer = calmer display, but a genuinely moved bag
+# keeps its stale outline (and paused counting) until the next refresh.
+BAG_REFRESH_PERIOD_S = 15.0
 # Initial acquisition compares successive masks by this overlap.
 BAG_RELOCK_IOU = 0.70
 # Mean abs grayscale diff (0-255) inside the expanded zone bbox. It flags

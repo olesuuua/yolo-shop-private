@@ -178,55 +178,60 @@ class TrackerPauseTest(unittest.TestCase):
         self.assertEqual(tracker.packed_counts["Bottle"], 1)
 
     def test_zone_motion_alone_cannot_pack_stationary_product(self):
-        """Stationary bottle crossed by a moving bag: no packing event."""
+        """Center-inside with insufficient overlap never packs.
+
+        The 70% footprint rule is the rim guard: a huge box whose center
+        falls in the bag but covers <70% of its own area must never count,
+        even after a zone jump and consistent observations.
+        """
         tracker = PackingTracker()
-        bottle = (500.0, 300.0, 580.0, 420.0)  # never moves
-        far = ZoneTest(rasterize(None), 0.30, version=1)  # empty zone
+        huge = (-100.0, -100.0, 400.0, 400.0)  # center inside, overlap ~0.36
+        far = ZoneTest(rasterize(None), 0.70, version=1)  # empty zone
         near_grid = np.zeros((120, 160), np.uint8)
-        near_grid[60:110, 110:150] = 1  # covers the bottle
-        near = ZoneTest(near_grid, 0.30, version=2)
+        near_grid[60:110, 110:150] = 1
+        near = ZoneTest(near_grid, 0.70, version=2)
         tracker.zone_test = far
         for _ in range(3):
-            self.assertEqual(tracker.update([Detection(7, "Bottle", bottle)]), [])
-        # Bag jumps onto the stationary bottle: pause + relocation, as the
-        # zone tracker does on a significant move.
+            self.assertEqual(tracker.update([Detection(7, "Bottle", huge)]), [])
         tracker.set_packing_paused(True)
         tracker.zone_test = near
         tracker.note_zone_relocation()
         for _ in range(5):
-            self.assertEqual(tracker.update([Detection(7, "Bottle", bottle)]), [])
-        # ... and even after the bag stabilizes, the motionless bottle must
-        # re-prove itself from outside first.
+            self.assertEqual(tracker.update([Detection(7, "Bottle", huge)]), [])
         tracker.set_packing_paused(False)
-        for _ in range(3):
-            self.assertEqual(tracker.update([Detection(7, "Bottle", bottle)]), [])
+        for _ in range(5):
+            self.assertEqual(tracker.update([Detection(7, "Bottle", huge)]), [])
         self.assertEqual(tracker.packed_counts.get("Bottle", 0), 0)
 
     def test_outside_evidence_goes_stale_on_zone_version_bump(self):
-        """Gradual zone creep onto a stationary product cannot pack it."""
+        """A new outline restarts the consistent-inside streak.
+
+        Inside-only counting still requires fresh observations under the
+        current version: the first frames after a version bump never count
+        immediately, then a consistent streak completes once.
+        """
         tracker = PackingTracker()
         bottle = (300.0, 220.0, 340.0, 260.0)
         far_grid = np.zeros((120, 160), np.uint8)
         near_grid = np.zeros((120, 160), np.uint8)
         near_grid[40:100, 60:110] = 1  # covers the bottle
-        tracker.zone_test = ZoneTest(far_grid, 0.30, version=1)
+        tracker.zone_test = ZoneTest(far_grid, 0.70, version=1)
         tracker.zone_version = 1
         for _ in range(3):  # outside under v1
             tracker.update([Detection(7, "Bottle", bottle)])
-        # Zone creeps (no explicit relocation): version bump invalidates it.
-        tracker.zone_test = ZoneTest(near_grid, 0.30, version=2)
+        # Zone changes version: the streak restarts, so one or two fresh
+        # inside frames are never enough on their own.
+        tracker.zone_test = ZoneTest(near_grid, 0.70, version=2)
         tracker.zone_version = 2
-        for _ in range(5):  # inside under v2, no fresh outside evidence
-            self.assertEqual(tracker.update([Detection(7, "Bottle", bottle)]), [])
-        # Fresh outside observations under v2 re-arm the transfer.
-        tracker.zone_test = ZoneTest(far_grid, 0.30, version=2)
-        for _ in range(3):
-            tracker.update([Detection(7, "Bottle", bottle)])
-        tracker.zone_test = ZoneTest(near_grid, 0.30, version=2)
-        events = []
-        for _ in range(3):
-            events += tracker.update([Detection(7, "Bottle", bottle)])
+        tracker.note_zone_relocation()
+        self.assertEqual(tracker.update([Detection(7, "Bottle", bottle)]), [])
+        self.assertEqual(tracker.update([Detection(7, "Bottle", bottle)]), [])
+        events = tracker.update([Detection(7, "Bottle", bottle)])
         self.assertEqual(len(events), 1)
+        # ... and it never duplicates afterwards.
+        for _ in range(3):
+            self.assertEqual(tracker.update([Detection(7, "Bottle", bottle)]), [])
+        self.assertEqual(tracker.packed_counts.get("Bottle", 0), 1)
 
 
 class ZoneStateMachineTest(unittest.TestCase):
@@ -275,27 +280,30 @@ class ZoneStateMachineTest(unittest.TestCase):
 
     def test_failed_refresh_retries_for_two_seconds_then_lost(self):
         base = disc_mask()
-        partial = base.copy()
-        partial[:, 350:] = False
-        zone = BagZoneTracker(FakeLocalizer([base] * 3 + [partial] * 8))
+        left = disc_mask(240, 240, 110)
+        right = disc_mask(400, 240, 110)
+        zone = BagZoneTracker(FakeLocalizer([base] * 3 + [left, right] * 6))
         for frame_id in range(1, 4):
             zone.update(blank_frame(), frame_id, now=100.0)
         old = zone.snapshot()["contour"]
         self.assertEqual(zone.localizer.calls, 3)
+        # First rejection: uncertain, not gone — outline retained for
+        # display, counting paused, product streaks kept frozen.
         zone.update(blank_frame(), 4, now=110.0)
         self.assertEqual(zone.status, "grace")
         self.assertEqual(zone.snapshot()["contour"], old)
-        self.assertFalse(zone.packing_paused)
+        self.assertTrue(zone.packing_paused)
+        self.assertIsNotNone(zone.last_locked_grid)
+        # Inconsistent replacements agree with nothing: no fast-path adopt.
         zone.update(blank_frame(), 5, now=111.0)
         self.assertEqual(zone.status, "grace")
+        self.assertEqual(zone.snapshot()["contour"], old)
+        # Bounded retention: expiry still drops the outline for reacquire.
         zone.update(blank_frame(), 6, now=112.1)
         self.assertEqual(zone.status, "lost")
         self.assertTrue(zone.packing_paused)
         self.assertEqual(zone.snapshot()["contour"], [])
-        for frame_id in range(7, 10):
-            zone.update(blank_frame(), frame_id, now=113.0)
-        self.assertEqual(zone.status, "lost")
-        self.assertGreaterEqual(zone.refresh_rejections, 6)
+        self.assertIsNone(zone.last_locked_grid)
 
     def test_whole_move_at_refresh_and_large_jump_rejected(self):
         base = disc_mask()

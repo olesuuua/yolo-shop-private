@@ -79,10 +79,18 @@ class TrackState:
     # geometry change invalidates it: the product must be seen outside the
     # NEW zone before any inside streak can count.
     outside_zone_version: int = -1
+    # Version under which the current consistent-inside streak was
+    # collected (dynamic zone). A new outline restarts the streak, so items
+    # are always evaluated afresh against the current footprint.
+    inside_zone_version: int = -1
     # "Packing..." watch: monotonic deadline (seconds) while a
     # reliably-outside track stays hidden after vanishing at the bag
     # boundary (None = not pending).
     pending_deadline: float | None = None
+    # Zone version when the pending watch started. Expiry under a different
+    # version never counts: disappearance alone, or under obsolete geometry,
+    # must not manufacture a packing event.
+    pending_zone_version: int = -1
 
 
 class PackingTracker:
@@ -133,8 +141,9 @@ class PackingTracker:
     def note_zone_relocation(self) -> None:
         """Discard incomplete outside-to-inside streaks after the bag moved.
 
-        A stationary product under a jumping zone must re-prove itself with
-        fresh observations once the bag stabilizes. Already confirmed packed
+        A new outline restarts all product evidence: streak counters reset
+        and pending watches clear, so visible items are evaluated afresh and
+        disappearance alone can never count. Already confirmed packed
         counts and IDs are left intact.
         """
         for state in self.tracks.values():
@@ -144,7 +153,9 @@ class PackingTracker:
             state.outside_frames = 0
             state.seen_outside = False
             state.outside_zone_version = -1
+            state.inside_zone_version = -1
             state.pending_deadline = None
+            state.pending_zone_version = -1
 
     def _pack_once(self, state: TrackState, events: list) -> None:
         """Count one packed item for a track (normal, pending, or merged)."""
@@ -234,8 +245,11 @@ class PackingTracker:
                         if (pending.pending_deadline is not None
                                 and pending.class_name == state.class_name
                                 and not pending.packed
+                                and (self.zone_version < 0
+                                     or pending.pending_zone_version == self.zone_version)
                                 and _center_distance(pending.last_bbox, state.last_bbox) < 120.0):
                             pending.pending_deadline = None
+                            pending.pending_zone_version = -1
                             self._pack_once(state, events)
                             break
 
@@ -243,12 +257,20 @@ class PackingTracker:
             if self.frame_number - state.last_seen_frame > 1:
                 state.inside_frames = 0
                 state.outside_frames = 0
+                state.inside_zone_version = -1
             if state.pending_deadline is not None and not state.packed:
                 # Product evidence resolves on real time even while the zone
                 # geometry is frozen: this counts insertions that move the bag.
-                if outside:
+                # A pending watch tied to an old outline never resolves: the
+                # item must re-prove itself against the current geometry.
+                if (self.zone_version >= 0
+                        and state.pending_zone_version != self.zone_version):
+                    state.pending_deadline = None
+                    state.pending_zone_version = -1
+                elif outside:
                     # Reappeared clearly outside: it never went in; cancel.
                     state.pending_deadline = None
+                    state.pending_zone_version = -1
                 elif inside:
                     # Reappeared inside after vanishing at the boundary:
                     # the hidden transfer completed while unseen.
@@ -272,8 +294,23 @@ class PackingTracker:
                     state.seen_outside = True
                     state.outside_zone_version = self.zone_version
                 state.inside_frames = 0
+                state.inside_zone_version = -1
             elif inside:
                 state.outside_frames = 0
+                if self.zone_test is not None:
+                    # Dynamic whole-bag zone: "mostly inside" (overlap with
+                    # the filled footprint) for consistent frames counts,
+                    # even when the camera never saw the item enter. The
+                    # streak is versioned, so a new outline restarts it.
+                    if state.inside_zone_version != self.zone_version:
+                        state.inside_zone_version = self.zone_version
+                        state.inside_frames = 1
+                    else:
+                        state.inside_frames += 1
+                    if state.inside_frames >= self.min_inside_frames and not state.packed:
+                        self._pack_once(state, events)
+                # Legacy fixed-ROI path keeps the outside->inside transfer
+                # below (versioned outside evidence required).
             else:
                 # Rim hysteresis band (neither inside nor clearly outside):
                 # hold position, accrue nothing either way.
@@ -282,7 +319,8 @@ class PackingTracker:
                 self.zone_version < 0
                 or state.outside_zone_version == self.zone_version
             )
-            if inside and state.seen_outside and outside_current and not state.packed:
+            if (self.zone_test is None and inside and state.seen_outside
+                    and outside_current and not state.packed):
                 state.inside_frames += 1
                 if state.inside_frames >= self.min_inside_frames:
                     self._pack_once(state, events)
@@ -299,9 +337,15 @@ class PackingTracker:
             if state.pending_deadline is not None:
                 if now >= state.pending_deadline:
                     # Hidden the whole ~2 s wait: the boundary disappearance
-                    # was a completed transfer. Resolves even while the bag
-                    # zone is moving/lost (product evidence, not geometry).
-                    self._pack_once(state, events)
+                    # was a completed transfer. A watch tied to an old
+                    # outline never fires on expiry: disappearance alone, or
+                    # under obsolete geometry, must not count.
+                    if (self.zone_version < 0
+                            or state.pending_zone_version == self.zone_version):
+                        self._pack_once(state, events)
+                    else:
+                        state.pending_deadline = None
+                        state.pending_zone_version = -1
                 continue
             # The watch starts on product evidence alone, even while the
             # zone is frozen: insertions routinely move the bag.
@@ -310,10 +354,71 @@ class PackingTracker:
                 # occlusion): watch ~2 s of real time instead of dropping
                 # the trail. Vanishing while clearly outside starts no watch.
                 state.pending_deadline = now + self.pending_pack_seconds
+                state.pending_zone_version = self.zone_version
                 continue
             state.inside_frames = 0
             state.outside_frames = 0
+            state.inside_zone_version = -1
         return events
+
+    def _zone_inside(self, bbox: BBox) -> bool:
+        """Mirror of the per-detection inside test in update()."""
+        if self.zone_test is not None:
+            try:
+                return bool(self.zone_test(bbox))
+            except Exception:
+                return False
+        return is_inside_bag(bbox, self.roi, self.overlap_threshold)
+
+    def _zone_overlap(self, bbox: BBox) -> float:
+        """Share of the product box inside the footprint (diagnostics)."""
+        overlap = getattr(self.zone_test, "overlap_fraction", None)
+        if callable(overlap):
+            try:
+                return max(0.0, min(1.0, float(overlap(bbox))))
+            except Exception:
+                return 0.0
+        try:
+            return max(0.0, min(1.0, float(intersection_ratio(bbox, self.roi))))
+        except Exception:
+            return 0.0
+
+    def track_diagnostics(self) -> list:
+        """Per-track packing state for visible uncounted products.
+
+        Each entry reports the footprint-overlap share, the inside streak,
+        and the reason counting is currently blocked. Bounded by the live
+        track count; no video.
+        """
+        out = []
+        for state in self.tracks.values():
+            pending = state.pending_deadline is not None
+            if state.packed:
+                blocked = "already counted"
+            elif self.packing_paused:
+                blocked = "packing paused (bag uncertain)"
+            elif pending:
+                blocked = "hidden at boundary, awaiting reappearance"
+            elif self._zone_inside(state.last_bbox):
+                blocked = ("inside %d/%d — still confirming"
+                           % (state.inside_frames, self.min_inside_frames))
+            elif self._clearly_outside(state.last_bbox):
+                blocked = "outside the footprint"
+            else:
+                blocked = "at footprint rim"
+            out.append({
+                "track_id": state.track_id,
+                "class_name": state.class_name,
+                "overlap": round(self._zone_overlap(state.last_bbox), 3),
+                "inside": "%d/%d" % (state.inside_frames,
+                                     self.min_inside_frames),
+                "seen_outside": bool(state.seen_outside),
+                "pending": bool(pending),
+                "packed": bool(state.packed),
+                "frames_since_seen": self.frame_number - state.last_seen_frame,
+                "blocked": blocked,
+            })
+        return out
 
     def snapshot(self) -> dict:
         return {
@@ -321,4 +426,5 @@ class PackingTracker:
             "packed_total": sum(self.packed_counts.values()),
             "event_count": len(self.packed_events),
             "last_event": self.packed_events[-1].copy() if self.packed_events else None,
+            "track_diag": self.track_diagnostics(),
         }

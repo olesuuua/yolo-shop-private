@@ -524,11 +524,12 @@ class FrameProcessor:
 
         from bag_zone import BagLocalizer, BagZoneTracker, load_bag_model
         from config import (
-            BAG_ACQUIRE_STABLE, BAG_CONF_THRESHOLD,
-            BAG_GRACE_PERIOD_S, BAG_REFRESH_PERIOD_S,
+            BAG_ACQUIRE_STABLE, BAG_ACQUIRE_TOLERATE_MISSES, BAG_CONF_THRESHOLD,
+            BAG_FOOTPRINT_OVERLAP, BAG_GRACE_PERIOD_S, BAG_PRIOR_TTL_S,
+            BAG_REFRESH_PERIOD_S,
             BAG_IMPLAUSIBLE_CONF, BAG_IMPLAUSIBLE_FRAC,
             BAG_MAX_FOOTPRINT_FRAC, BAG_MIN_FRAC,
-            BAG_MOTION_THRESHOLD, BAG_OVERLAP_THRESHOLD, BAG_RELOCK_IOU,
+            BAG_MOTION_THRESHOLD, BAG_RELOCK_IOU,
             BAG_RIM_MARGIN_PX,
         )
         try:
@@ -540,9 +541,11 @@ class FrameProcessor:
             localizer = None
         return BagZoneTracker(
             localizer, on_relocation=self.tracker.note_zone_relocation,
-            overlap_threshold=BAG_OVERLAP_THRESHOLD,
+            overlap_threshold=BAG_FOOTPRINT_OVERLAP,
             refresh_period_s=BAG_REFRESH_PERIOD_S,
             acquire_stable=BAG_ACQUIRE_STABLE,
+            acquire_tolerate_misses=BAG_ACQUIRE_TOLERATE_MISSES,
+            prior_ttl_s=BAG_PRIOR_TTL_S,
             relock_iou=BAG_RELOCK_IOU, motion_threshold=BAG_MOTION_THRESHOLD,
             rim_margin=BAG_RIM_MARGIN_PX,
             grace_period_s=BAG_GRACE_PERIOD_S,
@@ -557,6 +560,7 @@ class FrameProcessor:
             if self.bag_zone is not None:
                 self.bag_zone.reset()
                 self.tracker.zone_test = self.bag_zone.zone_test
+                self.tracker.zone_version = self.bag_zone.zone_test.version
                 self.tracker.set_packing_paused(self.bag_zone.packing_paused)
             self.session_version += 1
             for request_id in self.crop_pending:

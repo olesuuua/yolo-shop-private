@@ -25,6 +25,8 @@ const lastEvent = document.getElementById("lastEvent");
 const modelInfo = document.getElementById("modelInfo");
 const cameraInfo = document.getElementById("cameraInfo");
 const bagStatus = document.getElementById("bagStatus");
+const bagDiag = document.getElementById("bagDiag");
+const packDiag = document.getElementById("packDiag");
 const packedList = document.getElementById("packedList");
 const packedHeading = document.getElementById("packedHeading");
 const identList = document.getElementById("identList");
@@ -476,6 +478,17 @@ function renderSession(response) {
     } else {
       bagStatus.textContent = "Bag: localization unavailable — packing paused";
       bagStatus.style.color = "#ffb496";
+    }
+    if (bagDiag) {
+      const reason = bag && bag.bag_diag && bag.bag_diag.reason;
+      bagDiag.textContent = reason ? `Bag diagnostics: ${reason}` : "";
+    }
+    if (packDiag) {
+      // Visible uncounted products: overlap share, inside streak, blocker.
+      const tracks = Array.isArray(response.track_diag) ? response.track_diag : [];
+      const pending = tracks.filter((t) => !t.packed);
+      packDiag.textContent = pending.length ? `Packing: ${pending.slice(0, 3).map((t) =>
+        `${t.class_name} #${t.track_id} · ${Math.round(t.overlap * 100)}% inside · ${t.blocked}`).join("; ")}` : "";
     }
   }
   renderPacked(response.packed_items || []);
