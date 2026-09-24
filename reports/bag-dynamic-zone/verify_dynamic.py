@@ -50,8 +50,8 @@ def main() -> None:
 
     from bag_zone import BagLocalizer, BagZoneTracker, load_bag_model
     from config import (
-        BAG_ACQUIRE_STABLE, BAG_ADOPT_IOU, BAG_CONF_THRESHOLD,
-        BAG_HEARTBEAT_FRAMES, BAG_MIN_FRAC, BAG_MISSES_TO_LOSE,
+        BAG_ACQUIRE_STABLE, BAG_CONF_THRESHOLD,
+        BAG_REFRESH_PERIOD_S, BAG_MIN_FRAC,
         BAG_MOTION_THRESHOLD, BAG_OVERLAP_THRESHOLD, BAG_RELOCK_IOU,
     )
     from tracking import Detection, PackingTracker
@@ -66,10 +66,10 @@ def main() -> None:
     zone = BagZoneTracker(
         BagLocalizer(model, BAG_CONF_THRESHOLD, BAG_MIN_FRAC),
         overlap_threshold=BAG_OVERLAP_THRESHOLD,
-        heartbeat_frames=BAG_HEARTBEAT_FRAMES,
-        acquire_stable=BAG_ACQUIRE_STABLE, adopt_iou=BAG_ADOPT_IOU,
+        refresh_period_s=BAG_REFRESH_PERIOD_S,
+        acquire_stable=BAG_ACQUIRE_STABLE,
         relock_iou=BAG_RELOCK_IOU, motion_threshold=BAG_MOTION_THRESHOLD,
-        misses_to_lose=BAG_MISSES_TO_LOSE)
+        )
     tracker = PackingTracker()
     tracker.zone_test = zone.zone_test
 

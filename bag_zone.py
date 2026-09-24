@@ -12,12 +12,10 @@ turns the mask into:
 
 Design notes (MVP):
 
-- ``BagLocalizer`` owns the segmentation model. ``BagZoneTracker`` owns the
-  state machine (locating -> stable -> moving/lost) and never lets an old
-  prediction move the zone backward (frame-id guard).
-- While stable, expensive inference is reduced to a periodic heartbeat plus
-  a cheap frame-difference motion trigger; acquisition and loss use
-  every-frame inference until the position re-stabilizes.
+- ``BagLocalizer`` owns segmentation. ``BagZoneTracker`` locks its outline for
+  ten seconds, then replaces it only with a credible whole-bag observation.
+- Acquisition and failed refreshes retry on processed frames. During a lock,
+  frame difference is diagnostic only and never changes packing geometry.
 - Packing geometry is exposed as a ``ZoneTest`` callable so ``tracking.py``
   stays free of vision dependencies.
 """
@@ -184,10 +182,10 @@ def rasterize(poly: np.ndarray) -> np.ndarray:
     return grid
 
 
-def working_outline(grid: np.ndarray):
-    """Return a drawing polygon from the persistent packing grid."""
-    full = cv2.resize(grid, (640, 480), interpolation=cv2.INTER_NEAREST)
-    return footprint_contour(full)
+def translate_grid(grid: np.ndarray, dx: int, dy: int) -> np.ndarray:
+    return cv2.warpAffine(grid, np.float32([[1, 0, dx], [0, 1, dy]]),
+                          (GRID_WIDTH, GRID_HEIGHT),
+                          flags=cv2.INTER_NEAREST, borderValue=0)
 
 
 def grid_iou(a: np.ndarray, b: np.ndarray) -> float:
@@ -328,42 +326,45 @@ class BagZoneTracker:
     """State machine turning bag masks into a packing zone.
 
     States: ``locating`` (no zone yet), ``stable`` (zone locked, packing
-    allowed), ``grace`` (bag briefly unseen: last outline kept visible and
-    packing continues while every frame tries to reacquire), ``moving``
-    (zone frozen at last position, packing paused), ``lost`` (no zone,
-    packing paused), ``unavailable`` (no model).
+    allowed), ``grace`` (refresh failed; outline retained for two seconds),
+    ``lost`` (no zone, packing paused), ``unavailable`` (no model).
     ``packing_paused`` is True in every state except ``stable`` and ``grace``.
     """
 
     def __init__(self, localizer=None, on_relocation=None,
                  overlap_threshold: float = 0.30,
-                 heartbeat_frames: int = 10, acquire_stable: int = 3,
-                 adopt_iou: float = 0.5, relock_iou: float = 0.7,
-                 motion_threshold: float = 12.0, misses_to_lose: int = 2,
+                 acquire_stable: int = 3, relock_iou: float = 0.7,
+                 motion_threshold: float = 12.0,
                  rim_margin: float = 16.0, grace_period_s: float = 2.0,
                  max_footprint_frac: float = 0.70,
                  implausible_conf: float = 0.20,
-                 implausible_frac: float = 0.45):
+                 implausible_frac: float = 0.45,
+                 refresh_period_s: float = 10.0):
         self.localizer = localizer
         self.on_relocation = on_relocation
         self.overlap_threshold = overlap_threshold
-        self.heartbeat_frames = heartbeat_frames
         self.acquire_stable = acquire_stable
-        self.adopt_iou = adopt_iou
         self.relock_iou = relock_iou
         self.motion_threshold = motion_threshold
-        self.misses_to_lose = misses_to_lose
         self.rim_margin = rim_margin
         self.grace_period_s = grace_period_s
         self.max_footprint_frac = max_footprint_frac
         self.implausible_conf = implausible_conf
         self.implausible_frac = implausible_frac
+        self.refresh_period_s = refresh_period_s
         self.reset()
 
     def reset(self) -> None:
         self.status = "locating" if self.localizer is not None else "unavailable"
         self.footprint = None  # Nx2 int polygon in 640x480 pixels
         self.grid = np.zeros((GRID_HEIGHT, GRID_WIDTH), np.uint8)
+        self.last_locked_grid = None
+        self.locked_at = None
+        self.last_update_at = None
+        self.move_warning = False
+        self.refresh_rejections = 0
+        self.last_rejection = None
+        self.last_shift_px = [0, 0]
         self.zone_bbox = None
         self.zone_conf = 0.0
         self.zone_frame_id = -1
@@ -372,18 +373,12 @@ class BagZoneTracker:
         self.candidate_grid = None
         self.consecutive = 0
         self.misses = 0
-        self.last_check_id = -10 ** 9
         self.previous_small = None
         self.inference_count = 0
         self.inference_ms_ema = 0.0
         self.last_motion = 0.0
         self.grace_deadline = 0.0
         self.rejected_masks = 0
-        self.shape_candidate = None
-        self.shape_support = None
-        self.shape_repeats = 0
-        self.move_candidate = None
-        self.move_repeats = 0
 
     @property
     def packing_paused(self) -> bool:
@@ -396,11 +391,11 @@ class BagZoneTracker:
             callback()
 
     def _adopt(self, grid: np.ndarray, poly, bbox, conf: float,
-               frame_id: int) -> None:
+               frame_id: int, now: float, force_relocation: bool = False) -> None:
         # Frame-id guard: an old prediction must never move the zone back.
         if frame_id <= self.zone_frame_id:
             return
-        if self.status in ("locating", "moving", "lost"):
+        if self.status in ("locating", "lost") or force_relocation:
             # First lock, re-lock, or recovery: products that looked
             # "outside" under the old (or absent) zone must re-prove
             # themselves, so a bag placed over a stationary product cannot
@@ -410,14 +405,11 @@ class BagZoneTracker:
         elif self.status == "grace":
             # Reappearance during grace: same-place refresh continues
             # normally; a real move still restarts product evidence.
-            significant = grid_iou(grid, self.grid) < 0.90
+            significant = not np.array_equal(grid, self.grid)
             if significant:
                 self._relocation()
         else:
-            # Steady-state refresh: only a real geometry change invalidates
-            # outside evidence. Ordinary jitter (IoU >= 0.9) refreshes the
-            # contour in place so genuine transfers survive heartbeats.
-            significant = grid_iou(grid, self.grid) < 0.90
+            significant = not np.array_equal(grid, self.grid)
         if significant:
             self.zone_version += 1
             self.zone_test = ZoneTest(grid, self.overlap_threshold,
@@ -426,18 +418,17 @@ class BagZoneTracker:
         else:
             np.copyto(self.grid, grid)
         self.grid = self.zone_test.grid
+        self.last_locked_grid = self.grid.copy()
         self.footprint = poly
         self.zone_bbox = bbox
         self.zone_conf = conf
         self.zone_frame_id = frame_id
+        self.locked_at = now
+        self.move_warning = False
+        self.last_update_at = now
         self.status = "stable"
         self.consecutive = 0
         self.candidate_grid = None
-        self.shape_candidate = None
-        self.shape_support = None
-        self.shape_repeats = 0
-        self.move_candidate = None
-        self.move_repeats = 0
         self.misses = 0
 
     def _observe_candidate(self, grid: np.ndarray, frame_id: int) -> None:
@@ -447,11 +438,11 @@ class BagZoneTracker:
         else:
             self.candidate_grid = grid
             self.consecutive = 1
-        self.last_check_id = frame_id
 
-    def _try_lock(self, grid, poly, bbox, conf: float, frame_id: int) -> None:
+    def _try_lock(self, grid, poly, bbox, conf: float, frame_id: int,
+                  now: float) -> None:
         if self.consecutive >= self.acquire_stable:
-            self._adopt(grid, poly, bbox, conf, frame_id)
+            self._adopt(grid, poly, bbox, conf, frame_id, now)
 
     def update(self, frame_640x480, frame_id: int, now=None) -> dict:
         """Advance the zone with one processed frame; never raises."""
@@ -461,15 +452,15 @@ class BagZoneTracker:
             return self._update(frame_640x480, frame_id, now)
         except Exception:
             logger.exception("Bag zone update failed; packing stays paused.")
-            if self.status in ("stable", "grace"):
-                self.status = "moving"
-                self._relocation()
+            if self.status == "stable":
+                self._enter_grace(now)
+            elif self.status == "grace" and now >= self.grace_deadline:
+                self._enter_lost()
             return self.snapshot()
 
     def _enter_grace(self, now: float) -> None:
-        # Brief disappearance: keep the ghost outline and keep counting
-        # while every frame tries to reacquire. Streaks restart so only
-        # fresh observations under the ghost can complete.
+        if self.status == "grace":
+            return
         self.grace_deadline = now + self.grace_period_s
         self.status = "grace"
         self._relocation()
@@ -478,18 +469,12 @@ class BagZoneTracker:
         self.misses += 1
         self.consecutive = 0
         self.candidate_grid = None
-        self.shape_candidate = None
-        self.shape_support = None
-        self.shape_repeats = 0
-        self.move_candidate = None
-        self.move_repeats = 0
         if self.status == "stable":
-            if self.misses >= self.misses_to_lose:
-                self._enter_grace(now)
+            self._enter_grace(now)
         elif self.status == "grace":
             if now >= self.grace_deadline:
                 self._enter_lost()
-        elif self.status not in ("stable",):
+        elif self.status != "stable":
             self.status = "lost" if self.zone_frame_id >= 0 else "locating"
 
     def _enter_lost(self) -> None:
@@ -505,92 +490,59 @@ class BagZoneTracker:
         self.status = "lost"
         self._relocation()
 
-    def _refresh_working_footprint(self, observed: np.ndarray,
-                                   conf: float, frame_id: int) -> None:
-        """Keep occluded edges; accept repeated, modest outward growth."""
-        self.status = "stable"
-        self.misses = 0
-        self.zone_conf = conf
-        added = (observed > 0) & (self.grid == 0)
-        area = int(self.grid.sum())
-        if (added.sum() < max(12, area * 0.01)
-                or added.sum() > area * 0.20
-                or grid_iou(observed, self.grid) < self.adopt_iou):
-            self.shape_candidate = None
-            self.shape_support = None
-            self.shape_repeats = 0
-            self.zone_frame_id = frame_id
-            return
-        if (self.shape_candidate is not None
-                and grid_iou(observed, self.shape_candidate) >= 0.90):
-            self.shape_repeats += 1
-            self.shape_support &= added
-        else:
-            self.shape_candidate = observed.copy()
-            self.shape_support = added.copy()
-            self.shape_repeats = 1
-        if self.shape_repeats < 3:
-            self.zone_frame_id = frame_id
-            return
-        # Require the same added pixels across observations; transient
-        # bottle/hand silhouettes outside the rim cannot grow the zone.
-        if self.shape_support.sum() < max(12, area * 0.01):
-            self.shape_candidate = None
-            self.shape_support = None
-            self.shape_repeats = 0
-            self.zone_frame_id = frame_id
-            return
-        grown = np.logical_or(self.grid, self.shape_support).astype(np.uint8)
-        poly = working_outline(grown)
-        if poly is not None:
-            ys, xs = np.nonzero(grown)
-            bbox = (int(xs.min() * 4), int(ys.min() * 4),
-                    int((xs.max() + 1) * 4), int((ys.max() + 1) * 4))
-            self._adopt(grown, poly, bbox, conf, frame_id)
+    def _credible_refresh(self, observed: np.ndarray):
+        """Compare whole shapes after a bounded translation, not raw overlap.
 
-    def _whole_bag_shift(self, observed: np.ndarray) -> bool:
-        """A translation moves opposing visible extents in the same direction."""
-        old_y, old_x = np.nonzero(self.grid)
+        The missing-area and perimeter gates reject a bottle-shaped notch
+        even when total area and IoU are deceptively close to the old bag.
+        """
+        old = self.last_locked_grid
+        old_area = int(old.sum())
+        new_area = int(observed.sum())
+        if not old_area or not 0.88 <= new_area / old_area <= 1.12:
+            return None, "area"
+        old_y, old_x = np.nonzero(old)
         new_y, new_x = np.nonzero(observed)
-        if not len(new_x):
-            return False
-        dx = (int(new_x.min()) - int(old_x.min()),
-              int(new_x.max()) - int(old_x.max()))
-        dy = (int(new_y.min()) - int(old_y.min()),
-              int(new_y.max()) - int(old_y.max()))
-        return any(abs(a) >= 3 and abs(b) >= 3 and a * b > 0
-                   for a, b in (dx, dy))
+        dx = int(round(float(new_x.mean() - old_x.mean())))
+        dy = int(round(float(new_y.mean() - old_y.mean())))
+        if max(abs(dx), abs(dy)) > 8:
+            return None, "jump"
+        aligned = translate_grid(old, dx, dy)
+        missing = int(np.logical_and(aligned > 0, observed == 0).sum())
+        extra = int(np.logical_and(aligned == 0, observed > 0).sum())
+        if missing > old_area * 0.008 or extra > old_area * 0.05:
+            return None, "shape"
+        kernel = np.ones((3, 3), np.uint8)
+        old_edge = int((aligned - cv2.erode(aligned, kernel)).sum())
+        new_edge = int((observed - cv2.erode(observed, kernel)).sum())
+        if new_edge > old_edge * 1.18:
+            return None, "edge"
+        return (dx, dy), None
 
     def _update(self, frame_640x480, frame_id: int, now: float) -> dict:
+        self.last_update_at = now
         if self.localizer is None:
             self.status = "unavailable"
             return self.snapshot()
-        if frame_id <= self.zone_frame_id and self.status == "stable":
+        if frame_id <= self.zone_frame_id:
             # Duplicate or reordered delivery: keep the newer zone.
             return self.snapshot()
 
         small = cv2.resize(frame_640x480, (GRID_WIDTH, GRID_HEIGHT))
         gray = cv2.cvtColor(small, cv2.COLOR_BGR2GRAY)
-        need = False
-        if self.status != "stable":
-            need = True  # locating / moving / lost: check every frame.
-        elif frame_id - self.last_check_id >= self.heartbeat_frames:
-            need = True
-        elif (self.zone_bbox is not None and self.previous_small is not None
-                and frame_id > self.last_check_id):
+        if (self.status == "stable" and self.zone_bbox is not None
+                and self.previous_small is not None):
             self.last_motion = motion_energy(
                 self.previous_small, frame_640x480, self.zone_bbox)
             if self.last_motion >= self.motion_threshold:
-                need = True
+                self.move_warning = True
         self.previous_small = gray
-
-        if not need:
+        if self.status == "stable" and now - self.locked_at < self.refresh_period_s:
             return self.snapshot()
 
         found = self.localizer.localize(frame_640x480)
-        self.last_check_id = frame_id
+        self.inference_count += 1
         if found is not None:
-            self.inference_count += 1
             ms = found["inference_ms"]
             self.inference_ms_ema = (ms if not self.inference_ms_ema
                                      else 0.2 * ms + 0.8 * self.inference_ms_ema)
@@ -599,9 +551,9 @@ class BagZoneTracker:
             self._register_miss(now)
             return self.snapshot()
 
-        self.misses = 0
         filled = fill_footprint(found["mask"])
         if not filled.any():
+            self._register_miss(now)
             return self.snapshot()
         conf = found["conf"]
         if (float(filled.mean()) > self.max_footprint_frac
@@ -615,43 +567,33 @@ class BagZoneTracker:
             return self.snapshot()
         poly = footprint_contour(filled)
         if poly is None:
+            self._register_miss(now)
             return self.snapshot()
         grid = rasterize(poly)
         x1, y1, x2, y2 = (int(poly[:, 0].min()), int(poly[:, 1].min()),
                           int(poly[:, 0].max()), int(poly[:, 1].max()))
 
-        if self.status in ("stable", "grace"):
-            if self._whole_bag_shift(grid):
-                if (self.move_candidate is not None
-                        and grid_iou(grid, self.move_candidate) >= self.relock_iou):
-                    self.move_repeats += 1
-                else:
-                    self.move_candidate = grid.copy()
-                    self.move_repeats = 1
-                if self.move_repeats < 3:
-                    return self.snapshot()
-                self.status = "moving"
-                self._relocation()
-                self.candidate_grid = grid
-                self.consecutive = 1
-                self.move_candidate = None
-                self.move_repeats = 0
-            else:
-                self.move_candidate = None
-                self.move_repeats = 0
-                if grid_iou(grid, self.grid) >= self.adopt_iou:
-                    self._refresh_working_footprint(grid, conf, frame_id)
+        if self.last_locked_grid is not None:
+            shift, reason = self._credible_refresh(grid)
+            if shift is None:
+                self.refresh_rejections += 1
+                self.last_rejection = reason
+                if self.status in ("stable", "grace"):
+                    self._enter_grace(now)
+                    if now >= self.grace_deadline:
+                        self._enter_lost()
+                return self.snapshot()
+            dx, dy = shift
+            self.last_rejection = None
+            self.last_shift_px = [dx * 4, dy * 4]
+            moved = max(abs(dx), abs(dy)) >= 2
+            # Geometry changes invalidate outside evidence; packed IDs stay
+            # with the product tracker and cannot count again on refresh.
+            self._adopt(grid, poly, (x1, y1, x2, y2), conf, frame_id, now,
+                        force_relocation=moved)
         else:
-            # locating / moving / lost: recover the bag.
-            # Collect stable repeats, then lock.
             self._observe_candidate(grid, frame_id)
-            self._try_lock(grid, poly, (x1, y1, x2, y2), conf, frame_id)
-            if self.status == "stable":
-                pass
-            elif self.zone_frame_id >= 0:
-                self.status = "moving"
-            else:
-                self.status = "locating"
+            self._try_lock(grid, poly, (x1, y1, x2, y2), conf, frame_id, now)
         return self.snapshot()
 
     def snapshot(self) -> dict:
@@ -668,5 +610,11 @@ class BagZoneTracker:
             "inference_count": self.inference_count,
             "inference_ms_ema": round(self.inference_ms_ema, 1),
             "last_motion": round(self.last_motion, 2),
+            "possible_bag_move_during_lock": self.move_warning,
+            "last_refresh_shift_px": self.last_shift_px,
+            "refresh_rejections": self.refresh_rejections,
+            "last_refresh_rejection": self.last_rejection,
+            "refresh_due_in_s": round(max(0.0, self.refresh_period_s -
+                (self.last_update_at - self.locked_at)), 1) if self.locked_at is not None else None,
             "rejected_masks": self.rejected_masks,
         }

@@ -161,22 +161,13 @@ BAG_MIN_FRAC = 0.08
 # Startup/acquisition runs every processed frame until this many consecutive
 # mutually consistent masks (pairwise IoU >= BAG_RELOCK_IOU) lock the zone.
 BAG_ACQUIRE_STABLE = 3
-# While stable: heartbeat re-inference cadence in processed frames
-# (~6 s at the measured ~1.75 processed fps) plus a cheap motion trigger.
-BAG_HEARTBEAT_FRAMES = 10
-# Heartbeat mask overlapping the locked zone by >= this is ordinary jitter
-# (adopt directly); below it the bag relocated (freeze + pause + relock).
-BAG_ADOPT_IOU = 0.50
+BAG_REFRESH_PERIOD_S = 10.0
+# Initial acquisition compares successive masks by this overlap.
 BAG_RELOCK_IOU = 0.70
-# Mean abs grayscale diff (0-255) inside the expanded zone bbox that forces
-# an immediate re-check. Calibrated on the bag video: stable pairs 3.5-5.2,
-# bag-moving pairs 20-41.
+# Mean abs grayscale diff (0-255) inside the expanded zone bbox. It flags
+# possible motion during the locked interval without changing the outline.
 BAG_MOTION_THRESHOLD = 12.0
-# Consecutive heartbeat/motion misses before a locked zone stops trusting
-# its outline. The zone first enters a wall-clock grace period (keeps the
-# ghost outline and keeps counting); only after BAG_GRACE_PERIOD_S without
-# reacquisition is it declared lost (outline removed, packing paused).
-BAG_MISSES_TO_LOSE = 2
+# A failed refresh retries each processed frame for this long before loss.
 BAG_GRACE_PERIOD_S = 2.0
 # Rim hysteresis for outside evidence, in 640x480 pixels: a product must
 # clear the footprint by this margin before an outside observation counts.

@@ -5,12 +5,13 @@ returning synthetic masks.
 """
 
 import unittest
+from pathlib import Path
 
 import numpy as np
 
 from bag_zone import (
     BagZoneTracker, NoZone, ZoneTest, box_footprint_fractions,
-    box_overlap_fraction, fill_footprint, grid_iou, is_bag_self,
+    box_overlap_fraction, fill_footprint, footprint_contour, grid_iou, is_bag_self,
     motion_energy, rasterize,
 )
 from tracking import Detection, PackingTracker
@@ -229,293 +230,112 @@ class TrackerPauseTest(unittest.TestCase):
 
 
 class ZoneStateMachineTest(unittest.TestCase):
-    def test_acquire_stable_then_heartbeat(self):
-        zone = BagZoneTracker(FakeLocalizer([disc_mask()] * 10),
-                              heartbeat_frames=10)
-        for frame_id in (1, 2):
-            state = zone.update(blank_frame(), frame_id)
-            self.assertEqual(state["status"], "locating")
-        state = zone.update(blank_frame(), 3)
-        self.assertEqual(state["status"], "stable")
-        self.assertFalse(zone.packing_paused)
-        calls = zone.localizer.calls
-        # Stable: no inference until the heartbeat frame.
-        zone.update(blank_frame(), 4)
-        self.assertEqual(zone.localizer.calls, calls)
-        zone.update(blank_frame(), 13)
-        self.assertGreater(zone.localizer.calls, calls)
-
-    def test_stale_frame_id_cannot_move_zone_back(self):
-        first = disc_mask(320, 240)
-        zone = BagZoneTracker(FakeLocalizer([first] * 5))
-        for frame_id in (1, 2, 3):
-            zone.update(blank_frame(), frame_id)
-        bbox_before = list(zone.zone_bbox)
-        # An old prediction re-delivered late must not shift the zone.
-        zone.update(blank_frame(), 2)
-        self.assertEqual(list(zone.zone_bbox), bbox_before)
-
-    def test_relocation_pauses_and_requires_relock(self):
-        relocations = []
-        script = [disc_mask(320, 240)] * 3 + [disc_mask(100, 100, 60)] * 6
-        zone = BagZoneTracker(FakeLocalizer(script), heartbeat_frames=1,
-                              on_relocation=lambda: relocations.append(1))
-        for frame_id in (1, 2, 3):
-            zone.update(blank_frame(), frame_id)
-        self.assertEqual(zone.status, "stable")
-        state = zone.update(blank_frame(), 4)
-        self.assertEqual(state["status"], "stable")
-        zone.update(blank_frame(), 5)
-        state = zone.update(blank_frame(), 6)
-        self.assertEqual(state["status"], "moving")
-        self.assertTrue(zone.packing_paused)
-        # Relocation fires on the move and again on the re-lock adopt.
-        self.assertEqual(len(relocations), 2)
-        # Frozen zone keeps the old footprint while moving.
-        self.assertIsNotNone(zone.zone_bbox)
-        for frame_id in (7, 8):
-            state = zone.update(blank_frame(), frame_id)
-        self.assertEqual(state["status"], "stable")
-        self.assertFalse(zone.packing_paused)
-
-    def test_occluded_rim_and_interior_keep_drawn_and_packing_zone(self):
+    def test_ten_second_lock_and_one_count(self):
         base = disc_mask()
-        bottle_rim = base.copy()
-        bottle_rim[195:275, 420:460] = False
-        hand_rim = base.copy()
-        hand_rim[115:165, 285:355] = False
-        inside = base.copy()
-        inside[225:255, 300:340] = False
-        script = [base] * 3 + [bottle_rim] * 3 + [inside] * 3 + [hand_rim] * 3
-        zone = BagZoneTracker(FakeLocalizer(script), heartbeat_frames=1)
-        for frame_id in range(1, 4):
-            zone.update(blank_frame(), frame_id)
-        outline = zone.snapshot()["contour"]
-        grid = zone.grid.copy()
+        notch = base.copy()
+        notch[205:270, 425:460] = False  # bottle-width cut in the rim
+        script = [base] * 3 + [notch] * 2 + [base] * 3
+        zone = BagZoneTracker(FakeLocalizer(script))
         tracker = PackingTracker()
-        tracker.zone_test = zone.zone_test
-        tracker.zone_version = zone.zone_version
-        bottle = (475.0, 220.0, 505.0, 260.0)
-        for _ in range(3):
-            tracker.update([Detection(7, "Bottle", bottle)])
+        outside = Detection(7, "Bottle", (475, 220, 505, 260))
+        inside = Detection(7, "Bottle", (305, 220, 335, 260))
+        for frame_id in range(1, 4):
+            zone.update(blank_frame(), frame_id, now=100.0)
+        locked = zone.grid.copy()
+        contour = zone.snapshot()["contour"]
+        self.assertEqual(zone.localizer.calls, 3)
         events = []
-        for frame_id in range(4, 13):
-            zone.update(blank_frame(), frame_id)
-            self.assertEqual(zone.snapshot()["contour"], outline)
-            self.assertTrue(np.array_equal(zone.grid, grid))
+        for frame_id in range(4, 10):
+            frame = blank_frame() if frame_id != 6 else np.full((480, 640, 3), 255, np.uint8)
+            zone.update(frame, frame_id, now=100.0 + frame_id)
             tracker.zone_test = zone.zone_test
             tracker.zone_version = zone.zone_version
-            if frame_id >= 7:
-                bottle = (305.0, 220.0, 335.0, 260.0)
-            events += tracker.update([Detection(7, "Bottle", bottle)])
+            tracker.set_packing_paused(zone.packing_paused)
+            events += tracker.update([outside if frame_id < 7 else inside])
+            self.assertTrue(np.array_equal(zone.grid, locked))
+            self.assertEqual(zone.snapshot()["contour"], contour)
         self.assertEqual(len(events), 1)
-        self.assertEqual(tracker.packed_counts.get("Bottle"), 1)
+        self.assertEqual(zone.localizer.calls, 3)
+        self.assertTrue(zone.snapshot()["possible_bag_move_during_lock"])
+        zone.update(blank_frame(), 10, now=110.0)  # first refresh: notch
+        self.assertEqual(zone.status, "grace")
+        self.assertTrue(np.array_equal(zone.grid, locked))
+        self.assertEqual(zone.snapshot()["last_refresh_rejection"], "shape")
+        zone.update(blank_frame(), 11, now=110.5)  # second notch rejected
+        zone.update(blank_frame(), 12, now=111.0)  # full bag recovers
+        self.assertEqual(zone.status, "stable")
+        self.assertEqual(zone.snapshot()["contour"], contour)
+        for frame_id in range(13, 18):
+            zone.update(blank_frame(), frame_id, now=111.0 + frame_id / 10)
+            tracker.zone_test = zone.zone_test
+            tracker.zone_version = zone.zone_version
+            events += tracker.update([inside])
+        self.assertEqual(len(events), 1)
+        self.assertEqual(tracker.packed_counts["Bottle"], 1)
 
-    def test_bulge_requires_repeats_and_shape_alone_does_not_pack(self):
+    def test_failed_refresh_retries_for_two_seconds_then_lost(self):
         base = disc_mask()
-        bulge = base.copy()
-        bulge[215:265, 425:453] = True
-        oversized = disc_mask(radius=165)
-        script = [base] * 3 + [oversized, base] + [bulge] * 3
-        zone = BagZoneTracker(FakeLocalizer(script), heartbeat_frames=1)
+        partial = base.copy()
+        partial[:, 350:] = False
+        zone = BagZoneTracker(FakeLocalizer([base] * 3 + [partial] * 8))
         for frame_id in range(1, 4):
-            zone.update(blank_frame(), frame_id)
-        old_grid = zone.grid.copy()
-        old_outline = zone.snapshot()["contour"]
-        for frame_id in (4, 5, 6, 7):
-            zone.update(blank_frame(), frame_id)
-            self.assertTrue(np.array_equal(zone.grid, old_grid))
-            self.assertEqual(zone.snapshot()["contour"], old_outline)
-        zone.update(blank_frame(), 8)
-        self.assertGreater(zone.grid.sum(), old_grid.sum())
-        self.assertNotEqual(zone.snapshot()["contour"], old_outline)
-        tracker = PackingTracker()
-        tracker.zone_test = zone.zone_test
-        tracker.zone_version = zone.zone_version
-        for _ in range(4):
-            self.assertEqual(tracker.update([]), [])
-        self.assertEqual(tracker.packed_counts, {})
-
-    def test_loss_after_misses(self):
-        script = [disc_mask()] * 3 + [None] * 6
-        zone = BagZoneTracker(FakeLocalizer(script), heartbeat_frames=1,
-                              misses_to_lose=2, grace_period_s=2.0)
-        for frame_id in (1, 2, 3):
             zone.update(blank_frame(), frame_id, now=100.0)
-        self.assertEqual(zone.status, "stable")
-        zone.update(blank_frame(), 4, now=100.0)  # miss 1: still stable
-        self.assertEqual(zone.status, "stable")
-        state = zone.update(blank_frame(), 5, now=100.0)  # miss 2: grace
-        self.assertEqual(state["status"], "grace")
-        self.assertFalse(zone.packing_paused)  # counting continues
-        self.assertIsNotNone(zone.footprint)  # ghost outline kept
-        zone.update(blank_frame(), 6, now=101.0)  # inside the 2 s window
+        old = zone.snapshot()["contour"]
+        self.assertEqual(zone.localizer.calls, 3)
+        zone.update(blank_frame(), 4, now=110.0)
         self.assertEqual(zone.status, "grace")
-        state = zone.update(blank_frame(), 7, now=103.0)  # window expired
-        self.assertEqual(state["status"], "lost")
-        self.assertTrue(zone.packing_paused)
-        self.assertIsNone(zone.footprint)  # outline removed
-        self.assertIsInstance(zone.zone_test, NoZone)
-
-    def test_motion_trigger(self):
-        zone = BagZoneTracker(FakeLocalizer([disc_mask()] * 10),
-                              heartbeat_frames=100, motion_threshold=12.0)
-        for frame_id in (1, 2, 3):
-            zone.update(blank_frame(), frame_id)
-        calls = zone.localizer.calls
-        moved = np.full((480, 640, 3), 255, np.uint8)
-        zone.update(moved, 4)
-        self.assertGreater(zone.localizer.calls, calls)
-
-    def test_motion_energy_separation(self):
-        still = np.zeros((480, 640, 3), np.uint8)
-        import cv2
-
-        prev = cv2.cvtColor(cv2.resize(still, (160, 120)), cv2.COLOR_BGR2GRAY)
-        self.assertLess(motion_energy(prev, still, (60, 80, 580, 470)), 1.0)
-        changed = still.copy()
-        changed[100:400, 100:500] = 200
-        self.assertGreater(motion_energy(prev, changed, (60, 80, 580, 470)), 12.0)
-
-    def test_implausible_masks_rejected_as_misses(self):
-        flood = np.ones((480, 640), bool)  # whole screen, low conf
-        zone = BagZoneTracker(
-            FakeLocalizer([{"mask": flood, "conf": 0.16}] * 6),
-            heartbeat_frames=1, misses_to_lose=2)
-        for frame_id in (1, 2, 3):
-            state = zone.update(blank_frame(), frame_id, now=100.0)
-        self.assertEqual(state["status"], "locating")  # never locks garbage
-        self.assertIsNone(zone.footprint)
-        self.assertGreater(zone.snapshot()["rejected_masks"], 0)
-        # A large HIGH-confidence mask still locks (generous upper bar).
-        zone2 = BagZoneTracker(
-            FakeLocalizer([{"mask": flood, "conf": 0.9}] * 6),
-            heartbeat_frames=1, misses_to_lose=2,
-            max_footprint_frac=1.0)
-        for frame_id in (1, 2, 3):
-            state = zone2.update(blank_frame(), frame_id, now=100.0)
-        self.assertEqual(state["status"], "stable")
-
-
-class GracePeriodTest(unittest.TestCase):
-    """2-second bag-loss grace: ghost outline, continued counting, expiry."""
-
-    def _wired(self, script, **kwargs):
-        zone = BagZoneTracker(FakeLocalizer(script), heartbeat_frames=1,
-                              misses_to_lose=1, **kwargs)
-        tracker = PackingTracker()
-        tracker.zone_test = zone.zone_test
-        tracker.zone_version = zone.zone_test.version
-        frame_id = [0]
-
-        def step(now, detections):
-            frame_id[0] += 1
-            state = zone.update(blank_frame(), frame_id[0], now=now)
-            tracker.zone_test = zone.zone_test
-            tracker.zone_version = zone.zone_test.version
-            tracker.set_packing_paused(zone.packing_paused)
-            return state, tracker.update(detections)
-
-        return zone, tracker, step
-
-    def test_counting_continues_in_ghost_then_pauses_on_expiry(self):
-        script = [disc_mask(320, 240, 120)] * 3 + [None] * 10
-        zone, tracker, step = self._wired(script, grace_period_s=2.0)
-        outside = (40.0, 40.0, 100.0, 100.0)
-        inside = (300.0, 220.0, 340.0, 260.0)
-        for _ in range(3):
-            state, _ = step(100.0, [])
-        self.assertEqual(state["status"], "stable")
-        step(100.0, [])  # miss 1 -> grace, streaks restart
-        self.assertEqual(zone.status, "grace")
+        self.assertEqual(zone.snapshot()["contour"], old)
         self.assertFalse(zone.packing_paused)
-        ghost = zone.zone_test
-        for _ in range(3):  # fresh outside evidence under the ghost
-            step(100.0, [Detection(5, "Bottle", outside)])
-        for _ in range(3):  # completes inside the ghost: still counts
-            _, events = step(100.0, [Detection(5, "Bottle", inside)])
+        zone.update(blank_frame(), 5, now=111.0)
         self.assertEqual(zone.status, "grace")
-        self.assertEqual(len(events), 1)
-        self.assertIs(zone.zone_test, ghost)  # same frozen zone
-        for _ in range(3):  # past the 2 s deadline without reacquisition
-            state, _ = step(103.0, [Detection(5, "Bottle", inside)])
-        self.assertEqual(state["status"], "lost")
+        zone.update(blank_frame(), 6, now=112.1)
+        self.assertEqual(zone.status, "lost")
         self.assertTrue(zone.packing_paused)
-        self.assertIsNone(zone.footprint)
+        self.assertEqual(zone.snapshot()["contour"], [])
+        for frame_id in range(7, 10):
+            zone.update(blank_frame(), frame_id, now=113.0)
+        self.assertEqual(zone.status, "lost")
+        self.assertGreaterEqual(zone.refresh_rejections, 6)
 
-    def test_same_place_reappearance_continues_normally(self):
-        relocations = []
-        script = [disc_mask(320, 240, 120)] * 3 + [None] + [disc_mask(320, 240, 120)] * 10
-        zone = BagZoneTracker(
-            FakeLocalizer(script), heartbeat_frames=1, misses_to_lose=1,
-            grace_period_s=2.0,
-            on_relocation=lambda: relocations.append(1))
-        for frame_id in (1, 2, 3):
+    def test_whole_move_at_refresh_and_large_jump_rejected(self):
+        base = disc_mask()
+        shifted = disc_mask(336, 252)
+        far = disc_mask(440, 240)
+        zone = BagZoneTracker(FakeLocalizer([base] * 3 + [shifted, far]),
+                              refresh_period_s=10.0)
+        for frame_id in range(1, 4):
             zone.update(blank_frame(), frame_id, now=100.0)
-        version = zone.zone_version
-        zone.update(blank_frame(), 4, now=100.0)  # miss -> grace
+        old = zone.grid.copy()
+        zone.update(blank_frame(), 4, now=109.9)
+        self.assertTrue(np.array_equal(zone.grid, old))
+        zone.update(blank_frame(), 5, now=110.0)
+        self.assertEqual(zone.status, "stable")
+        self.assertEqual(zone.snapshot()["last_refresh_shift_px"], [16, 12])
+        self.assertFalse(np.array_equal(zone.grid, old))
+        zone.update(blank_frame(), 6, now=120.0)
         self.assertEqual(zone.status, "grace")
-        state = zone.update(blank_frame(), 5, now=100.5)  # same bag back
-        self.assertEqual(state["status"], "stable")
-        self.assertEqual(zone.zone_version, version)  # no geometry change
-        # Relocations: initial lock + grace entry; the same-place
-        # reappearance itself wipes nothing.
-        self.assertEqual(len(relocations), 2)
+        self.assertEqual(zone.snapshot()["last_refresh_rejection"], "jump")
 
-    def test_bag_move_during_grace_creates_no_false_pack(self):
-        """Bag slides onto a stationary product mid-grace: no packed event."""
-        relocations = []
-        home = disc_mask(320, 240, 120)
-        away = disc_mask(100, 100, 60)
-        script = [home] * 3 + [None] * 3 + [away] * 10
-        zone = BagZoneTracker(
-            FakeLocalizer(script), heartbeat_frames=1, misses_to_lose=1,
-            grace_period_s=2.0,
-            on_relocation=lambda: relocations.append(1))
-        tracker = PackingTracker()
-        product = (80.0, 80.0, 140.0, 140.0)  # inside `away`, outside `home`
-        frame_id = [0]
-
-        def step(now):
-            frame_id[0] += 1
-            state = zone.update(blank_frame(), frame_id[0], now=now)
-            tracker.zone_test = zone.zone_test
-            tracker.zone_version = zone.zone_test.version
-            tracker.set_packing_paused(zone.packing_paused)
-            return state, tracker.update([Detection(9, "Bottle", product)])
-
-        for _ in range(3):
-            state, _ = step(100.0)
-        self.assertEqual(state["status"], "stable")  # locked at home
-        state, events = step(100.0)  # miss -> grace (wipes home streaks)
+    def test_recorded_partial_mask_rejected(self):
+        source = Path(__file__).with_name("fixtures") / "bag_live_20260924_masks.npz"
+        with np.load(source) as packed:
+            full = np.unpackbits(packed["frame_90"]).reshape(480, 640).astype(bool)
+            partial = np.unpackbits(packed["frame_360"]).reshape(480, 640).astype(bool)
+        zone = BagZoneTracker(FakeLocalizer([full] * 3 + [partial] * 3))
+        for frame_id in range(1, 4):
+            zone.update(blank_frame(), frame_id, now=100.0)
+        old = zone.grid.copy()
+        zone.update(blank_frame(), 4, now=110.0)
         self.assertEqual(zone.status, "grace")
-        self.assertEqual(events, [])
-        for _ in range(2):  # still inside the 2 s window
-            state, events = step(100.0)
-            self.assertEqual(state["status"], "grace")
-            self.assertEqual(events, [])
-        for _ in range(2):  # repeated edge shift before relocation
-            state, events = step(100.0)
-            self.assertEqual(state["status"], "grace")
-            self.assertEqual(events, [])
-        state, events = step(100.0)
-        self.assertEqual(state["status"], "moving")
-        self.assertTrue(zone.packing_paused)
-        self.assertEqual(events, [])
-        for _ in range(6):  # relocks over the stationary product...
-            state, events = step(100.0)
-            self.assertEqual(events, [])
-        self.assertEqual(state["status"], "stable")
-        self.assertGreaterEqual(len(relocations), 2)
-        self.assertEqual(tracker.packed_counts.get("Bottle", 0), 0)
-        still = np.zeros((480, 640, 3), np.uint8)
-        import cv2
+        self.assertTrue(np.array_equal(zone.grid, old))
 
-        prev = cv2.cvtColor(cv2.resize(still, (160, 120)), cv2.COLOR_BGR2GRAY)
-        self.assertLess(motion_energy(prev, still, (60, 80, 580, 470)), 1.0)
-        changed = still.copy()
-        changed[100:400, 100:500] = 200
-        self.assertGreater(motion_energy(prev, changed, (60, 80, 580, 470)), 12.0)
+    def test_implausible_flood_rejected(self):
+        flood = np.ones((480, 640), bool)
+        zone = BagZoneTracker(FakeLocalizer([{"mask": flood, "conf": 0.16}] * 3))
+        for frame_id in range(1, 4):
+            zone.update(blank_frame(), frame_id, now=100.0)
+        self.assertEqual(zone.status, "locating")
+        self.assertGreater(zone.snapshot()["rejected_masks"], 0)
 
 
 class _Array:
@@ -561,11 +381,10 @@ class DynamicPipelineTest(unittest.TestCase):
                 return [SimpleNamespace(boxes=boxes, names=names)]
 
         model = StubModel()
-        # Heartbeat every frame: the scripted localizer drives the zone
-        # through acquire -> stable -> lost within a few processed frames.
-        # Zero grace period: expiry is immediate once misses accumulate.
-        zone = BagZoneTracker(FakeLocalizer(script), heartbeat_frames=1,
-                              grace_period_s=0.0)
+        # Zero refresh/grace periods keep this pipeline test short; timed
+        # locking and retry behavior are tested above with explicit clocks.
+        zone = BagZoneTracker(FakeLocalizer(script),
+                              grace_period_s=0.0, refresh_period_s=0.0)
         processor = FrameProcessor(model, identifier=None, bag_zone=zone)
         ok, jpeg = cv2.imencode(
             ".jpg", np.zeros((480, 640, 3), np.uint8))

@@ -12,6 +12,8 @@
     ],
     "pending_seen": false,
     "zones": [
+      "grace",
+      "lost",
       "stable"
     ]
   },
@@ -28,7 +30,7 @@
     ],
     "pending_seen": true,
     "zones": [
-      "moving",
+      "grace",
       "stable"
     ]
   },

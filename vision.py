@@ -524,10 +524,10 @@ class FrameProcessor:
 
         from bag_zone import BagLocalizer, BagZoneTracker, load_bag_model
         from config import (
-            BAG_ACQUIRE_STABLE, BAG_ADOPT_IOU, BAG_CONF_THRESHOLD,
-            BAG_GRACE_PERIOD_S, BAG_HEARTBEAT_FRAMES,
+            BAG_ACQUIRE_STABLE, BAG_CONF_THRESHOLD,
+            BAG_GRACE_PERIOD_S, BAG_REFRESH_PERIOD_S,
             BAG_IMPLAUSIBLE_CONF, BAG_IMPLAUSIBLE_FRAC,
-            BAG_MAX_FOOTPRINT_FRAC, BAG_MIN_FRAC, BAG_MISSES_TO_LOSE,
+            BAG_MAX_FOOTPRINT_FRAC, BAG_MIN_FRAC,
             BAG_MOTION_THRESHOLD, BAG_OVERLAP_THRESHOLD, BAG_RELOCK_IOU,
             BAG_RIM_MARGIN_PX,
         )
@@ -541,10 +541,10 @@ class FrameProcessor:
         return BagZoneTracker(
             localizer, on_relocation=self.tracker.note_zone_relocation,
             overlap_threshold=BAG_OVERLAP_THRESHOLD,
-            heartbeat_frames=BAG_HEARTBEAT_FRAMES,
-            acquire_stable=BAG_ACQUIRE_STABLE, adopt_iou=BAG_ADOPT_IOU,
+            refresh_period_s=BAG_REFRESH_PERIOD_S,
+            acquire_stable=BAG_ACQUIRE_STABLE,
             relock_iou=BAG_RELOCK_IOU, motion_threshold=BAG_MOTION_THRESHOLD,
-            misses_to_lose=BAG_MISSES_TO_LOSE, rim_margin=BAG_RIM_MARGIN_PX,
+            rim_margin=BAG_RIM_MARGIN_PX,
             grace_period_s=BAG_GRACE_PERIOD_S,
             max_footprint_frac=BAG_MAX_FOOTPRINT_FRAC,
             implausible_conf=BAG_IMPLAUSIBLE_CONF,
