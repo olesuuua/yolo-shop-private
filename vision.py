@@ -122,8 +122,53 @@ def quality_gate_accepts(sharpness_full: float, sharpness_norm: float) -> bool:
     return full >= OCR_SHARPNESS_MIN or normed >= OCR_SHARPNESS_NORM_MIN
 
 
+def letterbox_rect(upload_width, upload_height,
+                   canvas_width=FRAME_WIDTH, canvas_height=FRAME_HEIGHT):
+    """Content rectangle mapping an upload frame into the detection canvas.
+
+    Aspect-preserving letterbox: 16:9 uploads land on a centered 640x360
+    content area (60 px black bars top/bottom); 4:3 uploads are the identity.
+    The browser applies the identical math when drawing its detection
+    canvas, so detection boxes, bag geometry, and OCR coordinates share one
+    undistorted 640x480 space. Rounding matches the JS mirror
+    (round-half-up on exact .5 aside, irrelevant at real dimensions).
+    """
+    try:
+        upload_width, upload_height = float(upload_width), float(upload_height)
+    except (TypeError, ValueError):
+        return (0, 0, canvas_width, canvas_height)
+    if upload_width <= 0 or upload_height <= 0:
+        return (0, 0, canvas_width, canvas_height)
+    scale = min(canvas_width / upload_width, canvas_height / upload_height)
+    width = int(round(upload_width * scale))
+    height = int(round(upload_height * scale))
+    return ((canvas_width - width) // 2, (canvas_height - height) // 2,
+            width, height)
+
+
+def letterbox_frame(full_frame):
+    """Resize an upload frame into detection pixels without distortion."""
+    height, width = full_frame.shape[:2]
+    dx, dy, content_width, content_height = letterbox_rect(width, height)
+    canvas = np.zeros((FRAME_HEIGHT, FRAME_WIDTH, 3), dtype=np.uint8)
+    resized = cv2.resize(full_frame, (content_width, content_height))
+    canvas[dy:dy + content_height, dx:dx + content_width] = resized
+    return canvas
+
+
+def detect_to_upload(bbox_640x480, upload_width, upload_height):
+    """Inverse of the letterbox: detection pixels -> upload pixels."""
+    x1, y1, x2, y2 = (float(v) for v in bbox_640x480)
+    dx, dy, content_width, content_height = letterbox_rect(
+        upload_width, upload_height)
+    scale_x = upload_width / content_width
+    scale_y = upload_height / content_height
+    return ((x1 - dx) * scale_x, (y1 - dy) * scale_y,
+            (x2 - dx) * scale_x, (y2 - dy) * scale_y)
+
+
 def upload_crop_rect(bbox_640x480, upload_width, upload_height,
-                      margin=OCR_CROP_MARGIN):
+                     margin=OCR_CROP_MARGIN):
     """Padded crop rectangle in upload pixels, or None when too small.
 
     Geometry mirrors hires_crop without needing pixels, so the backend can
@@ -142,13 +187,16 @@ def upload_crop_rect(bbox_640x480, upload_width, upload_height,
         return None
     if upload_width <= 0 or upload_height <= 0:
         return None
-    scale_x, scale_y = upload_width / FRAME_WIDTH, upload_height / FRAME_HEIGHT
+    # Margin in detection pixels, then inverse letterbox into the upload.
     width, height = x2 - x1, y2 - y1
     margin_x, margin_y = width * margin, height * margin
-    out_x1 = max(0, int((x1 - margin_x) * scale_x))
-    out_y1 = max(0, int((y1 - margin_y) * scale_y))
-    out_x2 = min(upload_width, int((x2 + margin_x) * scale_x))
-    out_y2 = min(upload_height, int((y2 + margin_y) * scale_y))
+    ux1, uy1, ux2, uy2 = detect_to_upload(
+        (x1 - margin_x, y1 - margin_y, x2 + margin_x, y2 + margin_y),
+        upload_width, upload_height)
+    out_x1 = max(0, int(ux1))
+    out_y1 = max(0, int(uy1))
+    out_x2 = min(upload_width, int(ux2))
+    out_y2 = min(upload_height, int(uy2))
     if out_x2 - out_x1 < OCR_MIN_CROP_WIDTH or out_y2 - out_y1 < OCR_MIN_CROP_HEIGHT:
         return None
     return (out_x1, out_y1, out_x2, out_y2)
@@ -247,7 +295,7 @@ def pending_tracks(tracker) -> list:
     """Tracks currently in the "Packing..." watch (hidden at the boundary)."""
     pendings = []
     for track_id, state in tracker.tracks.items():
-        if state.pending_since is None or state.packed:
+        if state.pending_deadline is None or state.packed:
             continue
         pendings.append({
             "track_id": track_id, "class_name": state.class_name,
@@ -257,8 +305,9 @@ def pending_tracks(tracker) -> list:
 
 
 def annotate_frame(frame, detections, tracker, identification=None,
-                   bag_zone=None, bag_mode="fixed"):
+                   bag_zone=None, bag_mode="fixed", packed_names=None):
     identification = identification or {}
+    packed_names = packed_names or {}
     for index, detection in enumerate(detections):
         state = tracker.tracks.get(detection.track_id)
         if state is None:
@@ -266,24 +315,29 @@ def annotate_frame(frame, detections, tracker, identification=None,
         color = (90, 220, 100) if state.packed else (255, 185, 70)
         x1, y1, x2, y2 = map(int, detection.bbox)
         cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
-        # Cascade stacked labels so neighboring tracks stay readable.
-        shift = (index % 4) * 26
+        # Alternate the label stack above/below the box so neighboring
+        # tracks stop piling onto one row; audience overlay text stays short.
+        below_ok = (index % 2 == 1) and (y2 + 66 <= FRAME_HEIGHT - 2)
+        if below_ok:
+            class_y, main_y, sub_y = y2 + 18, y2 + 40, y2 + 62
+        else:
+            class_y, main_y, sub_y = (max(100, y1 - 60), max(74, y1 - 34),
+                                      max(48, y1 - 8))
         label = f"{state.class_name} #{state.track_id}"
         if state.packed:
             label += " PACKED"
         elif state.inside_frames:
             label += f" entering {state.inside_frames}/{tracker.min_inside_frames}"
-        draw_label(frame, label, (max(2, x1), max(70, y1 - 60 - shift)), color)
+        draw_label(frame, label, (max(2, x1), class_y), color)
         info = identification.get(detection.track_id)
         if info is not None:
-            # Human-readable name + size sits directly above the box; the
-            # qualifier line stacks above it, under the class label, so no
-            # label is hidden behind the bottle or the frame edge.
+            # Human-readable name + size next to the box; truncated for the
+            # overlay (the Recognition panel keeps the full text).
             main, sub = ident_label(info)
-            draw_label(frame, main, (max(2, x1), max(18, y1 - 8 - shift)),
+            draw_label(frame, main[:30], (max(2, x1), main_y),
                        (140, 220, 255), scale=0.55)
             if sub:
-                draw_label(frame, sub, (max(2, x1), max(44, y1 - 34 - shift)),
+                draw_label(frame, sub, (max(2, x1), sub_y),
                            (120, 255, 140) if sub == "Recognized"
                            else (250, 215, 140), scale=0.5)
     # "Packing..." watches: item hidden at the boundary, single clean label
@@ -349,7 +403,10 @@ def annotate_frame(frame, detections, tracker, identification=None,
     if tracker.packed_events:
         event = tracker.packed_events[-1]
         if tracker.frame_number - event["frame_number"] < PACKED_BANNER_FRAMES:
-            draw_label(frame, f"PACKED: {event['class_name']} #{event['track_id']}",
+            name = packed_names.get(
+                event["track_id"],
+                f"{event['class_name']} #{event['track_id']}")
+            draw_label(frame, f"PACKED: {name}",
                        (16, 32), (120, 255, 140), scale=0.8)
     return frame
 
@@ -424,9 +481,11 @@ class FrameProcessor:
         from bag_zone import BagLocalizer, BagZoneTracker, load_bag_model
         from config import (
             BAG_ACQUIRE_STABLE, BAG_ADOPT_IOU, BAG_CONF_THRESHOLD,
-            BAG_GRACE_PERIOD_S, BAG_HEARTBEAT_FRAMES, BAG_MIN_FRAC,
-            BAG_MISSES_TO_LOSE, BAG_MOTION_THRESHOLD, BAG_OVERLAP_THRESHOLD,
-            BAG_RELOCK_IOU, BAG_RIM_MARGIN_PX,
+            BAG_GRACE_PERIOD_S, BAG_HEARTBEAT_FRAMES,
+            BAG_IMPLAUSIBLE_CONF, BAG_IMPLAUSIBLE_FRAC,
+            BAG_MAX_FOOTPRINT_FRAC, BAG_MIN_FRAC, BAG_MISSES_TO_LOSE,
+            BAG_MOTION_THRESHOLD, BAG_OVERLAP_THRESHOLD, BAG_RELOCK_IOU,
+            BAG_RIM_MARGIN_PX,
         )
         try:
             root = Path(__file__).resolve().parent
@@ -442,7 +501,10 @@ class FrameProcessor:
             acquire_stable=BAG_ACQUIRE_STABLE, adopt_iou=BAG_ADOPT_IOU,
             relock_iou=BAG_RELOCK_IOU, motion_threshold=BAG_MOTION_THRESHOLD,
             misses_to_lose=BAG_MISSES_TO_LOSE, rim_margin=BAG_RIM_MARGIN_PX,
-            grace_period_s=BAG_GRACE_PERIOD_S)
+            grace_period_s=BAG_GRACE_PERIOD_S,
+            max_footprint_frac=BAG_MAX_FOOTPRINT_FRAC,
+            implausible_conf=BAG_IMPLAUSIBLE_CONF,
+            implausible_frac=BAG_IMPLAUSIBLE_FRAC)
 
     def reset(self) -> dict:
         with self.lock:
@@ -518,6 +580,20 @@ class FrameProcessor:
             snapshot["last_event"] = last_display
         return snapshot
 
+    def _refresh_packed_labels(self, identification: dict) -> None:
+        """Cache recognized names for packed tracks (display only).
+
+        The cache upgrades a packed row from its generic name when OCR
+        evidence completes and survives track pruning, so a late
+        recognition renames the row instead of adding a count.
+        """
+        for event in self.tracker.packed_events:
+            track_id = event["track_id"]
+            info = identification.get(track_id)
+            if (isinstance(info, dict) and info.get("complete")
+                    and str(info.get("label_main") or "").strip()):
+                self.packed_labels[track_id] = str(info["label_main"]).strip()
+
     def _packed_display(self) -> tuple:
         """Audience names for packed items, without touching their counts.
 
@@ -533,12 +609,7 @@ class FrameProcessor:
                 identification = self.identifier.snapshot()
             except Exception:
                 logger.exception("Packed display labels unavailable.")
-        for event in self.tracker.packed_events:
-            track_id = event["track_id"]
-            info = identification.get(track_id)
-            if (isinstance(info, dict) and info.get("complete")
-                    and str(info.get("label_main") or "").strip()):
-                self.packed_labels[track_id] = str(info["label_main"]).strip()
+        self._refresh_packed_labels(identification)
         counts: dict[str, int] = {}
         for event in self.tracker.packed_events:
             name = self.packed_labels.get(
@@ -637,7 +708,10 @@ class FrameProcessor:
         # Detection keeps the small fixed input; OCR crops are supplied by
         # the browser from the exact retained upload (stage 1), never
         # extracted here, so old and new OCR paths cannot double-submit.
-        frame = cv2.resize(full_frame, (FRAME_WIDTH, FRAME_HEIGHT))
+        # The resize is an aspect-preserving letterbox (black bars for 16:9
+        # uploads, identity for 4:3), so proportions stay truthful while all
+        # geometry shares the 640x480 detection space.
+        frame = letterbox_frame(full_frame)
 
         with self.lock:
             if connection_id is not None and self.connection_id is None:
@@ -688,7 +762,7 @@ class FrameProcessor:
                         else:
                             kept.append(detection)
                     detections = kept
-            events = self.tracker.update(detections)
+            events = self.tracker.update(detections, now=now)
             full_height, full_width = full_frame.shape[:2]
             identification = {}
             crop_requests = []
@@ -720,8 +794,10 @@ class FrameProcessor:
                 self.tracker.tracks[d.track_id].class_name for d in detections
                 if d.track_id in self.tracker.tracks
             )
+            self._refresh_packed_labels(identification)
             frame = annotate_frame(frame, detections, self.tracker, identification,
-                                   self.bag_zone, self.bag_mode)
+                                   self.bag_zone, self.bag_mode,
+                                   self.packed_labels)
             success, image = cv2.imencode(
                 ".jpg", frame, [int(cv2.IMWRITE_JPEG_QUALITY), 80],
             )

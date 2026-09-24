@@ -40,10 +40,14 @@ class FakeLocalizer:
 
     def localize(self, frame):
         self.calls += 1
-        mask = self.script[min(self.calls - 1, len(self.script) - 1)]
-        if mask is None:
+        item = self.script[min(self.calls - 1, len(self.script) - 1)]
+        if item is None:
             return None
-        return {"mask": mask, "conf": 0.4, "inference_ms": 1.0}
+        if isinstance(item, dict):
+            found = dict(item)
+            found.setdefault("inference_ms", 1.0)
+            return found
+        return {"mask": item, "conf": 0.4, "inference_ms": 1.0}
 
 
 def blank_frame():
@@ -135,6 +139,23 @@ class TrackerPauseTest(unittest.TestCase):
         for _ in range(3):
             events += tracker.update([Detection(1, "Bottle", inside)])
         self.assertEqual(len(events), 1)
+
+    def test_visible_rim_touching_bottle_never_counts(self):
+        # A bottle set down beside the bag, visibly touching its rim, sits
+        # in the hysteresis band (neither inside nor clearly outside): it
+        # must never pack and never start a watch while it stays visible.
+        grid = np.zeros((120, 160), np.uint8)
+        grid[30:90, 40:120] = 1
+        tracker = PackingTracker(zone_test=ZoneTest(grid, 0.30, version=1))
+        tracker.zone_version = 1
+        rim_box = (430, 300, 550, 420)
+        for _ in range(10):
+            events = tracker.update([Detection(3, "Bottle", rim_box)], now=100.0)
+            self.assertEqual(events, [])
+        self.assertEqual(tracker.packed_counts.get("Bottle", 0), 0)
+        self.assertEqual(
+            [t for t in tracker.tracks.values() if t.pending_deadline is not None],
+            [])
 
     def test_relocation_discards_streaks_keeps_packed(self):
         tracker = PackingTracker()
@@ -294,6 +315,25 @@ class ZoneStateMachineTest(unittest.TestCase):
         changed = still.copy()
         changed[100:400, 100:500] = 200
         self.assertGreater(motion_energy(prev, changed, (60, 80, 580, 470)), 12.0)
+
+    def test_implausible_masks_rejected_as_misses(self):
+        flood = np.ones((480, 640), bool)  # whole screen, low conf
+        zone = BagZoneTracker(
+            FakeLocalizer([{"mask": flood, "conf": 0.16}] * 6),
+            heartbeat_frames=1, misses_to_lose=2)
+        for frame_id in (1, 2, 3):
+            state = zone.update(blank_frame(), frame_id, now=100.0)
+        self.assertEqual(state["status"], "locating")  # never locks garbage
+        self.assertIsNone(zone.footprint)
+        self.assertGreater(zone.snapshot()["rejected_masks"], 0)
+        # A large HIGH-confidence mask still locks (generous upper bar).
+        zone2 = BagZoneTracker(
+            FakeLocalizer([{"mask": flood, "conf": 0.9}] * 6),
+            heartbeat_frames=1, misses_to_lose=2,
+            max_footprint_frac=1.0)
+        for frame_id in (1, 2, 3):
+            state = zone2.update(blank_frame(), frame_id, now=100.0)
+        self.assertEqual(state["status"], "stable")
 
 
 class GracePeriodTest(unittest.TestCase):

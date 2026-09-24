@@ -334,7 +334,10 @@ class BagZoneTracker:
                  heartbeat_frames: int = 10, acquire_stable: int = 3,
                  adopt_iou: float = 0.5, relock_iou: float = 0.7,
                  motion_threshold: float = 12.0, misses_to_lose: int = 2,
-                 rim_margin: float = 16.0, grace_period_s: float = 2.0):
+                 rim_margin: float = 16.0, grace_period_s: float = 2.0,
+                 max_footprint_frac: float = 0.70,
+                 implausible_conf: float = 0.20,
+                 implausible_frac: float = 0.45):
         self.localizer = localizer
         self.on_relocation = on_relocation
         self.overlap_threshold = overlap_threshold
@@ -346,6 +349,9 @@ class BagZoneTracker:
         self.misses_to_lose = misses_to_lose
         self.rim_margin = rim_margin
         self.grace_period_s = grace_period_s
+        self.max_footprint_frac = max_footprint_frac
+        self.implausible_conf = implausible_conf
+        self.implausible_frac = implausible_frac
         self.reset()
 
     def reset(self) -> None:
@@ -366,6 +372,7 @@ class BagZoneTracker:
         self.inference_ms_ema = 0.0
         self.last_motion = 0.0
         self.grace_deadline = 0.0
+        self.rejected_masks = 0
 
     @property
     def packing_paused(self) -> bool:
@@ -451,6 +458,19 @@ class BagZoneTracker:
         self.status = "grace"
         self._relocation()
 
+    def _register_miss(self, now: float) -> None:
+        self.misses += 1
+        self.consecutive = 0
+        self.candidate_grid = None
+        if self.status == "stable":
+            if self.misses >= self.misses_to_lose:
+                self._enter_grace(now)
+        elif self.status == "grace":
+            if now >= self.grace_deadline:
+                self._enter_lost()
+        elif self.status not in ("stable",):
+            self.status = "lost" if self.zone_frame_id >= 0 else "locating"
+
     def _enter_lost(self) -> None:
         # Grace expired: remove the outline and pause counting.
         self.footprint = None
@@ -499,22 +519,22 @@ class BagZoneTracker:
                                      else 0.2 * ms + 0.8 * self.inference_ms_ema)
 
         if found is None:
-            self.misses += 1
-            self.consecutive = 0
-            self.candidate_grid = None
-            if self.status == "stable":
-                if self.misses >= self.misses_to_lose:
-                    self._enter_grace(now)
-            elif self.status == "grace":
-                if now >= self.grace_deadline:
-                    self._enter_lost()
-            elif self.status not in ("stable",):
-                self.status = "lost" if self.zone_frame_id >= 0 else "locating"
+            self._register_miss(now)
             return self.snapshot()
 
         self.misses = 0
         filled = fill_footprint(found["mask"])
         if not filled.any():
+            return self.snapshot()
+        conf = found["conf"]
+        if (float(filled.mean()) > self.max_footprint_frac
+                or (conf < self.implausible_conf
+                    and float(filled.mean()) > self.implausible_frac)):
+            # Implausible mask (live failure: 0.16-conf flood over the whole
+            # screen): reject as a miss so the last good outline survives in
+            # grace instead of adopting garbage geometry.
+            self.rejected_masks += 1
+            self._register_miss(now)
             return self.snapshot()
         poly = footprint_contour(filled)
         if poly is None:
@@ -522,7 +542,6 @@ class BagZoneTracker:
         grid = rasterize(poly)
         x1, y1, x2, y2 = (int(poly[:, 0].min()), int(poly[:, 1].min()),
                           int(poly[:, 0].max()), int(poly[:, 1].max()))
-        conf = found["conf"]
 
         if self.status == "stable":
             if grid_iou(grid, self.grid) >= self.adopt_iou:
@@ -574,4 +593,5 @@ class BagZoneTracker:
             "inference_count": self.inference_count,
             "inference_ms_ema": round(self.inference_ms_ema, 1),
             "last_motion": round(self.last_motion, 2),
+            "rejected_masks": self.rejected_masks,
         }

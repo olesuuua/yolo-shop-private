@@ -103,20 +103,38 @@ function renderDiag() {
   box.style.display = "block";
 }
 
+function letterboxRect(srcWidth, srcHeight) {
+  // Mirror of the server's letterbox: content rectangle placing an upload
+  // frame into the 640x480 detection canvas without distortion (centered
+  // 640x360 + 60px bars for 16:9, identity for 4:3).
+  const scale = Math.min(DETECT_WIDTH / srcWidth, DETECT_HEIGHT / srcHeight);
+  const w = Math.round(srcWidth * scale);
+  const h = Math.round(srcHeight * scale);
+  return {
+    dx: Math.floor((DETECT_WIDTH - w) / 2),
+    dy: Math.floor((DETECT_HEIGHT - h) / 2),
+    w, h,
+  };
+}
+
 function mapCropRect(bbox, retainedWidth, retainedHeight) {
   if (!Array.isArray(bbox) || bbox.length !== 4) return null;
   const [bx1, by1, bx2, by2] = bbox.map(Number);
   if (![bx1, by1, bx2, by2].every(Number.isFinite)) return null;
   if (!(bx2 > bx1) || !(by2 > by1)) return null;
   if (!(retainedWidth > 0) || !(retainedHeight > 0)) return null;
-  const scaleX = retainedWidth / DETECT_WIDTH;
-  const scaleY = retainedHeight / DETECT_HEIGHT;
-  const width = bx2 - bx1;
-  const height = by2 - by1;
-  const x1 = Math.max(0, Math.round((bx1 - width * CROP_MARGIN) * scaleX));
-  const y1 = Math.max(0, Math.round((by1 - height * CROP_MARGIN) * scaleY));
-  const x2 = Math.min(retainedWidth, Math.round((bx2 + width * CROP_MARGIN) * scaleX));
-  const y2 = Math.min(retainedHeight, Math.round((by2 + height * CROP_MARGIN) * scaleY));
+  // Inverse letterbox into the retained full-resolution grab, then margin.
+  const lb = letterboxRect(retainedWidth, retainedHeight);
+  const ux1 = (bx1 - lb.dx) * retainedWidth / lb.w;
+  const uy1 = (by1 - lb.dy) * retainedHeight / lb.h;
+  const ux2 = (bx2 - lb.dx) * retainedWidth / lb.w;
+  const uy2 = (by2 - lb.dy) * retainedHeight / lb.h;
+  const width = ux2 - ux1;
+  const height = uy2 - uy1;
+  const x1 = Math.max(0, Math.round(ux1 - width * CROP_MARGIN));
+  const y1 = Math.max(0, Math.round(uy1 - height * CROP_MARGIN));
+  const x2 = Math.min(retainedWidth, Math.round(ux2 + width * CROP_MARGIN));
+  const y2 = Math.min(retainedHeight, Math.round(uy2 + height * CROP_MARGIN));
   if (x2 - x1 < CROP_MIN_WIDTH || y2 - y1 < CROP_MIN_HEIGHT) return null;
   return { x: x1, y: y1, w: x2 - x1, h: y2 - y1 };
 }
@@ -658,11 +676,11 @@ function sendNextFrame() {
     return;
   }
   // Stage 2: one grab from the live video at capture resolution
-  // (at native video dimensions). The 640x480 detection upload is derived
-  // from that same grab with a plain stretch to exactly DETECT_WIDTH x
-  // DETECT_HEIGHT, matching the server's cv2.resize with no letterbox or
-  // crop, so detection boxes, ROI alignment and the 640x480 coordinate
-  // space are preserved. The full-resolution grab is retained for OCR.
+  // (at native video dimensions). The 640x480 detection upload derives
+  // from that grab with the same aspect-preserving letterbox the server
+  // applies (centered content + black bars for 16:9, identity for 4:3),
+  // so detection boxes, bag geometry and the 640x480 coordinate space stay
+  // aligned. The full-resolution grab is retained for OCR.
   const videoTimestamp = isVideo() ? camera.currentTime : null;
   // Camera keeps its legacy dimension fallback; video mode is validated
   // above, so the true video dimensions are always used there.
@@ -677,7 +695,12 @@ function sendNextFrame() {
   full.getContext("2d", { alpha: false, desynchronized: true }).drawImage(camera, 0, 0, fullWidth, fullHeight);
   canvas.width = DETECT_WIDTH;
   canvas.height = DETECT_HEIGHT;
-  canvas.getContext("2d", { alpha: false, desynchronized: true }).drawImage(full, 0, 0, DETECT_WIDTH, DETECT_HEIGHT);
+  const detectCtx = canvas.getContext("2d", { alpha: false, desynchronized: true });
+  detectCtx.fillStyle = "#000";
+  detectCtx.fillRect(0, 0, DETECT_WIDTH, DETECT_HEIGHT);
+  const content = letterboxRect(fullWidth, fullHeight);
+  detectCtx.drawImage(full, 0, 0, fullWidth, fullHeight,
+    content.dx, content.dy, content.w, content.h);
   pendingUpload = {
     canvas: full, width: fullWidth, height: fullHeight,
     detectWidth: DETECT_WIDTH, detectHeight: DETECT_HEIGHT, at: Date.now(),

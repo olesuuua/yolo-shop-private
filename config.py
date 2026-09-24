@@ -183,6 +183,13 @@ BAG_GRACE_PERIOD_S = 2.0
 # Calibrated on the bag video: mask-rim flicker from a reaching hand carved
 # ~20 px, while genuine removals travel much farther.
 BAG_RIM_MARGIN_PX = 16.0
+# Implausible-mask rejection: a footprint covering more than this fraction
+# of the frame can never be the tabletop bag (live failure: a 0.16-conf
+# mask flooded the whole screen). Low-confidence large masks are rejected
+# at a lower size bar; white-bag stable masks cover ~0.3-0.45 at 0.14+.
+BAG_MAX_FOOTPRINT_FRAC = 0.70
+BAG_IMPLAUSIBLE_CONF = 0.20
+BAG_IMPLAUSIBLE_FRAC = 0.45
 # Bag-self suppression: a product box covering this fraction of the locked
 # footprint while itself lying this fraction inside is the bag, not a
 # product (live blue-bag scene: false Storage box scored ~0.9/~0.95).
@@ -190,9 +197,11 @@ BAG_SELF_FOOT_FRAC = 0.55
 BAG_SELF_BOX_FRAC = 0.50
 # "Packing..." pending state for items hidden mid-insertion (e.g. by a
 # hand): a reliably-outside track that vanishes at the bag boundary waits
-# this many processed frames (~2 s at the measured ~1.75 processed fps).
-# Reappearance outside cancels; expiry counts the item once.
-PENDING_PACK_FRAMES = 4
+# this many seconds of real time. Reappearance outside cancels; expiry (or
+# reappearance inside) counts the item once. The watch resolves on product
+# evidence alone, so it also completes while the bag zone itself is
+# moving/lost — that is what fixes insertions that shift the bag.
+PENDING_PACK_SECONDS = 2.0
 MIN_OUTSIDE_FRAMES = 3
 MIN_INSIDE_FRAMES = 3
 TRACK_TTL_FRAMES = 60

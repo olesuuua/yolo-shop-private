@@ -99,56 +99,70 @@ class PackingTests(unittest.TestCase):
 
     def test_hidden_at_boundary_reappearing_inside_completes(self):
         # Hand hides the item mid-insertion: it still counts on return.
-        self.tracker.update([food()])
-        self.tracker.update([food(bbox=INSIDE)])
-        self.tracker.update([])
-        self.assertEqual(len(self.tracker.update([food(bbox=INSIDE)])), 1)
+        self.tracker.update([food()], now=100.0)
+        self.tracker.update([food(bbox=INSIDE)], now=100.0)
+        self.tracker.update([], now=100.0)
+        self.assertEqual(
+            len(self.tracker.update([food(bbox=INSIDE)], now=100.0)), 1)
 
     def test_hidden_at_boundary_reappearing_outside_cancels(self):
-        self.tracker.update([food()])
-        self.tracker.update([food(bbox=INSIDE)])
-        self.tracker.update([])
-        self.assertEqual(self.tracker.update([food()]), [])
+        self.tracker.update([food()], now=100.0)
+        self.tracker.update([food(bbox=INSIDE)], now=100.0)
+        self.tracker.update([], now=100.0)
+        self.assertEqual(self.tracker.update([food()], now=100.0), [])
         # No phantom watch left behind: a later genuine transfer counts once.
-        self.assertEqual(self.tracker.update([food(bbox=INSIDE)]), [])
-        self.assertEqual(len(self.tracker.update([food(bbox=INSIDE)])), 1)
+        self.assertEqual(self.tracker.update([food(bbox=INSIDE)], now=100.0), [])
+        self.assertEqual(
+            len(self.tracker.update([food(bbox=INSIDE)], now=100.0)), 1)
 
-    def test_hidden_at_boundary_expiry_counts_once(self):
+    def test_hidden_at_boundary_expiry_counts_once_after_two_seconds(self):
         tracker = PackingTracker(roi=ROI, min_inside_frames=2,
                                  min_outside_frames=1, track_ttl_frames=60,
-                                 pending_pack_frames=4)
-        tracker.update([food()])
-        tracker.update([food(bbox=INSIDE)])
-        events = []
-        for _ in range(3):
-            events += tracker.update([])
-        self.assertEqual(events, [])
-        self.assertEqual(tracker.update([]), [])  # still inside the wait
-        events += tracker.update([])  # ~2 s elapsed: counts once
+                                 pending_pack_seconds=2.0)
+        tracker.update([food()], now=100.0)
+        tracker.update([food(bbox=INSIDE)], now=100.0)
+        self.assertEqual(tracker.update([], now=100.0), [])  # watch starts
+        self.assertEqual(tracker.update([], now=101.9), [])  # still waiting
+        events = tracker.update([], now=102.0)  # ~2 s elapsed: counts once
         self.assertEqual(len(events), 1)
         self.assertEqual(events[0]["track_id"], 7)
         # Expiry consumed the watch: nothing more follows.
         for _ in range(3):
-            self.assertEqual(tracker.update([]), [])
+            self.assertEqual(tracker.update([], now=110.0), [])
+
+    def test_pending_resolves_while_bag_zone_paused(self):
+        # Insertion that moves the bag: the watch still completes on real
+        # time even though zone-geometry counting is frozen.
+        tracker = PackingTracker(roi=ROI, min_inside_frames=2,
+                                 min_outside_frames=1, track_ttl_frames=60,
+                                 pending_pack_seconds=2.0)
+        tracker.update([food()], now=100.0)
+        tracker.update([food(bbox=INSIDE)], now=100.0)
+        tracker.set_packing_paused(True)
+        self.assertEqual(tracker.update([], now=101.0), [])
+        self.assertEqual(tracker.update([], now=102.0), [])
+        events = tracker.update([], now=103.0)
+        self.assertEqual(len(events), 1)
+        self.assertEqual(tracker.packed_counts, {PRIMARY_CLASS: 1})
 
     def test_disappearance_while_clearly_outside_starts_no_watch(self):
         tracker = PackingTracker(roi=ROI, min_inside_frames=2,
                                  min_outside_frames=1, track_ttl_frames=60,
-                                 pending_pack_frames=4)
-        tracker.update([food()])
+                                 pending_pack_seconds=2.0)
+        tracker.update([food()], now=100.0)
         for _ in range(6):
-            self.assertEqual(tracker.update([]), [])
+            self.assertEqual(tracker.update([], now=100.0 + _ * 10), [])
         self.assertEqual(tracker.packed_counts, {})
 
     def test_new_id_inside_next_to_pending_counts_once(self):
         tracker = PackingTracker(roi=ROI, min_inside_frames=2,
                                  min_outside_frames=1, track_ttl_frames=60,
-                                 pending_pack_frames=4)
-        tracker.update([food(7)])
-        tracker.update([food(7, INSIDE)])
-        tracker.update([])  # hidden at the boundary: watch starts
+                                 pending_pack_seconds=2.0)
+        tracker.update([food(7)], now=100.0)
+        tracker.update([food(7, INSIDE)], now=100.0)
+        tracker.update([], now=100.0)  # hidden at the boundary: watch starts
         nearby = (130, 130, 170, 170)
-        events = tracker.update([food(9, nearby)])
+        events = tracker.update([food(9, nearby)], now=100.5)
         self.assertEqual(len(events), 1)
         self.assertEqual(events[0]["track_id"], 9)
         self.assertEqual(tracker.packed_counts, {PRIMARY_CLASS: 1})
@@ -156,19 +170,19 @@ class PackingTests(unittest.TestCase):
     def test_behind_bag_limitation_documents_false_count(self):
         # A bottle slid BEHIND an upright bag vanishes at the bag's rim
         # exactly like a hand-hidden insertion: reliably outside, last seen
-        # not clearly outside, gone for the whole wait. The camera cannot
-        # distinguish the two, so this counts (falsely). Honest limitation.
+        # not clearly outside, gone for the whole ~2 s wait. The camera
+        # cannot distinguish the two, so this counts (falsely). Honest
+        # limitation: only VISIBLE placements beside the bag are guarded
+        # (rim hysteresis keeps them out of the inside test).
         tracker = PackingTracker(roi=ROI, min_inside_frames=3,
                                  min_outside_frames=3, track_ttl_frames=60,
-                                 pending_pack_frames=4)
+                                 pending_pack_seconds=2.0)
         for _ in range(3):
-            tracker.update([food(7)])
-        tracker.update([food(7, INSIDE)])  # reaches behind the bag rim
-        events = []
-        for _ in range(4):
-            events += tracker.update([])
-        self.assertEqual(events, [])
-        events += tracker.update([])  # wait elapsed: counts (falsely)
+            tracker.update([food(7)], now=100.0)
+        tracker.update([food(7, INSIDE)], now=100.0)  # reaches behind the rim
+        self.assertEqual(tracker.update([], now=101.0), [])
+        self.assertEqual(tracker.update([], now=102.0), [])
+        events = tracker.update([], now=103.0)  # wait elapsed: counts falsely
         self.assertEqual(len(events), 1)
         self.assertEqual(tracker.packed_counts, {PRIMARY_CLASS: 1})
 

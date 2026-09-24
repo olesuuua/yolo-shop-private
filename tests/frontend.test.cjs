@@ -29,7 +29,7 @@ async function controller(url = "") {
   const track = { stopped: false, stop() { this.stopped = true; } };
   const media = { getTracks: () => [track] };
   function element() {
-    const ctx = { calls: [], drawImage(...args) { this.calls.push(args); } };
+    const ctx = { calls: [], drawImage(...args) { this.calls.push(args); }, fillStyle: "", fillRect(...args) { this.calls.push(args); } };
     const el = {
       disabled: false, textContent: "", children: [], readyState: 2, style: {},
       classList: { add() {}, remove() {} },
@@ -381,7 +381,9 @@ test("detection upload is 640x480 q0.75 from the same video grab", async () => {
   const full = app.created.at(-1);
   assert.equal(full.width, 1280);
   assert.equal(full.height, 960);
+  // 4:3 grab: letterbox is the identity, drawn into the full canvas.
   assert.equal(canvas.__ctx.calls.at(-1)[0], full);
+  assert.deepEqual(canvas.__ctx.calls.at(-1).slice(1), [0, 0, 1280, 960, 0, 0, 640, 480]);
   assert.equal(full.__ctx.calls.length, 1);
   assert.equal(full.__ctx.calls[0][0], camera);
 });
@@ -423,9 +425,16 @@ test("widescreen capture maps both axes from the same grab", async () => {
   const full = app.created.at(-1);
   assert.equal(full.width, 1280);
   assert.equal(full.height, 720);
-  assert.equal(app.elements.get("canvas").__ctx.calls.at(-1).length, 5);
+  // 16:9 grab: detection canvas draws the letterboxed content rect
+  // (centered 640x360 + 60px bars), matching the server.
+  const lb = app.context.letterboxRect(1280, 720);
+  assert.equal(lb.dx, 0); assert.equal(lb.dy, 60);
+  assert.equal(lb.w, 640); assert.equal(lb.h, 360);
+  assert.deepEqual(app.elements.get("canvas").__ctx.calls.at(-1).slice(1), [0, 0, 1280, 720, 0, 60, 640, 360]);
   const rect = app.context.mapCropRect([100, 100, 300, 300], 1280, 720);
-  assert.ok(rect.w > 400 && rect.h > 300);
+  // Inverse letterbox + 8% margin in upload pixels: (168,48,632,512)-ish.
+  assert.ok(Math.abs(rect.x - 168) <= 2 && Math.abs(rect.y - 48) <= 2);
+  assert.ok(Math.abs(rect.w - 464) <= 2 && Math.abs(rect.h - 464) <= 2);
 });
 
 test("diag overlay reports network-inclusive and backend timings", async () => {
@@ -496,7 +505,7 @@ test("source change releases camera, resets in order and uses one socket", async
 test("portrait native frame mapping and bounded diagnostics retain attribution", async () => {
   const app = await controller("?diag=1");
   const rect = app.context.mapCropRect([100,100,300,300], 1080,1920);
-  assert.equal(rect.w,391); assert.equal(rect.h,928);
+  assert.equal(rect.w,524); assert.equal(rect.h,928);
   const entry = {canvas:app.elements.get("canvas"),width:1080,height:1920,video_timestamp:2.5};
   for(let i=0;i<65;i++) app.context.recordCrop({request_id:String(i),frame_id:i,track_id:7,
     session_version:0,bbox:[100,100,300,300]},entry,rect);

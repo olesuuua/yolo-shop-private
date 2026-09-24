@@ -128,12 +128,19 @@ class MappingTests(unittest.TestCase):
         self.assertAlmostEqual(rect_large[2] - rect_large[0],
                                (rect_small[2] - rect_small[0]) * 2, delta=2)
 
-    def test_widescreen_upload_scales_axes_independently(self):
+    def test_widescreen_upload_uses_letterbox_inverse(self):
+        # 1280x720 upload: detection canvas holds centered 640x360 content
+        # with 60 px bars top/bottom. BOX(100,100,300,300) + 8% margin ->
+        # detect rect (84,84,316,316) -> upload (168,48,632,512).
         rect = upload_crop_rect(BOX, 1280, 720)
-        self.assertIsNotNone(rect)
-        x1, y1, x2, y2 = rect
-        self.assertTrue(0 <= x1 < x2 <= 1280)
-        self.assertTrue(0 <= y1 < y2 <= 720)
+        self.assertEqual(rect, (168, 48, 632, 512))
+
+    def test_full_hd_upload_maps_bars_correctly(self):
+        # 1920x1080: same geometry at 1.5x: (252,72,948,768).
+        rect = upload_crop_rect(BOX, 1920, 1080)
+        self.assertEqual(rect, (252, 72, 948, 768))
+        # A box fully inside the top bar maps to nothing usable.
+        self.assertIsNone(upload_crop_rect((100, 0, 200, 30), 1920, 1080))
 
     def test_clamps_at_frame_edges(self):
         rect = upload_crop_rect((0, 0, 640, 480), 640, 480)

@@ -1,5 +1,6 @@
 """Geometry and packing events, independent of YOLO, OpenCV and FastAPI."""
 
+import time
 from collections import Counter
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -8,7 +9,7 @@ from typing import Iterable
 
 from config import (
     BAG_OVERLAP_THRESHOLD, BAG_ROI, FOOD_CLASSES,
-    MIN_INSIDE_FRAMES, MIN_OUTSIDE_FRAMES, PENDING_PACK_FRAMES,
+    MIN_INSIDE_FRAMES, MIN_OUTSIDE_FRAMES, PENDING_PACK_SECONDS,
     TRACK_TTL_FRAMES,
 )
 
@@ -78,9 +79,10 @@ class TrackState:
     # geometry change invalidates it: the product must be seen outside the
     # NEW zone before any inside streak can count.
     outside_zone_version: int = -1
-    # "Packing..." watch: processed frame when a reliably-outside track
-    # vanished at the bag boundary (None = not pending).
-    pending_since: int | None = None
+    # "Packing..." watch: monotonic deadline (seconds) while a
+    # reliably-outside track stays hidden after vanishing at the bag
+    # boundary (None = not pending).
+    pending_deadline: float | None = None
 
 
 class PackingTracker:
@@ -91,7 +93,7 @@ class PackingTracker:
         track_ttl_frames: int = TRACK_TTL_FRAMES,
         min_outside_frames: int = MIN_OUTSIDE_FRAMES,
         zone_test=None,
-        pending_pack_frames: int = PENDING_PACK_FRAMES,
+        pending_pack_seconds: float = PENDING_PACK_SECONDS,
     ):
         if not all(isfinite(v) for v in roi) or bbox_area(roi) <= 0:
             raise ValueError("ROI must be a finite rectangle with positive area.")
@@ -113,17 +115,18 @@ class PackingTracker:
         # under the current version.
         self.zone_version = -1
         self.packing_paused = False
-        if pending_pack_frames < 1:
-            raise ValueError("Pending-pack window must be positive.")
-        self.pending_pack_frames = pending_pack_frames
+        if pending_pack_seconds <= 0:
+            raise ValueError("Pending-pack wait must be positive.")
+        self.pending_pack_seconds = pending_pack_seconds
         self.reset()
 
     def set_packing_paused(self, paused: bool) -> None:
-        """Freeze new packing confirmations (bag moving/lost/locating).
+        """Freeze zone-geometry confirmations (bag moving/lost/locating).
 
-        While paused, sightings refresh geometry/recency but all transfer
-        evidence — including "Packing..." watches — is frozen: nothing
-        advances, expires, or fires until packing resumes.
+        While paused, sightings refresh geometry/recency but streak counters
+        are frozen. The "Packing..." watch is product evidence, not zone
+        geometry, so it still starts, cancels, and resolves on real time —
+        that is what counts insertions that shift or lose the bag.
         """
         self.packing_paused = bool(paused)
 
@@ -141,12 +144,12 @@ class PackingTracker:
             state.outside_frames = 0
             state.seen_outside = False
             state.outside_zone_version = -1
-            state.pending_since = None
+            state.pending_deadline = None
 
     def _pack_once(self, state: TrackState, events: list) -> None:
         """Count one packed item for a track (normal, pending, or merged)."""
         state.packed = True
-        state.pending_since = None
+        state.pending_deadline = None
         self.packed_ids.add(state.track_id)
         self.packed_counts[state.class_name] += 1
         event = {
@@ -179,8 +182,15 @@ class PackingTracker:
         # Preserve packed IDs after stale geometry is removed, until reset.
         self.packed_ids: set[int] = set()
 
-    def update(self, detections: Iterable[Detection]) -> list[dict]:
-        """Advance exactly one processed frame, including empty frames."""
+    def update(self, detections: Iterable[Detection], now: float | None = None) -> list[dict]:
+        """Advance exactly one processed frame, including empty frames.
+
+        ``now`` is monotonic seconds for the "Packing..." watch (≈2 s of
+        real time, independent of processed-frame rate); defaults to the
+        current time.
+        """
+        if now is None:
+            now = time.monotonic()
         self.frame_number += 1
         for track_id, state in list(self.tracks.items()):
             if self.frame_number - state.last_seen_frame > self.track_ttl_frames:
@@ -216,16 +226,16 @@ class PackingTracker:
                     last_seen_frame=self.frame_number,
                 )
                 self.tracks[detection.track_id] = state
-                if inside and not state.packed and not self.packing_paused:
+                if inside and not state.packed:
                     # Tracking-ID change mid-insertion: a new ID appearing
                     # inside next to a pending same-class track is the same
                     # physical item — count it once under the new ID.
                     for pending in self.tracks.values():
-                        if (pending.pending_since is not None
+                        if (pending.pending_deadline is not None
                                 and pending.class_name == state.class_name
                                 and not pending.packed
                                 and _center_distance(pending.last_bbox, state.last_bbox) < 120.0):
-                            pending.pending_since = None
+                            pending.pending_deadline = None
                             self._pack_once(state, events)
                             break
 
@@ -233,19 +243,12 @@ class PackingTracker:
             if self.frame_number - state.last_seen_frame > 1:
                 state.inside_frames = 0
                 state.outside_frames = 0
-            if self.packing_paused:
-                # Frozen zone state: the sighting refreshes geometry/recency
-                # but contributes zero transfer evidence either way, so a
-                # zone jump alone can never manufacture (or preserve) a
-                # streak for a stationary product.
-                state.last_bbox = detection.bbox
-                state.was_inside_roi = inside
-                state.last_seen_frame = self.frame_number
-                continue
-            if state.pending_since is not None and not state.packed:
+            if state.pending_deadline is not None and not state.packed:
+                # Product evidence resolves on real time even while the zone
+                # geometry is frozen: this counts insertions that move the bag.
                 if outside:
                     # Reappeared clearly outside: it never went in; cancel.
-                    state.pending_since = None
+                    state.pending_deadline = None
                 elif inside:
                     # Reappeared inside after vanishing at the boundary:
                     # the hidden transfer completed while unseen.
@@ -255,6 +258,14 @@ class PackingTracker:
                     state.last_seen_frame = self.frame_number
                     continue
                 # Rim band: keep waiting, accrue nothing meanwhile.
+            if self.packing_paused:
+                # Frozen zone state: the sighting refreshes geometry/recency
+                # but streak counters stay frozen, so a zone jump alone can
+                # never manufacture a streak for a stationary product.
+                state.last_bbox = detection.bbox
+                state.was_inside_roi = inside
+                state.last_seen_frame = self.frame_number
+                continue
             if outside:
                 state.outside_frames += 1
                 if state.outside_frames >= self.min_outside_frames:
@@ -281,20 +292,24 @@ class PackingTracker:
             state.last_seen_frame = self.frame_number
 
         for track_id, state in self.tracks.items():
-            if track_id in seen_ids or self.packing_paused:
+            if track_id in seen_ids:
                 continue
-            if state.packed or state.pending_since is not None:
-                if (state.pending_since is not None
-                        and self.frame_number - state.pending_since >= self.pending_pack_frames):
-                    # Hidden the whole wait: the boundary disappearance was
-                    # a completed transfer.
+            if state.packed:
+                continue
+            if state.pending_deadline is not None:
+                if now >= state.pending_deadline:
+                    # Hidden the whole ~2 s wait: the boundary disappearance
+                    # was a completed transfer. Resolves even while the bag
+                    # zone is moving/lost (product evidence, not geometry).
                     self._pack_once(state, events)
                 continue
+            # The watch starts on product evidence alone, even while the
+            # zone is frozen: insertions routinely move the bag.
             if state.seen_outside and not self._clearly_outside(state.last_bbox):
                 # Reliably outside, vanished at the boundary (hand
-                # occlusion): watch briefly instead of dropping the trail.
-                # Vanishing while clearly outside starts no watch.
-                state.pending_since = self.frame_number
+                # occlusion): watch ~2 s of real time instead of dropping
+                # the trail. Vanishing while clearly outside starts no watch.
+                state.pending_deadline = now + self.pending_pack_seconds
                 continue
             state.inside_frames = 0
             state.outside_frames = 0

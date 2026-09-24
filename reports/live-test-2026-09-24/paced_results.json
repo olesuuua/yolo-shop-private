@@ -1,0 +1,60 @@
+{
+  "A_clear_insertion": {
+    "packed_total": 1,
+    "display": {
+      "Unidentified bottle": 1
+    },
+    "events": [
+      [
+        2,
+        "Bottle"
+      ]
+    ],
+    "pending_seen": false,
+    "zones": [
+      "stable"
+    ]
+  },
+  "B_hand_hidden": {
+    "packed_total": 1,
+    "display": {
+      "Unidentified bottle": 1
+    },
+    "events": [
+      [
+        2,
+        "Bottle"
+      ]
+    ],
+    "pending_seen": true,
+    "zones": [
+      "moving",
+      "stable"
+    ]
+  },
+  "C_beside_bag": {
+    "packed_total": 0,
+    "display": {},
+    "events": [],
+    "pending_seen": false,
+    "zones": [
+      "stable"
+    ]
+  },
+  "D_behind_occluded": {
+    "packed_total": 1,
+    "display": {
+      "Unidentified bottle": 1
+    },
+    "events": [
+      [
+        2,
+        "Bottle"
+      ]
+    ],
+    "pending_seen": true,
+    "zones": [
+      "stable"
+    ]
+  }
+}
