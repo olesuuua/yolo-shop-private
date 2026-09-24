@@ -759,6 +759,10 @@ test("camera falls back through constraint sets on rejection", async () => {
 test("packed section persists unnamed items and upgrades their names", async () => {
   const app = await controller();
   const socket = await app.connect();
+  socket.receive(detectionResponse({ packed_counts: {}, packed_items: [], last_event: null }));
+  assert.equal(app.elements.get("packedList").hidden, true);
+  assert.equal(app.elements.get("packedCounts").hidden, true);
+  assert.equal(app.elements.get("lastEvent").hidden, true);
   socket.receive(detectionResponse({
     packed_counts: { Bottle: 1 },
     packed_display_counts: { "Unidentified bottle": 1 },
@@ -767,8 +771,11 @@ test("packed section persists unnamed items and upgrades their names", async () 
   }));
   const list = app.elements.get("packedList");
   assert.equal(list.children.length, 1);
+  assert.match(list.children[0].className, /no-thumb/);
   assert.match(list.children[0].children.at(-1).children[0].textContent, /Unidentified bottle/);
   assert.equal(app.elements.get("packedHeading").hidden, false);
+  assert.equal(app.elements.get("packedList").hidden, false);
+  assert.equal(app.elements.get("packedCounts").hidden, false);
   // Recognition clears when the box disappears, but the packed row stays,
   // then upgrades when a reliable name arrives — with no extra count.
   socket.receive(detectionResponse({

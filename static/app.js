@@ -454,12 +454,15 @@ function renderSession(response) {
   sessionVersion = response.session_version;
   if (response.inference_device) inferenceDevice = response.inference_device;
   if (response.model_label) modelInfo.textContent = response.model_label;
-  renderCounts(response.packed_display_counts || response.packed_counts || {}, packedTotal, packedCounts, "Nothing packed yet");
+  const packed = response.packed_display_counts || response.packed_counts || {};
+  renderCounts(packed, packedTotal, packedCounts, "Nothing packed yet");
+  packedCounts.hidden = Object.keys(packed).length === 0;
   const event = response.last_event;
   const eventName = event ? (event.display_name || event.class_name) : null;
   lastEvent.textContent = event
     ? `Last packed: ${eventName} · ${new Date(event.timestamp).toLocaleTimeString()}`
     : "Waiting for a transfer";
+  lastEvent.hidden = !event;
   if (bagStatus) {
     const bag = response.bag_zone;
     bagStatus.style.color = "";
@@ -493,6 +496,7 @@ function renderPacked(items) {
   if (!packedList) return;
   const rows = Array.isArray(items) ? items : [];
   if (packedHeading) packedHeading.hidden = rows.length === 0;
+  packedList.hidden = rows.length === 0;
   packedList.replaceChildren();
   for (const item of rows) {
     if (!item || !item.display_name) continue;
@@ -505,6 +509,8 @@ function renderPacked(items) {
       thumb.src = `/api/ident-crop/${item.track_id}`;
       thumb.onerror = () => thumb.remove();
       card.appendChild(thumb);
+    } else {
+      card.className += " no-thumb";
     }
     const body = document.createElement("div");
     const title = document.createElement("h3");

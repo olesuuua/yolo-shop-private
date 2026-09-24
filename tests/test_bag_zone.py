@@ -264,16 +264,77 @@ class ZoneStateMachineTest(unittest.TestCase):
             zone.update(blank_frame(), frame_id)
         self.assertEqual(zone.status, "stable")
         state = zone.update(blank_frame(), 4)
+        self.assertEqual(state["status"], "stable")
+        zone.update(blank_frame(), 5)
+        state = zone.update(blank_frame(), 6)
         self.assertEqual(state["status"], "moving")
         self.assertTrue(zone.packing_paused)
         # Relocation fires on the move and again on the re-lock adopt.
         self.assertEqual(len(relocations), 2)
         # Frozen zone keeps the old footprint while moving.
         self.assertIsNotNone(zone.zone_bbox)
-        for frame_id in (5, 6, 7):
+        for frame_id in (7, 8):
             state = zone.update(blank_frame(), frame_id)
         self.assertEqual(state["status"], "stable")
         self.assertFalse(zone.packing_paused)
+
+    def test_occluded_rim_and_interior_keep_drawn_and_packing_zone(self):
+        base = disc_mask()
+        bottle_rim = base.copy()
+        bottle_rim[195:275, 420:460] = False
+        hand_rim = base.copy()
+        hand_rim[115:165, 285:355] = False
+        inside = base.copy()
+        inside[225:255, 300:340] = False
+        script = [base] * 3 + [bottle_rim] * 3 + [inside] * 3 + [hand_rim] * 3
+        zone = BagZoneTracker(FakeLocalizer(script), heartbeat_frames=1)
+        for frame_id in range(1, 4):
+            zone.update(blank_frame(), frame_id)
+        outline = zone.snapshot()["contour"]
+        grid = zone.grid.copy()
+        tracker = PackingTracker()
+        tracker.zone_test = zone.zone_test
+        tracker.zone_version = zone.zone_version
+        bottle = (475.0, 220.0, 505.0, 260.0)
+        for _ in range(3):
+            tracker.update([Detection(7, "Bottle", bottle)])
+        events = []
+        for frame_id in range(4, 13):
+            zone.update(blank_frame(), frame_id)
+            self.assertEqual(zone.snapshot()["contour"], outline)
+            self.assertTrue(np.array_equal(zone.grid, grid))
+            tracker.zone_test = zone.zone_test
+            tracker.zone_version = zone.zone_version
+            if frame_id >= 7:
+                bottle = (305.0, 220.0, 335.0, 260.0)
+            events += tracker.update([Detection(7, "Bottle", bottle)])
+        self.assertEqual(len(events), 1)
+        self.assertEqual(tracker.packed_counts.get("Bottle"), 1)
+
+    def test_bulge_requires_repeats_and_shape_alone_does_not_pack(self):
+        base = disc_mask()
+        bulge = base.copy()
+        bulge[215:265, 425:453] = True
+        oversized = disc_mask(radius=165)
+        script = [base] * 3 + [oversized, base] + [bulge] * 3
+        zone = BagZoneTracker(FakeLocalizer(script), heartbeat_frames=1)
+        for frame_id in range(1, 4):
+            zone.update(blank_frame(), frame_id)
+        old_grid = zone.grid.copy()
+        old_outline = zone.snapshot()["contour"]
+        for frame_id in (4, 5, 6, 7):
+            zone.update(blank_frame(), frame_id)
+            self.assertTrue(np.array_equal(zone.grid, old_grid))
+            self.assertEqual(zone.snapshot()["contour"], old_outline)
+        zone.update(blank_frame(), 8)
+        self.assertGreater(zone.grid.sum(), old_grid.sum())
+        self.assertNotEqual(zone.snapshot()["contour"], old_outline)
+        tracker = PackingTracker()
+        tracker.zone_test = zone.zone_test
+        tracker.zone_version = zone.zone_version
+        for _ in range(4):
+            self.assertEqual(tracker.update([]), [])
+        self.assertEqual(tracker.packed_counts, {})
 
     def test_loss_after_misses(self):
         script = [disc_mask()] * 3 + [None] * 6
@@ -433,7 +494,11 @@ class GracePeriodTest(unittest.TestCase):
             state, events = step(100.0)
             self.assertEqual(state["status"], "grace")
             self.assertEqual(events, [])
-        state, events = step(100.0)  # bag reappears far away
+        for _ in range(2):  # repeated edge shift before relocation
+            state, events = step(100.0)
+            self.assertEqual(state["status"], "grace")
+            self.assertEqual(events, [])
+        state, events = step(100.0)
         self.assertEqual(state["status"], "moving")
         self.assertTrue(zone.packing_paused)
         self.assertEqual(events, [])

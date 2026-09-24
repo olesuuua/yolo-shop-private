@@ -184,6 +184,12 @@ def rasterize(poly: np.ndarray) -> np.ndarray:
     return grid
 
 
+def working_outline(grid: np.ndarray):
+    """Return a drawing polygon from the persistent packing grid."""
+    full = cv2.resize(grid, (640, 480), interpolation=cv2.INTER_NEAREST)
+    return footprint_contour(full)
+
+
 def grid_iou(a: np.ndarray, b: np.ndarray) -> float:
     union = np.logical_or(a, b).sum()
     return float(np.logical_and(a, b).sum()) / float(union) if union else 0.0
@@ -373,6 +379,11 @@ class BagZoneTracker:
         self.last_motion = 0.0
         self.grace_deadline = 0.0
         self.rejected_masks = 0
+        self.shape_candidate = None
+        self.shape_support = None
+        self.shape_repeats = 0
+        self.move_candidate = None
+        self.move_repeats = 0
 
     @property
     def packing_paused(self) -> bool:
@@ -422,6 +433,11 @@ class BagZoneTracker:
         self.status = "stable"
         self.consecutive = 0
         self.candidate_grid = None
+        self.shape_candidate = None
+        self.shape_support = None
+        self.shape_repeats = 0
+        self.move_candidate = None
+        self.move_repeats = 0
         self.misses = 0
 
     def _observe_candidate(self, grid: np.ndarray, frame_id: int) -> None:
@@ -462,6 +478,11 @@ class BagZoneTracker:
         self.misses += 1
         self.consecutive = 0
         self.candidate_grid = None
+        self.shape_candidate = None
+        self.shape_support = None
+        self.shape_repeats = 0
+        self.move_candidate = None
+        self.move_repeats = 0
         if self.status == "stable":
             if self.misses >= self.misses_to_lose:
                 self._enter_grace(now)
@@ -483,6 +504,62 @@ class BagZoneTracker:
         self.misses = 0
         self.status = "lost"
         self._relocation()
+
+    def _refresh_working_footprint(self, observed: np.ndarray,
+                                   conf: float, frame_id: int) -> None:
+        """Keep occluded edges; accept repeated, modest outward growth."""
+        self.status = "stable"
+        self.misses = 0
+        self.zone_conf = conf
+        added = (observed > 0) & (self.grid == 0)
+        area = int(self.grid.sum())
+        if (added.sum() < max(12, area * 0.01)
+                or added.sum() > area * 0.20
+                or grid_iou(observed, self.grid) < self.adopt_iou):
+            self.shape_candidate = None
+            self.shape_support = None
+            self.shape_repeats = 0
+            self.zone_frame_id = frame_id
+            return
+        if (self.shape_candidate is not None
+                and grid_iou(observed, self.shape_candidate) >= 0.90):
+            self.shape_repeats += 1
+            self.shape_support &= added
+        else:
+            self.shape_candidate = observed.copy()
+            self.shape_support = added.copy()
+            self.shape_repeats = 1
+        if self.shape_repeats < 3:
+            self.zone_frame_id = frame_id
+            return
+        # Require the same added pixels across observations; transient
+        # bottle/hand silhouettes outside the rim cannot grow the zone.
+        if self.shape_support.sum() < max(12, area * 0.01):
+            self.shape_candidate = None
+            self.shape_support = None
+            self.shape_repeats = 0
+            self.zone_frame_id = frame_id
+            return
+        grown = np.logical_or(self.grid, self.shape_support).astype(np.uint8)
+        poly = working_outline(grown)
+        if poly is not None:
+            ys, xs = np.nonzero(grown)
+            bbox = (int(xs.min() * 4), int(ys.min() * 4),
+                    int((xs.max() + 1) * 4), int((ys.max() + 1) * 4))
+            self._adopt(grown, poly, bbox, conf, frame_id)
+
+    def _whole_bag_shift(self, observed: np.ndarray) -> bool:
+        """A translation moves opposing visible extents in the same direction."""
+        old_y, old_x = np.nonzero(self.grid)
+        new_y, new_x = np.nonzero(observed)
+        if not len(new_x):
+            return False
+        dx = (int(new_x.min()) - int(old_x.min()),
+              int(new_x.max()) - int(old_x.max()))
+        dy = (int(new_y.min()) - int(old_y.min()),
+              int(new_y.max()) - int(old_y.max()))
+        return any(abs(a) >= 3 and abs(b) >= 3 and a * b > 0
+                   for a, b in (dx, dy))
 
     def _update(self, frame_640x480, frame_id: int, now: float) -> dict:
         if self.localizer is None:
@@ -543,31 +620,29 @@ class BagZoneTracker:
         x1, y1, x2, y2 = (int(poly[:, 0].min()), int(poly[:, 1].min()),
                           int(poly[:, 0].max()), int(poly[:, 1].max()))
 
-        if self.status == "stable":
-            if grid_iou(grid, self.grid) >= self.adopt_iou:
-                # Ordinary jitter: adopt directly, packing continues.
-                self._adopt(grid, poly, (x1, y1, x2, y2), conf, frame_id)
-            else:
-                # Significant relocation: freeze the old zone, pause packing,
-                # and require the new position to prove itself stable.
+        if self.status in ("stable", "grace"):
+            if self._whole_bag_shift(grid):
+                if (self.move_candidate is not None
+                        and grid_iou(grid, self.move_candidate) >= self.relock_iou):
+                    self.move_repeats += 1
+                else:
+                    self.move_candidate = grid.copy()
+                    self.move_repeats = 1
+                if self.move_repeats < 3:
+                    return self.snapshot()
                 self.status = "moving"
                 self._relocation()
                 self.candidate_grid = grid
                 self.consecutive = 1
-        else:
-            # locating / moving / lost / grace: recover the bag.
-            if self.status == "grace":
+                self.move_candidate = None
+                self.move_repeats = 0
+            else:
+                self.move_candidate = None
+                self.move_repeats = 0
                 if grid_iou(grid, self.grid) >= self.adopt_iou:
-                    # Same-place reappearance: update the outline and
-                    # continue normally (evidence restarts only on a move).
-                    self._adopt(grid, poly, (x1, y1, x2, y2), conf, frame_id)
-                else:
-                    # Reappeared elsewhere: the bag moved during grace.
-                    self.status = "moving"
-                    self._relocation()
-                    self.candidate_grid = grid
-                    self.consecutive = 1
-                return self.snapshot()
+                    self._refresh_working_footprint(grid, conf, frame_id)
+        else:
+            # locating / moving / lost: recover the bag.
             # Collect stable repeats, then lock.
             self._observe_candidate(grid, frame_id)
             self._try_lock(grid, poly, (x1, y1, x2, y2), conf, frame_id)

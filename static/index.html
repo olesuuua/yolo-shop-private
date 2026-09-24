@@ -220,8 +220,12 @@
       margin: 0 0 5px;
       font-size: 1.02rem;
       line-height: 1.25;
-      overflow-wrap: break-word;
+      overflow-wrap: normal;
+      word-break: normal;
     }
+
+    .packed-card.no-thumb { grid-template-columns: minmax(0, 1fr); }
+    #packedHeading[hidden], #packedList[hidden], #packedCounts[hidden], #lastEvent[hidden] { display: none; }
 
     .product-card .count {
       font-weight: 800;
@@ -416,7 +420,7 @@
         <h2>Recognition</h2>
         <div id="identList"><div class="empty-count">Nothing in view yet — show a bottle to the camera.</div></div>
         <h2 id="packedHeading" hidden>Packed</h2>
-        <div id="packedList"></div>
+        <div id="packedList" hidden></div>
       </aside>
     </div>
 
@@ -444,8 +448,8 @@
               <span>Packed</span>
               <strong id="packedTotal">0</strong>
             </div>
-            <div id="packedCounts"><div class="empty-count">Nothing packed yet</div></div>
-            <p id="lastEvent">Waiting for a transfer</p>
+            <div id="packedCounts" hidden></div>
+            <p id="lastEvent" hidden></p>
             <div class="counter-total" style="margin-top:8px">
               <span>Detected now</span>
               <strong id="totalCount">0</strong>
