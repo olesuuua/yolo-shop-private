@@ -41,21 +41,30 @@ def make_service(jev_fn):
     return IdentificationService(jev_fn=jev_fn, config=cfg)
 
 
+def with_constructed_size_sibling(service):
+    """Keep the historical sibling-gate investigation without a live SKU."""
+    sibling = service._product_by_sku("saint-spring-0-75l").copy()
+    sibling.update(sku="constructed-saint-spring-0-33l", size="0,33 л")
+    service.products.append(sibling)
+    return service
+
+
 class OwnershipFixtures(unittest.TestCase):
     # a) correct owner, correct text incl. the distinguishing volume ->
     #    completes (CONSTRUCTED analogue of O1 had the gate accepted it;
     #    O1 itself never reached OCR). Brand text alone must NOT finalize
     #    a sibling volume: the size gate keeps it provisional.
     def test_a_correct_owner_correct_text_completes(self):
-        svc = make_service(lambda *a: candidate("saint-spring-0-33l", 0.95))
+        svc = with_constructed_size_sibling(make_service(
+            lambda *a: candidate("saint-spring-0-75l", 0.95)))
         ev = svc._merge(1, "Bottle", [{"text": "СВЯТОЙ ИСТОЧНИК", "score": 0.9}],
                         request_id="a1")
         svc._identify(1, ev)
         self.assertFalse(svc.is_complete(1))  # brand alone: provisional only
-        self.assertEqual(svc.snapshot()[1]["choice"], "saint-spring-0-33l")
+        self.assertEqual(svc.snapshot()[1]["choice"], "saint-spring-0-75l")
         self.assertEqual(svc.snapshot()[1]["label_sub"],
                          "Likely match · checking label")
-        svc._merge(1, "Bottle", [{"text": "ОБЪЁМ 0,33 Л", "score": 0.9}],
+        svc._merge(1, "Bottle", [{"text": "ОБЪЁМ 0,75 Л", "score": 0.9}],
                    request_id="a2")
         svc._identify(1, ev)
         self.assertTrue(svc.is_complete(1))
@@ -79,7 +88,8 @@ class OwnershipFixtures(unittest.TestCase):
     #    unresolved because Jev was disabled in that experiment). The track
     #    stays a provisional likely-match until volume text is visible.
     def test_c_single_hallucination_can_complete_constructed(self):
-        svc = make_service(lambda *a: candidate("saint-spring-0-33l", 0.95))
+        svc = with_constructed_size_sibling(make_service(
+            lambda *a: candidate("saint-spring-0-75l", 0.95)))
         ev = svc._merge(2, "Bottle", [{"text": "СВЯТОЙ ИСТОЧНИК", "score": 0.6}],
                         request_id="172:2:232-like")
         svc._identify(2, ev)

@@ -387,18 +387,10 @@ function renderIdentification(identification) {
     body.append(badge);
     // Provisional guess vs. label-supported volume: the size is shown with
     // the name, but only marked as seen when the volume text is visible.
-    if (info.display_size) {
+    if (info.display_size && info.size_supported === true) {
       const volume = document.createElement("div");
-      if (info.size_supported === true) {
-        volume.className = "volume-note";
-        volume.textContent = `${info.display_size} · seen on label`;
-      } else if (info.size_supported === false) {
-        volume.className = "volume-note unconfirmed";
-        volume.textContent = `${info.display_size} · not yet confirmed on label`;
-      } else {
-        volume.className = "volume-note unconfirmed";
-        volume.textContent = info.display_size;
-      }
+      volume.className = "volume-note";
+      volume.textContent = `${info.display_size} · seen on label`;
       body.append(volume);
     }
     card.append(thumb, body);

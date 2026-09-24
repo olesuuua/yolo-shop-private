@@ -65,25 +65,6 @@
       ]
     },
     {
-      "sku": "saint-spring-0-33l",
-      "name": "Святой источник негазированная",
-      "object_classes": [
-        "Bottle"
-      ],
-      "brand": "Святой источник",
-      "category": "Вода",
-      "variant": "негазированная",
-      "size": "0,33 л",
-      "aliases": [
-        "СВятой источник",
-        "Saint spring"
-      ],
-      "verified_label_text": [
-        "SAINT SPRING STILL",
-        "ВОДА ПИТЬЕВАЯ «СВЯТОЙ ИСТОЧНИК» НЕГАЗИРОВАННАЯ, ОБЪЁМ 0,33 Л"
-      ]
-    },
-    {
       "sku": "prostokvashino-2-5-930ml",
       "name": "Простоквашино молоко пастеризованное 2,5% 930 мл",
       "object_classes": [

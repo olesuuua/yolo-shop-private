@@ -106,15 +106,15 @@ class IdentificationTests(unittest.TestCase):
         self.addCleanup(service.close)
         return service
 
-    def test_catalog_has_thirteen_unique_products(self):
+    def test_catalog_has_twelve_unique_products(self):
         service = self.make_service()
         skus = [p["sku"] for p in service.products]
-        self.assertEqual(len(skus), 13)
-        self.assertEqual(len(set(skus)), 13)
+        self.assertEqual(len(skus), 12)
+        self.assertEqual(len(set(skus)), 12)
         self.assertIn("aqua-minerale-0-5l", skus)
         self.assertIn("senezhskaya-0-5l", skus)
         self.assertIn("saint-spring-0-75l", skus)
-        self.assertIn("saint-spring-0-33l", skus)
+        self.assertNotIn("saint-spring-0-33l", skus)
         self.assertIn("stantsiya-molochnaya-kefir-1-0-430g", skus)
         self.assertIn("dobryi-cola-no-sugar-0-5l", skus)
         self.assertIn("red-bull-sugar-free-0-25l", skus)
@@ -174,7 +174,7 @@ class IdentificationTests(unittest.TestCase):
         lines, skus, hint = calls[0]
         self.assertEqual(hint, "Bottle")  # Hint travels, never filters.
         self.assertEqual(set(skus), {"aqua-minerale-0-5l", "senezhskaya-0-5l",
-                                       "saint-spring-0-75l", "saint-spring-0-33l", "prostokvashino-2-5-930ml",
+                                       "saint-spring-0-75l", "prostokvashino-2-5-930ml",
                                        "domik-v-derevne-2-5-930ml",
                                        "stantsiya-molochnaya-kefir-1-0-430g",
                                        "dobryi-cola-no-sugar-0-5l",
@@ -275,7 +275,7 @@ class IdentificationTests(unittest.TestCase):
         service = self.make_service()
         readiness = service.readiness()
         self.assertTrue(readiness["catalog_ok"])
-        self.assertEqual(len(readiness["products"]), 13)
+        self.assertEqual(len(readiness["products"]), 12)
         self.assertEqual(readiness["ocr_device"], "cpu")
         self.assertNotIn("TYPESAFE_API_KEY", str(readiness).upper().replace("JEV_KEY_PRESENT", ""))
         self.assertIsInstance(readiness["jev_key_present"], bool)
@@ -441,54 +441,49 @@ class IdentificationTests(unittest.TestCase):
         self.assertEqual(hamming(0b1010, 0b1010), 0)
         self.assertEqual(hamming(0b1010, 0b0101), 4)
 
-    def test_brand_text_alone_never_finalizes_sibling_volume(self):
-        # The two Святой Источник bottles share a brand: a confident Jev
-        # guess from brand text stays provisional until volume text is seen.
+    def test_remaining_saint_spring_uses_seventy_percent_threshold(self):
         service = IdentificationService(
-            jev_fn=lambda *a: candidate("saint-spring-0-75l", 0.95))
+            jev_fn=lambda *a: candidate("saint-spring-0-75l", 0.70))
         evidence = service._merge(1, "Bottle", [
             {"text": "СВЯТОЙ ИСТОЧНИК", "score": 0.9},
             {"text": "SAINT SPRING STILL", "score": 0.8}])
         service._identify(1, evidence)
         snap = service.snapshot()[1]
-        self.assertFalse(service.is_complete(1))
+        self.assertTrue(service.is_complete(1))
         self.assertEqual(snap["choice"], "saint-spring-0-75l")
-        self.assertEqual(snap["label_sub"], "Likely match · checking label")
-        # The guessed size is shown (provisional) but never marked as seen.
+        self.assertEqual(snap["label_sub"], "Recognized")
         self.assertIn("0,75", snap["label_main"])
         self.assertFalse(snap["size_supported"])
-        # Conflicting volume text must not finalize the guessed volume.
-        service2 = IdentificationService(
-            jev_fn=lambda *a: candidate("saint-spring-0-75l", 0.95))
-        evidence2 = service2._merge(2, "Bottle", [
-            {"text": "СВЯТОЙ ИСТОЧНИК", "score": 0.9},
-            {"text": "ОБЪЁМ 0,33 Л", "score": 0.9}])
-        service2._identify(2, evidence2)
-        self.assertFalse(service2.is_complete(2))
 
-    def test_matching_volume_text_completes_without_lowered_threshold(self):
-        # 0.70 stays the bar: below it even explicit volume text is only a
-        # provisional likely-match; at/above it the size gate completes.
-        low = IdentificationService(
-            jev_fn=lambda *a: candidate("saint-spring-0-33l", 0.65))
-        low_ev = low._merge(1, "Bottle", [
-            {"text": "СВЯТОЙ ИСТОЧНИК", "score": 0.9},
-            {"text": "ОБЪЁМ 0,33 Л", "score": 0.9}])
-        low._identify(1, low_ev)
-        self.assertFalse(low.is_complete(1))
-        self.assertEqual(low.snapshot()[1]["label_sub"],
-                         "Likely match · checking label")
-        high = IdentificationService(
-            jev_fn=lambda *a: candidate("saint-spring-0-33l", 0.8))
-        high_ev = high._merge(1, "Bottle", [
-            {"text": "СВЯТОЙ ИСТОЧНИК", "score": 0.9},
-            {"text": "ОБЪЁМ 0,33 Л", "score": 0.9}])
-        high._identify(1, high_ev)
-        snap = high.snapshot()[1]
-        self.assertTrue(high.is_complete(1))
-        self.assertEqual(snap["label_sub"], "Recognized")
-        self.assertTrue(snap["size_supported"])
-        self.assertIn("0,33", snap["label_main"])
+    def test_dobryi_flavors_are_not_size_siblings(self):
+        cases = (
+            ("dobryi-orange-1l", "ДОБРЫЙ АПЕЛЬСИН"),
+            ("dobryi-cola-no-sugar-0-5l", "ДОБРЫЙ КОЛА БЕЗ САХАРА"),
+        )
+        for sku, text in cases:
+            with self.subTest(sku=sku):
+                service = IdentificationService(
+                    jev_fn=lambda *a, sku=sku: candidate(sku, 0.70))
+                evidence = service._merge(1, "Bottle", [{"text": text, "score": 0.9}])
+                service._identify(1, evidence)
+                self.assertTrue(service.is_complete(1))
+                self.assertFalse(service.snapshot()[1]["size_supported"])
+                self.assertFalse(service._choice_size_info(sku)[1])
+
+    def test_future_identical_size_siblings_require_printed_volume(self):
+        service = IdentificationService(
+            jev_fn=lambda *a: candidate("saint-spring-0-75l", 0.70))
+        sibling = service._product_by_sku("saint-spring-0-75l").copy()
+        sibling.update(sku="future-saint-spring-0-33l", size="0,33 л")
+        service.products.append(sibling)
+        self.assertTrue(service._choice_size_info("saint-spring-0-75l")[1])
+        evidence = service._merge(1, "Bottle", [{"text": "СВЯТОЙ ИСТОЧНИК", "score": 0.9}])
+        service._identify(1, evidence)
+        self.assertFalse(service.is_complete(1))
+        service._merge(1, "Bottle", [{"text": "ОБЪЁМ 0,75 Л", "score": 0.9}])
+        service._identify(1, evidence)
+        self.assertTrue(service.is_complete(1))
+        self.assertTrue(service.snapshot()[1]["size_supported"])
 
     def test_unique_products_keep_confidence_only_completion(self):
         # No size siblings: the original confidence rule is untouched.

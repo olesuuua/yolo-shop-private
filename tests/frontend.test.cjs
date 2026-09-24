@@ -790,3 +790,17 @@ test("packed section persists unnamed items and upgrades their names", async () 
   assert.match(app.elements.get("lastEvent").textContent, /Dobryi Cola/);
   socket.close();
 });
+
+test("catalog-inferred size has no seen-on-label note", async () => {
+  const app = await controller();
+  app.context.renderIdentification({
+    1: { label_main: "Добрый Cola без сахара 0,5 л", display_size: "0,5 л", size_supported: false },
+  });
+  const list = app.elements.get("identList");
+  assert.equal(list.children.length, 1);
+  assert.equal(list.children[0].children[1].children.length, 2);
+  app.context.renderIdentification({
+    1: { label_main: "Добрый Cola без сахара 0,5 л", display_size: "0,5 л", size_supported: true },
+  });
+  assert.match(list.children[0].children[1].children[2].textContent, /seen on label/);
+});

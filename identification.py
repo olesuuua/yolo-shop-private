@@ -587,23 +587,29 @@ class IdentificationService:
     def _choice_size_info(self, choice):
         """(size_ml, has_size_siblings) for a catalog choice.
 
-        Siblings share the brand but print a different volume (e.g. the two
-        Святой Источник bottles). Only sibling choices need explicit volume
-        text before they may complete; unique products keep the confidence
-        rule unchanged."""
+        A sibling has the same product identity apart from size. Different
+        flavors under one brand are distinct products, even at different
+        volumes. True size siblings require printed volume to complete."""
         product = self._product_by_sku(choice)
         if product is None:
             return (None, False)
         size_ml = parse_size_ml(product.get("size"))
         if size_ml is None:
             return (None, False)
-        brand = str(product.get("brand", "")).casefold().strip()
-        if not brand:
-            return (size_ml, False)
+        def identity_without_size(item):
+            size = str(item.get("size", "")).strip()
+            name = str(item.get("name", ""))
+            if size:
+                name = re.sub(re.escape(size), "", name, flags=re.IGNORECASE)
+            return tuple(normalize(value) for value in (
+                item.get("brand", ""), item.get("category", ""),
+                item.get("variant", ""), name))
+
+        identity = identity_without_size(product)
         for other in self.products:
             if other.get("sku") == choice:
                 continue
-            if str(other.get("brand", "")).casefold().strip() != brand:
+            if identity_without_size(other) != identity:
                 continue
             other_ml = parse_size_ml(other.get("size"))
             if other_ml is not None and other_ml != size_ml:
@@ -1072,10 +1078,8 @@ class IdentificationService:
                     and self.config.stop_confidence <= confidence <= 1
                 )
                 if meets_confidence and result.get("choice"):
-                    # Sibling sizes share a brand (Святой Источник 0,33/0,75):
-                    # a volume is confirmed only by visible volume text, never
-                    # by brand text alone. The stop threshold itself is
-                    # unchanged, so a growing catalog cannot weaken this rule.
+                    # Identical products with different sizes require visible
+                    # volume text; the 70% stop threshold stays unchanged.
                     size_ml, has_siblings = self._choice_size_info(result["choice"])
                     if has_siblings and not ocr_supports_size(
                             evidence.fingerprint, size_ml):

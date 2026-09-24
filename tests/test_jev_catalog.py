@@ -2,10 +2,27 @@
 
 import unittest
 
-from jev_catalog import build_request, load_catalog, select_candidates
+from jev_catalog import build_request, load_catalog, select_candidates, validate_answer
 
 
 class JevCatalogTests(unittest.TestCase):
+    def test_removed_saint_spring_sku_is_not_selectable(self):
+        products = load_catalog()
+        self.assertNotIn("saint-spring-0-33l", {p["sku"] for p in products})
+        self.assertIn("saint-spring-0-75l", {p["sku"] for p in products})
+        payload = build_request(
+            [{"text": "СВЯТОЙ ИСТОЧНИК", "score": 0.9}], products, "Bottle")
+        criteria = payload["questions"]["product"]["criteria"]
+        self.assertNotIn("saint-spring-0-33l", criteria)
+        self.assertIn("saint-spring-0-75l", criteria)
+        probabilities = dict.fromkeys(criteria, 0.0)
+        probabilities["saint-spring-0-33l"] = 1.0
+        response = {"model": "test", "answers": {"product": {
+            "choice": "saint-spring-0-33l", "confidence": 1.0,
+            "probabilities": probabilities}}}
+        with self.assertRaises(ValueError):
+            validate_answer(response, payload)
+
     def test_request_contains_only_ocr_comparable_product_fields(self):
         payload = build_request(
             [{"text": "СЕНЕЖСКАЯ", "score": 0.9}], load_catalog(), "Bottle")
